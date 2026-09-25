@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10171a">
+  <meta name="description" content="AAIF ecosystemの変化を、Agentic Operationsとインフラ運用の視点で追う技術ノート。">
+  <title>AAIF Watch — Choucreme</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script src="./articles.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">本文へ移動</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="./" aria-label="AAIF Watch トップ"><span class="brand-mark" aria-hidden="true">◈</span><span>AAIF<span class="brand-light"> WATCH</span></span></a>
+      <nav aria-label="メインナビゲーション"><a href="#latest">Latest</a><a href="#archive">Archive</a><a href="#about">About</a></nav>
+      <a class="org-link" href="https://github.com/choucreme" target="_blank" rel="noopener noreferrer">by Choucreme <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy"><p class="eyebrow"><span class="live-dot"></span> INDEPENDENT TECHNOLOGY PROJECT <span class="eyebrow-line"></span> VOL. 001</p>
+        <h1 id="hero-title">Signals from the<br><em>agentic frontier.</em></h1>
+        <p class="hero-lede">AAIF周辺の変化を、インフラ運用の現場で使える判断材料に。<br>仕様、実装、ガバナンスを追い、Agentic Opsへの意味を読み解く。</p>
+        <a class="hero-cta" href="#latest">最新記事を読む <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="hero-graphic" aria-hidden="true"><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="orbit orbit-c"></div><span class="orb orb-a"></span><span class="orb orb-b"></span><span class="orb orb-c"></span><div class="hero-center">A<span>·</span>I</div><div class="graphic-label label-top">PROTOCOLS / TRUST</div><div class="graphic-label label-bottom">OBSERVE → DECIDE → OPERATE</div></div>
+    </section>
+    <section class="ticker" aria-label="対象分野"><div class="wrap ticker-inner"><span>TRACKING</span><strong>MCP</strong><i>✦</i><strong>A2A</strong><i>✦</i><strong>GATEWAYS</strong><i>✦</i><strong>SECURITY</strong><i>✦</i><strong>AGENTIC OPS</strong></div></section>
+    <div class="wrap content-grid">
+      <div class="primary">
+        <section id="latest" class="latest-section"><div class="section-heading"><div><p class="section-kicker">01 / THE LATEST</p><h2>Today's signal</h2></div><span class="heading-rule"></span></div><div id="featured"></div></section>
+        <section id="archive" class="archive-section"><div class="section-heading"><div><p class="section-kicker">02 / THE ARCHIVE</p><h2>Field notes</h2></div><span class="heading-rule"></span></div><div class="filter-row"><div id="filters" class="filters" aria-label="記事フィルター"></div><span id="result-count" class="result-count"></span></div><div id="articles" class="article-list"></div></section>
+        <section id="about" class="about-section"><div class="section-heading"><div><p class="section-kicker">03 / THE LENS</p><h2>Why we watch</h2></div><span class="heading-rule"></span></div><div class="about-grid"><div class="about-number">01<span>→</span>03</div><div><p>プロトコルのニュースを、現場での採用判断へつなぐ。各記事は<strong>確認できた事実</strong>と<strong>運用への考察</strong>を分け、一次情報へのリンクを添えます。</p><p class="about-fine">Choucreme is an independent technology project exploring AI × Infrastructure × Agentic Operations. 記事の日付は観測レポートの日付です。公開時点での内容としてお読みください。</p></div></div></section>
+      </div>
+      <aside class="sidebar" aria-label="サイト情報"><div class="side-panel"><p class="side-label">THE WATCHLIST</p><h3>Six projects.<br>One operating lens.</h3><ul><li><span>01</span> MCP</li><li><span>02</span> A2A</li><li><span>03</span> Agent Router</li><li><span>04</span> agentgateway</li><li><span>05</span> goose</li><li><span>06</span> AGENTS.md</li></ul><p class="side-note">仕様から本番運用まで、変化のつながりを追います。</p></div><div class="side-callout"><span class="side-label">FOCUS AREA</span><p>What does this change mean for <em>infrastructure operations?</em></p><div class="small-arrow">↗</div></div></aside>
+    </div>
+  </main>
+  <footer class="site-footer"><div class="wrap footer-inner"><div><span class="footer-logo">◈ AAIF WATCH</span><p>AI × Infrastructure × Agentic Operations</p></div><span>© 2026 Choucreme</span><a href="https://github.com/choucreme" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div></footer>
+  <dialog id="article-dialog" aria-labelledby="dialog-title"><div class="dialog-inner"><button class="close-dialog" type="button" aria-label="記事を閉じる">×</button><div id="dialog-content"></div></div></dialog>
+</body>
+</html>
