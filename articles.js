@@ -1,6 +1,27 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    date:'2026-09-26', level:'HIGH', tags:['Operations','Security','MCP'],
+    title:'Agent Routerで露呈した、AI Gatewayの障害半径',
+    summary:'異種リスナー混在時の制御面障害とストリーム処理のメモリ改善から、Agent Gatewayの本番運用設計を考える。',
+    sections:[
+      {heading:'今日のシグナル',html:'<p><strong>AI Gatewayの成熟度は、対応モデル数よりも「一つの異常を制御面全体へ波及させないか」で測る段階に入った。</strong>Agent Routerでは、HTTP Connection Managerを持たないTCP・UDP用filter chainを正常な構成として読み飛ばさず、変換エラーとして扱っていた問題が修正された。</p><p>HTTP推論GatewayとTCP・UDP Gatewayを同じcontrol planeで扱う構成では、この問題によりxDS変換全体が失敗し、すべてのGatewayが<code>Programmed=False</code>となり、dataplaneが不正な設定を拒否して再起動を繰り返す可能性があった。修正後はHTTP filterを挿入できないchainだけをskipし、HTTP chainへの処理を継続する。</p>'},
+      {heading:'重要ニュース',html:'<p><strong>Agent Router — 制御面の障害分離</strong><br>修正は、HCMが存在しないことを示すsentinelだけをskip条件とし、将来発生し得る本物のエラーは握りつぶさない。TCP proxy chainとHCM chainが混在するlistenerを使った回帰テストも追加された。単なるnil-checkではなく、正常な異種構成と異常を区別する変更である。</p><p><strong>Anthropic streaming — メモリ使用量の改善</strong><br>stream chunkをfoldする処理が、増え続けるtext・thinking・tool argumentsを毎回連結し、長い応答で二次的にallocationを増やしていた。<code>strings.Builder</code>を使う修正では、1 MiB・8,192 deltaの計測で累積allocationが約4.33 GB/opから約8.05 MB/opへ減少したと報告されている。これはmaintainerの限定的なbenchmarkであり一般性能を保証しないが、長時間streamをtraceするgatewayには重要な改善である。</p><p>同時に、Anthropicのusage情報を参照共有したまま更新し、元chunkや先に返したresponseのtoken数まで変えてしまう問題も修正された。observabilityと課金・quota判断の基礎データを守るcorrectness修正として重要である。</p>'},
+      {heading:'OSS別アップデート',html:'<p><strong>Agent Router — HIGH</strong><br>異種listenerによるcontrol plane障害、Anthropic streamの二次allocation、usageのmutationを修正した。GCP/Gemini経路では、vLLM v0.12.0の新しい<code>structured_outputs</code>形式への対応も追加され、OpenRouterを実providerとして試験するdata-plane coverageも入った。最新正式releaseはv1.1.0のため、これらのmain上の修正がどのreleaseへ含まれるかは今後の確認が必要である。</p><p><strong>goose — MEDIUM</strong><br>modelごとのvision対応可否をprovider別の分岐ではなくcanonical catalogから解決する修正が入った。複数providerを切り替えるAgentでは、能力判定の一元化が誤った画像入力やprovider依存挙動を減らす。</p><p><strong>agentgateway — MEDIUM</strong><br>古いbinaryがmain上の新しいmodel catalogを取得した際、未知fieldでrefreshが壊れないようdeserializationを寛容にする修正が入った。v1.6.0で先に互換処理を配布し、その後にcatalog fieldを追加する方針がcommitに明記されている。</p><p><strong>A2A — LOW</strong><br>x402支払いendpointをAgentが発見・検証するdirectoryがpartners一覧へ追加された。ただしdocumentation上のecosystem追加であり、A2A protocol自体の変更ではない。</p><p><strong>MCP / AGENTS.md — WATCH</strong><br>前回観測後に、記事の中心に据える新しい正式仕様、重大release、Technical Charter変更は確認できなかった。</p>'},
+      {heading:'ガバナンスと標準化',html:'<p>AAIF Technical Committee、Working Groups、project proposal、新規加入・卒業projectについて、この観測期間に新しい正式決定は確認できなかった。Agent Routerは2026年9月9日にAAIFへ加入済みであり、本日の変更はその後の通常開発である。</p><p><strong>分析：</strong>foundationの価値は名称やproject数だけでなく、異なるprovider・protocol・runtimeを跨ぐ不具合が公開され、回帰テストとrelease lifecycleへ取り込まれることにある。個別commitと正式な標準変更は分けて記録する必要がある。</p>'},
+      {heading:'技術トレンド',html:'<p>今回の差分は、Agentic infrastructureで重要になる三つの境界を示す。</p><ul><li><strong>障害境界</strong>：一つの非HTTP chainがcontrol plane全体を止めない</li><li><strong>資源境界</strong>：長いstreamやtool argumentsがmemoryを二次的に消費しない</li><li><strong>schema境界</strong>：新しいcatalog fieldを古いbinaryが安全に無視できる</li></ul><p>ModelやToolを増やすほど、gatewayは単なる中継器ではなく、互換性と障害半径を管理するcontrol planeになる。MCP・A2A・LLM APIを一つのgatewayへ集約するなら、protocol別の機能試験に加え、共存時のfailure isolationを確認しなければならない。</p>'},
+      {heading:'Agentic Opsへの示唆',html:'<p>ホスティング運用のPoCで、Incident Agent、Prometheus MCP、Alertmanager MCP、将来のA2A Agentを同一gateway配下へ置く場合、次を受け入れ条件へ加える。</p><ul><li>HTTP、TCP、UDP listenerを混在させても、無関係なrouteの設定反映が止まらない</li><li><code>Programmed</code> condition、xDS rejection、dataplane再起動回数を監視する</li><li>1 MiB級のstream、数千delta、長いthinking・tool argumentsでheapとGCを測る</li><li>token usageが途中集計やtrace処理で書き換わらないことを検証する</li><li>catalog更新をcanary環境で先行取得し、旧binaryのforward compatibilityを確認する</li></ul><p><strong>分析：</strong>Agentの回答品質試験だけでは、今回の障害は見つからない。control plane、data plane、protocol adapter、Agent業務E2Eを分離して試験し、どの層の失敗かを判定できるtraceを残す必要がある。</p><div class="insight"><span class="dialog-kicker">OPERATOR NOTE</span><p>「一つの壊れた設定が、無関係なAgentやToolの通信を止めない」をgateway PoCの最重要SLOとして扱う。</p></div>'},
+      {heading:'要ウォッチ項目',html:'<ul><li>Agent Routerの各修正を含む次期正式releaseとupgrade guidance</li><li>Anthropic stream改善の実環境memory・latency検証</li><li>Agent RouterでのMCP・LLM・TCP/UDP混在構成の回帰試験</li><li>agentgateway v1.6.0の正式releaseとcatalog互換性</li><li>gooseのcanonical model catalogを使った能力判定</li><li>A2Aとx402を組み合わせる場合のidentity、支払い承認、監査</li></ul>'}
+    ],sources:[
+      ['Agent Router: skip non-HCM filter chains','https://github.com/theagentrouter/agent-router/commit/2b59b939bc12d1b21d51fbdb80d8d3d529da54cb'],
+      ['Agent Router: avoid quadratic stream folding allocation','https://github.com/theagentrouter/agent-router/commit/0a62cda2de54563ffab18e8a3c15a83088078096'],
+      ['Agent Router: avoid mutating stream chunk usage','https://github.com/theagentrouter/agent-router/commit/e04c86ae6a8d87a51febff8b69198700c74563cf'],
+      ['goose: canonical catalog for vision support','https://github.com/aaif-goose/goose/commit/04ed836c8cde23e540cc77d256992e00be99298b'],
+      ['agentgateway: tolerate unknown catalog fields','https://github.com/agentgateway/agentgateway/commit/dc376ec75483292f45a1fa4ec58405319845561e'],
+      ['A2A: add x402-list partner','https://github.com/a2aproject/A2A/commit/72b3761bd84c59291da694dcd97cdfc2c010df39']
+    ]
+  },
+  {
     date:'2026-09-25', level:'HIGH', tags:['A2A','MCP','Operations'],
     title:'A2AとMCPで始まる、プロトコルのバージョン運用',
     summary:'A2A JavaScript SDK v1.2.1の修正とMCP Skills拡張から、Agentic AI基盤に必要になる互換性管理と能力配布を考える。',
