@@ -1,6 +1,30 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    date:'2026-09-27', level:'HIGH', tags:['Security','MCP','Operations'],
+    title:'Agent Routerの4件の脆弱性が示す、MCP Gatewayの防御境界',
+    summary:'MCPの巨大POST、Secret書き込み、SSE解析、APIキーログ露出から、Gateway運用で必要な多層防御を整理する。',
+    sections:[
+      {heading:'今日のシグナル',html:'<p><strong>Agent Routerから4件のsecurity advisoryが2026年9月27日（日本時間）に公開された。</strong>対象は旧称Envoy AI Gatewayの0.3.0〜0.7.0で、修正版は1.0.0とされている。現在の最新正式releaseはv1.1.0のため、1.xへ更新済みなら各advisory上は修正済みだが、旧版を残す検証環境や固定imageは直ちに棚卸しが必要である。</p><p>内容はMCP POST bodyによるmemory exhaustion、Kubernetesのlabelを悪用したAPI-key Secretの別namespaceへの書き込み、Anthropic SSE indexによる巨大allocation、<code>aigw run</code>のログへの平文API key出力である。単一の実装不備ではなく、入力・identity・stream・secretというGatewayの四つの境界にまたがる。</p>'},
+      {heading:'重要ニュース',html:'<p><strong>GHSA-43xg-mvg9-qwpq — HIGH / CVSS 7.5</strong><br>MCP proxyがPOST bodyを上限なしで<code>io.ReadAll</code>していた。ネットワークから到達できる攻撃者は巨大bodyでextproc sidecarをOOM killし、同じpodを共有するAI Gateway全体を停止させられる。認証前にbodyを読む経路であり、securityPolicy未設定のMCPRouteでは未認証攻撃が可能と説明されている。</p><p><strong>中程度の3件</strong><br>ラベルを偽装したPod・Deployment・DaemonSetのnamespaceがfilter-config Secretの書き込み先として使われ、API keyを含むSecretが攻撃者側namespaceへ生成され得る問題、悪意あるAnthropic互換upstreamがSSEの<code>index</code>を巨大値・負値にしてOOMまたはpanicを起こす問題、<code>aigw run</code>が平文API keyを含む全configをInfo logへ出す問題が公開された。</p>'},
+      {heading:'OSS別アップデート',html:'<p><strong>Agent Router — HIGH</strong><br>正式advisoryとは別にmainではMCP認可が強化された。CEL式の評価エラーをrule不一致として後続Allowへ通すのではなく、対象source・targetが一致する場合はdenyするfail-closedへ変更された。また、CELで<code>request.auth.jwt</code>を参照するauthorization・backend selectionにはOAuthを必須とし、未検証JWTのclaimで認可や接続先を操作できないようにした。BackendSecurityPolicyが別namespaceのSecretを参照する場合にはReferenceGrantも必須化され、release noteでbreaking changeとして告知すべき変更と明記されている。</p><p>observabilityではGenAI metricsへ<code>gen_ai.backend</code>が追加された。同じOpenAI互換schemaを持つ複数backendでも、error rate・latency・token usageを<code>namespace/name</code>単位で区別できる。</p><p><strong>agentgateway — LOW</strong><br>Substrateのactor identity変更後に壊れていたegress認可とcredential injectionを、新しいSPIFFE URIへ追随させる修正を確認した。model catalogの自動更新も行われた。</p><p><strong>MCP / A2A / goose / AGENTS.md — WATCH</strong><br>前回記事以降、正式仕様・重大release・新規security advisoryとして扱う追加変更は確認できなかった。</p>'},
+      {heading:'ガバナンスと標準化',html:'<p>AAIF Technical Committee、Working Groups、project proposal、新規加入・卒業projectについて、新しい正式決定は確認できなかった。今回のadvisoryはAgent Router実装のsecurity情報であり、MCP仕様そのものの脆弱性とは区別する。</p><p><strong>分析：</strong>一方で、MCP Gatewayを共通基盤として運用する際に必要な実装要件は明確になった。protocol準拠だけでは不十分で、HTTP body上限、stream fieldの範囲検証、JWT検証済み状態の伝播、Kubernetesのnamespace境界、secret redactionまでconformanceの外側で確認する必要がある。</p>'},
+      {heading:'技術トレンド',html:'<p>Agent Gatewayでは「認証を付けたから安全」では足りない。今回の事例を防御層へ対応させると、入口のrequest size・timeout、認可式のfail-closed、upstream responseをuntrustedとするparser制限、Kubernetes ReferenceGrantとnamespace-scoped RBAC、ログのsecret redactionが必要になる。</p><p>また、<code>gen_ai.provider.name</code>だけではOpenAI互換backendを識別できないため、実backendを示すmetric attributeが追加された。マルチbackend構成では、セキュリティイベントとSLOを同じbackend identityで追跡できることが重要になる。</p>'},
+      {heading:'Agentic Opsへの示唆',html:'<p>Prometheus MCPやAlertmanager MCPをGateway経由で公開するPoCでは、次を受け入れ条件へ追加する。</p><ul><li>MCP POST body上限とrequest timeoutをGateway・sidecarの両方へ設定する</li><li>欠損fieldや型不一致でCEL評価を失敗させ、必ずdenyになることを試験する</li><li>JWT claimを使うrouteでは署名・issuer・audience検証なしに設定を受理しない</li><li>巨大・負のSSE index、途中切断、CRLF framingを含むhostile upstream試験を行う</li><li>controllerのListとSecret書き込みをnamespaceで制限し、cross-namespace参照にはReferenceGrantを要求する</li><li>CI artifact、support bundle、Info logにAPI keyが残らないことを自動検査する</li></ul><div class="insight"><span class="dialog-kicker">OPERATOR NOTE</span><p>最初に確認すべきは、稼働・検証・手元環境を含め0.x imageが残っていないかである。1.x移行後も、同種の回帰を検出するnegative testを継続する。</p></div>'},
+      {heading:'要ウォッチ項目',html:'<ul><li>4件のadvisoryにCVEが割り当てられるか</li><li>main上のCEL・JWT・ReferenceGrant修正を含む次期正式release</li><li>MCP request body上限値とupgrade guidanceの公式文書化</li><li><code>gen_ai.backend</code>のOpenTelemetry semantic conventionsへの扱い</li><li>agentgateway v1.6.0の正式releaseとidentity・catalog互換性</li><li>AAIF SecurityまたはIdentity & Trust WGでの共通ガイドライン化</li></ul>'}
+    ],sources:[
+      ['GHSA-43xg-mvg9-qwpq: Unbounded MCP POST Body Memory Exhaustion','https://github.com/theagentrouter/agent-router/security/advisories/GHSA-43xg-mvg9-qwpq'],
+      ['GHSA-4mj2-4v82-3m96: Cross-namespace API-key Secret write','https://github.com/theagentrouter/agent-router/security/advisories/GHSA-4mj2-4v82-3m96'],
+      ['GHSA-vgp6-h389-r473: Unbounded SSE index allocation','https://github.com/theagentrouter/agent-router/security/advisories/GHSA-vgp6-h389-r473'],
+      ['GHSA-qv6v-2357-v3gm: API keys exposed in logs','https://github.com/theagentrouter/agent-router/security/advisories/GHSA-qv6v-2357-v3gm'],
+      ['Agent Router: CEL evaluation errors fail closed','https://github.com/theagentrouter/agent-router/commit/ec0f9817114f4927331a1e3b2e4af2c2c1627495'],
+      ['Agent Router: require OAuth for JWT-dependent CEL','https://github.com/theagentrouter/agent-router/commit/32add09382ed7e6cbdd0c20b278b1a1c128a578a'],
+      ['Agent Router: require ReferenceGrant for cross-namespace Secrets','https://github.com/theagentrouter/agent-router/commit/780fcf46b2a39a42b2c4cf67c987b318a86b77b6'],
+      ['Agent Router: add gen_ai.backend metric attribute','https://github.com/theagentrouter/agent-router/commit/00883b5859dbcca374d7561a3bff117fca18563f'],
+      ['agentgateway: fix Substrate egress identity handling','https://github.com/agentgateway/agentgateway/commit/9e78d1da3286dbca730b33e243cd8e153c773751']
+    ]
+  },
+  {
     date:'2026-09-26', level:'HIGH', tags:['Operations','Security','MCP'],
     title:'Agent Routerで露呈した、AI Gatewayの障害半径',
     summary:'異種リスナー混在時の制御面障害とストリーム処理のメモリ改善から、Agent Gatewayの本番運用設計を考える。',
