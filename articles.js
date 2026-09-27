@@ -1,6 +1,25 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    date:'2026-09-28', level:'HIGH', tags:['Security','MCP','Operations'],
+    title:'MCP GatewayでSecretをSecretのまま扱う',
+    summary:'HTTPRouteへのAPI key露出とToolCall起因の共有プロセス停止から、Agent Gatewayの秘密管理と障害分離を考える。',
+    sections:[
+      {heading:'今日のシグナル',html:'<p><strong>Agent Gatewayの安全性は、Secretを受け取れるかではなく、受け取ったSecretを非機密resourceやログへ展開しないかで決まる。</strong>前回観測後、Agent Routerからさらに2件のsecurity advisoryが公開された。MCP backend用API keyを生成HTTPRouteへ平文で埋め込む問題と、tool call IDの欠損により共有extproc processをpanicさせられる問題である。</p><p>いずれも旧称Envoy AI Gatewayの0.4.0〜0.7.0が対象で、advisory上の修正版は1.0.0。最新正式release v1.1.0は修正済みの範囲だが、0.x imageが残る検証環境、manifest、private registryの棚卸しは引き続き必要である。</p>'},
+      {heading:'重要ニュース',html:'<p><strong>GHSA-3x83-9r4x-q3px — MEDIUM / CVSS 6.5</strong><br><code>MCPRoute</code>がbackend API keyをSecret参照で受け取っても、controllerが値を解決し、生成する<code>HTTPRoute</code>のheader modifierまたはquery parameterへ平文で埋め込んでいた。HTTPRouteのread権限はSecretより広く付与されやすく、etcd暗号化の対象にも通常含まれない。query parameter方式ではEnvoyや中間proxyのaccess logにも残り得る。つまりSecret RBACを迂回してcredentialを参照できる経路が生まれる。</p><p><strong>GHSA-5gx6-2mh3-32v4 — HIGH / CVSS 7.5</strong><br>OpenAI形式のtool callにIDがないrequestをAnthropic、Bedrock-Anthropic、Gemini backendへ変換すると、pointerの未検証dereferenceでpanicする。gRPC recovery interceptorやprocess-level recoverがないため、攻撃対象requestだけでなくpod上の全tenantが利用するextproc processが停止する。境界入力の一項目欠損が共有data plane障害へ拡大する問題である。</p>'},
+      {heading:'OSS別アップデート',html:'<p><strong>Agent Router — HIGH</strong><br>上記2件のadvisoryを確認した。前日に公開された4件と合わせ、0.x系について入力上限、SSE解析、credential配置、ログredaction、Kubernetes namespace境界、panic recoveryを一括で見直す必要がある。今回の観測期間に新しい正式releaseはなく、最新版はv1.1.0のままである。</p><p><strong>agentgateway — MEDIUM</strong><br>管理UIでvirtual API keyを作成する際、raw keyではなくSHA-256 hashを保存する方式が標準になった。raw keyは作成直後に一度だけ表示され、以後はhintのみを表示する。HTTPSまたはlocalhostでWeb Crypto APIが利用できない場合はraw保存へfallbackするため、UIを安全なoriginで提供することも要件になる。</p><p><strong>MCP / A2A / goose / AGENTS.md — WATCH</strong><br>前回観測後、正式仕様、重大release、security advisoryとして報告すべき追加差分は確認できなかった。agentgatewayではIstio依存関係の更新も行われたが、利用者向けの機能変更としては扱わない。</p>'},
+      {heading:'ガバナンスと標準化',html:'<p>AAIF Technical Committee、Working Groups、project proposal、新規加入・卒業projectについて、新しい正式決定は確認できなかった。今回の問題はMCP protocolではなく、Gateway controllerがcredentialを別resourceへ変換する実装と、protocol translationの入力検証に属する。</p><p><strong>分析：</strong>MCPやA2Aの標準適合試験に加えて、SecretがどのKubernetes object、xDS config、log、metricへ複製されるかを追跡するcredential lineageが必要である。仕様上正しい通信でも、control plane内で秘密情報が広いread権限へ変換されれば安全とは言えない。</p>'},
+      {heading:'技術トレンド',html:'<p>二つの更新は、credentialの扱いに対照的な方向を示す。Agent Routerの旧実装はSecretを取得後にHTTPRouteへ平文展開した一方、agentgatewayは照合に必要なhashだけを保存し、raw keyを再表示できない設計へ進んだ。</p><p>理想は、Gateway controllerがcredential本体をresource specへ書かず、Secret参照、専用credential provider、短命token、workload identityをdata planeへ安全に解決させる構成である。またprotocol translatorは外部入力を完全とは仮定せず、required field validationとpanic recoveryを二重に持つ必要がある。</p>'},
+      {heading:'Agentic Opsへの示唆',html:'<p>ホスティング運用でMCP GatewayをPoCする場合、次の検査を追加する。</p><ul><li><code>kubectl get httproute -A -o yaml</code>等の生成resourceにtokenやAPI keyが含まれない</li><li>etcd backup、GitOps diff、Kubernetes audit event、proxy access logへcredentialが複製されない</li><li>API keyはhash保存または外部Secret store参照とし、作成時以外はraw値を表示しない</li><li>tool callのID、name、argumentsを欠損・null・異常型にしてもrequest単位の4xxで終了する</li><li>translator panicをprocess境界でrecoverし、一つのtenant入力が他tenantへ波及しない</li><li>旧0.x imageをregistry、Helm values、検証cluster、開発端末まで含めて検索する</li></ul><div class="insight"><span class="dialog-kicker">OPERATOR NOTE</span><p>SecretをSecret objectへ置くだけでは不十分。controllerが生成する全resourceとlogを含め、平文credentialの到達先を実測する。</p></div>'},
+      {heading:'要ウォッチ項目',html:'<ul><li>追加2件へのCVE割り当てと詳細なupgrade guidance</li><li>Agent Routerのpanic recovery、required field validationの回帰試験</li><li>MCP backend credentialをHTTPRouteへ埋め込まない現行実装の設計</li><li>agentgatewayのhashed key管理がAPI・CLIでも一貫するか</li><li>短命credential、SPIFFE、workload identityによるstatic key削減</li><li>AAIFでのcredential lineageとmulti-tenant isolationの共通指針</li></ul>'}
+    ],sources:[
+      ['GHSA-3x83-9r4x-q3px: MCP backend API key in HTTPRoute spec','https://github.com/theagentrouter/agent-router/security/advisories/GHSA-3x83-9r4x-q3px'],
+      ['GHSA-5gx6-2mh3-32v4: ToolCall ID nil dereference DoS','https://github.com/theagentrouter/agent-router/security/advisories/GHSA-5gx6-2mh3-32v4'],
+      ['agentgateway: support and default to hashed keys','https://github.com/agentgateway/agentgateway/commit/7e47ceb576aa9d3300cb0d2c7c35848fb0af048f'],
+      ['agentgateway: bump Istio dependency','https://github.com/agentgateway/agentgateway/commit/e10197ad4884a2971807ccc97763d46f813ea907']
+    ]
+  },
+  {
     date:'2026-09-27', level:'HIGH', tags:['Security','MCP','Operations'],
     title:'Agent Routerの4件の脆弱性が示す、MCP Gatewayの防御境界',
     summary:'MCPの巨大POST、Secret書き込み、SSE解析、APIキーログ露出から、Gateway運用で必要な多層防御を整理する。',
