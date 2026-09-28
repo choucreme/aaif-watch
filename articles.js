@@ -1,6 +1,29 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    date:'2026-09-29', level:'HIGH', tags:['Security','MCP','Operations'],
+    title:'MCP sessionを暗号化するだけでは、利用者境界は守れない',
+    summary:'subject bindingとランダムseed、未信頼repository対策から、Agent実行基盤のidentity境界を考える。',
+    sections:[
+      {heading:'今日のシグナル',html:'<p><strong>MCP session tokenを暗号化していても、全環境が同じ公開seedを使えば利用者境界は成立しない。</strong>Agent Routerではsession再開時にrequest subjectを必ず照合する修正に加え、Helm chartが使っていた<code>default-insecure-seed</code>を廃止し、installごとに64文字のランダムseedを生成する修正がmainへ入った。</p><p>公開seedを知る者は、観測した<code>Mcp-Session-Id</code>を復号し、subjectを差し替えて再暗号化できるため、subject checkだけを追加しても迂回できる。identityをtokenへ結び付ける処理と、tokenを保護する鍵管理は一体で設計する必要がある。</p>'},
+      {heading:'重要ニュース',html:'<p><strong>Agent Router — MCP sessionのsubject binding</strong><br>session再開時に、保存されたsessionのsubjectと現在のrequest subjectを照合するよう変更された。session IDを知っているだけで別利用者がsessionを再開する経路を閉じるための修正である。</p><p><strong>Helm chart — session encryption seedの安全化</strong><br>seed未指定時はinstall時にランダム値を生成し、専用Kubernetes Secretへ保存する。upgradeでは<code>lookup</code>により同じSecretを再利用し、controllerへはDeployment引数ではなく環境変数で渡す。GitOpsの<code>helm template</code>ではlookupが使えないため、利用者管理Secretを指定する<code>existingSecret</code>も追加された。</p><p>旧chartの既定seedから更新すると既存MCP sessionは一度失効する。可用性のために公開seedをfallbackへ残すことは可能だが、security上は短い移行期間に限定すべきである。これらはmain上の変更であり、次期正式releaseへの収録を確認する必要がある。</p>'},
+      {heading:'OSS別アップデート',html:'<p><strong>goose — HIGH</strong><br>review機能がrepository設定の<code>diff.external</code>を実行しないよう、すべての<code>git diff</code>へ<code>--no-ext-diff</code>を追加した。未信頼repositoryをreviewしただけで外部commandが起動する経路を閉じるsecurity修正で、commitはGHSA-6mg9-3cvh-9939への対応と明記している。advisory本文は現時点で公開一覧から確認できないため、影響version・severityは未確認として扱う。</p><p>model metadataはmodels.devからlive取得し、失敗時はbundled catalogへfallbackする方式へ進んだ。15秒timeout、32 MiB上限、ETag、atomic cache、空catalog・重複ID検証を備える。GDK Provider APIにもmodel discoveryが追加された。</p><p><strong>MCP — MEDIUM</strong><br>Ruby SDKがTier 2からTier 1へ昇格した。2025-11-25と2026-07-28の要件セットに対しserver 67/67、client 50/50のconformance、issue triage、policy整備などが根拠として示されている。</p><p><strong>agentgateway — LOW</strong><br>CELによるbody変換結果がnullの場合、upstream bodyを消去せず元のbodyを維持する修正が入った。backend CEL contextからservice workload endpointを除外する整理も行われた。</p><p><strong>A2A / AGENTS.md — WATCH</strong><br>前回観測後、正式仕様・重大release・security advisoryに相当する新しい差分は確認できなかった。</p>'},
+      {heading:'ガバナンスと標準化',html:'<p><strong>MCPのSEP提出プロセスが変更された。</strong>SEP pull requestを開く前に、関連WGまたはIGのDiscord、meeting notes、GitHub Discussionで提案を議論し、そのlinkをPRへ記載することが必須になった。事前議論のないSEPは受理されない。またrepositoryがSEP PRを受け付けるのはcollaboratorのみであることも明記された。</p><p>これは仕様案をPRへ直接持ち込む方式から、WG・IGで問題設定と支持を確認してからformal processへ進む方式への変更である。レビュー負荷と重複提案を減らす一方、外部提案者は適切なgroupとcollaboratorへ到達する導線が必要になる。</p><p>AAIF全体のTechnical Committee、新規project proposal、加入・卒業projectについて、これ以外の正式変更は確認できなかった。</p>'},
+      {heading:'技術トレンド',html:'<p>本日の差分には二つのtrust boundaryがある。一つはnetwork sessionで、token暗号化、鍵のentropy、subject binding、rotationが揃って初めてidentity境界になる。もう一つはlocal repositoryで、Agentが読むcodeだけでなく<code>.git/config</code>やhook、external diffもuntrusted inputとして扱う必要がある。</p><p>またmodel catalogのlive更新により、binaryを更新せず新model・価格・能力へ追随できる一方、remote metadataがAgentのmodel選択やcost計算へ影響する。size limit、schema validation、cache、bundled fallbackを備えた段階的な外部データ取り込みが標準パターンになりつつある。</p>'},
+      {heading:'Agentic Opsへの示唆',html:'<p>ホスティング運用のMCP Gateway・運用Agent PoCでは、次を確認する。</p><ul><li>異なる利用者のtokenで同一MCP sessionを再開できない</li><li>session seedを環境ごとに生成し、Secret managerまたはKubernetes Secretで管理する</li><li>seed rotation時のsession失効、rollback、監査手順をrunbook化する</li><li>GitOps renderごとにseedが変わらないよう既存Secretを明示する</li><li>未信頼repositoryでgit hook、fsmonitor、diff.external、textconvが実行されない</li><li>remote model catalogが取得不能・巨大・破損・空でもbundled dataで安全に継続する</li><li>model metadataの取得元、ETag、更新時刻を監査ログへ残す</li></ul><div class="insight"><span class="dialog-kicker">OPERATOR NOTE</span><p>暗号化済みtokenという表示だけで安全と判断しない。誰が鍵を知り、どのidentityへ再利用でき、rotation時に何が止まるかまで確認する。</p></div>'},
+      {heading:'要ウォッチ項目',html:'<ul><li>Agent Routerのsession修正を含む正式releaseとsecurity advisory</li><li>公開既定seedを拒否して起動失敗にするhardening</li><li>goose GHSA-6mg9-3cvh-9939の公開advisoryと影響version</li><li>models.dev live catalogの署名・provenance・rollback方法</li><li>MCP SEP事前議論ルールによるproposal throughputの変化</li><li>Ruby SDK Tier 1のrelease追随速度とproduction事例</li></ul>'}
+    ],sources:[
+      ['Agent Router: bind resumed MCP sessions to request subject','https://github.com/theagentrouter/agent-router/commit/0d1e73037076d72251342d0ea578a36ffb7002c7'],
+      ['Agent Router: generate random session encryption seed in Helm','https://github.com/theagentrouter/agent-router/commit/994579660ae2a9f2feef3cb77766e155746858b4'],
+      ['goose: remediate external git diff security issue','https://github.com/aaif-goose/goose/commit/3fbea00fd44f6496ee4afe2b8b2897c3c95d63e9'],
+      ['goose: live models.dev metadata with bundled fallback','https://github.com/aaif-goose/goose/commit/4dea9b483efbd2541d43500b8ed3c044c65e6d2f'],
+      ['goose GDK: add model discovery to Provider API','https://github.com/aaif-goose/goose/commit/c30c6d160e900e126d587a06875d764b99d0e377'],
+      ['MCP: require WG or IG discussion before SEP submission','https://github.com/modelcontextprotocol/modelcontextprotocol/commit/b3e2cc7a137f9c7d4335399300ad576cc4a66b68'],
+      ['MCP: promote Ruby SDK to Tier 1','https://github.com/modelcontextprotocol/modelcontextprotocol/commit/70480219e37e33ac0f7ec286779e24c4b58e1950'],
+      ['agentgateway: preserve upstream body on null CEL result','https://github.com/agentgateway/agentgateway/commit/c9573ed1a2664b2415d6b60994e7fe0b966bdd76']
+    ]
+  },
+  {
     date:'2026-09-28', level:'HIGH', tags:['Security','MCP','Operations'],
     title:'MCP GatewayでSecretをSecretのまま扱う',
     summary:'HTTPRouteへのAPI key露出とToolCall起因の共有プロセス停止から、Agent Gatewayの秘密管理と障害分離を考える。',
