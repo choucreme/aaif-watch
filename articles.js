@@ -1,6 +1,31 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    date:'2026-10-04', level:'LOW', tags:['Operations','MCP','A2A'],
+    title:'大きな変更なし、Summit前の基準線を固定する',
+    summary:'仕様・release・securityの実質差分はなし。次の発表を正しく比較するため現状を記録する。',
+    sections:[
+      {heading:'今日のシグナル',html:'<p><strong>前回レポート以降、AAIFと主要監視対象にruntime、正式仕様、governance、security advisoryとして報告すべき大きな変更は確認できなかった。</strong>変更があったのはMCP repositoryの開発dependency更新と、agentgatewayのCI／build cache周辺であり、production behaviorの変更とは扱わない。</p><p>ニュースが少ない日は、既知の最新版と未release変更を混ぜずに基準線を固定することが重要である。10月5〜6日のMCP Dev Summit Torontoを前に、現在の正式仕様・release・main上の差分を分けて記録しておけば、event後の発表を「新しい決定」「継続議論」「実装だけの先行変更」に分類できる。</p>'},
+      {heading:'重要ニュース',html:'<p><strong>本日は重大ニュースなし。</strong>AAIF Technical Committeeの決定、新規project proposal、加入・卒業project、MCP／A2Aの新仕様release、追跡対象の新しいsecurity advisoryは確認できなかった。変更が少ないことを推測で補わず、前日のagentgateway v1.6.0とAgent RouterのJSON Schema node budgetを最新の重要差分として維持する。</p><p><strong>事実：</strong>MCPの最新正式仕様は<code>2026-07-28</code>、A2A specificationはv1.0.1、Agent Routerはv1.1.0、gooseはv1.52.0、agentgatewayはv1.6.0である。<strong>分析：</strong>週末に新規commitがないことは成熟度や停滞を意味しない。正式なartifactが変わっていない、という範囲に限定して判断する。</p>'},
+      {heading:'OSS別アップデート',html:'<p><strong>MCP — LOW</strong><br>repositoryでは開発dependency groupとして<code>brace-expansion</code>と<code>markdown-it</code>が更新された。specification本文、schema、SEP process、conformance要件の変更ではないため、利用者向けprotocol updateには数えない。</p><p><strong>agentgateway — LOW</strong><br>Go dependencyの調整、CIでcache済みimageを強制利用する変更、GitHub Actions標準Go cacheを無効にして<code>GOCACHEPROG</code>へ寄せる変更が入った。いずれもbuild／CI効率に関する差分で、v1.6.0のrouting、authentication、MCP、rate limit、draining semanticsを変えるものではない。</p><p><strong>goose — WATCH</strong><br>前回レポート以降の新規commitは確認できなかった。repository mainでは1.53.0へ向けた変更が進んでいるが、最新正式GitHub Releaseは引き続きv1.52.0である。mainのversion表記だけを正式releaseとして扱わない。</p><p><strong>A2A — WATCH</strong><br>新規commitとreleaseは確認できず、最新正式specification releaseはv1.0.1のままである。前日のA2A CLI公式導線追加はdocumentation updateであり、protocol versionの更新ではない。</p><p><strong>Agent Router — WATCH</strong><br>新規commit・releaseは確認できなかった。前日確認したJSON Schema 5万node budgetはmain上の変更で、最新正式release v1.1.0への収録は未確認である。</p><p><strong>AGENTS.md — WATCH</strong><br>新規commitは確認できなかった。</p>'},
+      {heading:'ガバナンスと標準化',html:'<p>AAIFのWorking Groups calendarには継続的なmeetingが掲載されているが、meeting予定と採択済みの標準・policyは区別する。本日の確認では、公開された議事録や正式決定として記事へ追加すべき差分はなかった。</p><p>MCP Dev Summit Torontoは10月5〜6日に開催予定である。eventのsessionや登壇者の発言を、そのまま仕様変更とみなしてはいけない。記事へ反映する基準は、公式release、SEP status、maintainer meeting notes、repositoryへのmerge、AAIF／Linux Foundationの正式発表である。</p>'},
+      {heading:'技術トレンド',html:'<p>本日の技術的な示唆は、<strong>変更量と重要度を分離すること</strong>である。dependencyやCI cacheのcommit数が多くてもdata planeの挙動は変わらない。一方、前日のschema node budgetのような一つの小さなcommitがresource exhaustionへの防御境界を変えることがある。</p><p>Agentic Opsのwatchでは、commit数をactivity scoreとして扱わず、変更を「protocol」「control plane」「data plane」「security」「observability」「build／docs」に分類し、productionへの影響範囲を評価する必要がある。この分類を自動化すれば、ニュースの多さではなく運用判断に必要な差分へ集中できる。</p>'},
+      {heading:'Agentic Opsへの示唆',html:'<p>大きな更新がない日を、PoCのbaseline取得に使う。</p><ul><li>agentgateway v1.6.0のimage digest、Helm chart version、CRD、既定値を保存する</li><li>Agent Router v1.1.0とmainを分け、JSON Schema負荷試験の結果を比較する</li><li>MCP <code>2026-07-28</code>とA2A v1.0.1を現在のcompatibility matrixへ固定する</li><li>gooseは正式v1.52.0とmain上の1.53系変更を別test laneにする</li><li>Prometheus／Alertmanager MCPの正常系trace、p95、token、tool error率を取得する</li><li>Summit後に同じtestを再実行し、protocol／SDK／Gatewayのどの層で差が出たか比較する</li><li>commitをruntime影響とbuild／docs変更へ自動分類し、後者だけの日はalert severityを下げる</li></ul><div class="insight"><span class="dialog-kicker">OPERATOR NOTE</span><p>「変更なし」は空欄ではなく、比較可能なbaselineである。event前後で同じ試験を行える状態を作る。</p></div>'},
+      {heading:'要ウォッチ項目',html:'<ul><li>MCP Dev Summit Torontoで公開されるslides、meeting notes、SEP、release</li><li>MCP次期specificationの正式timelineとconformance要件</li><li>agentgateway v1.6.0の初期upgrade issueとpatch release</li><li>Agent RouterのJSON Schema budget修正を含む正式release</li><li>goose v1.53.0の正式releaseと収録change一覧</li><li>A2A CLIからSDK native実装へ移る公式adoption pattern</li><li>AAIF Working Groupsの公開議事録と採択済みdeliverable</li></ul>'}
+    ],sources:[
+      ['MCP: update development dependencies','https://github.com/modelcontextprotocol/modelcontextprotocol/commit/75db1e987cbbba6d170315dc99d0dfc440754aef'],
+      ['agentgateway: adjust Go dependency for CI cache','https://github.com/agentgateway/agentgateway/commit/61dd06b4cdece2f73c056c85076a38f36e4d14c9'],
+      ['agentgateway: force cached images in CI','https://github.com/agentgateway/agentgateway/commit/3f13ff3e6fa30f544e565e0817e70fd654f23aad'],
+      ['agentgateway: use GOCACHEPROG instead of GHA Go cache','https://github.com/agentgateway/agentgateway/commit/a4a3ebb014fa27cf0309331b4bc45e4d1c9c5663'],
+      ['MCP official releases','https://github.com/modelcontextprotocol/modelcontextprotocol/releases'],
+      ['A2A official releases','https://github.com/a2aproject/A2A/releases'],
+      ['Agent Router official releases','https://github.com/theagentrouter/agent-router/releases'],
+      ['goose official releases','https://github.com/aaif-goose/goose/releases'],
+      ['agentgateway v1.6.0 release','https://github.com/agentgateway/agentgateway/releases/tag/v1.6.0'],
+      ['MCP Dev Summit Toronto','https://events.linuxfoundation.org/mcp-dev-summit-toronto/']
+    ]
+  },
+  {
     date:'2026-10-03', level:'HIGH', tags:['Operations','Security','MCP','A2A'],
     title:'agentgateway v1.6.0、AI Gatewayを本番運用の部品へ',
     summary:'正式版のrouting・認証・cost・drainingと、JSON Schema展開制限を運用目線で整理する。',
