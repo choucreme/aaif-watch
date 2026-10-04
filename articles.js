@@ -1,6 +1,32 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    date:'2026-10-05', level:'LOW', tags:['MCP','Operations','Security'],
+    title:'MCP Dev Summit開幕、発表を検証可能な変更へ落とす',
+    summary:'正式仕様・releaseの差分はなし。Summit発表を運用判断へ変える証拠の段階を整理する。',
+    sections:[
+      {heading:'今日のシグナル',html:'<p><strong>MCP Dev Summit Torontoが本日開幕する一方、観測時点ではMCP、A2A、goose、agentgateway、Agent Router、AGENTS.mdに前回記事後の新規commit、正式release、security advisoryは確認できなかった。</strong>AAIF Technical CommitteeやWorking Groupsからも、新しい採択事項、project proposal、加入・卒業projectの正式発表はない。</p><p>今日は「eventが始まった」という事実と「仕様・実装が変わった」という事実を分ける日である。sessionの主張は重要な先行signalだが、productionの互換性やsecurity境界を変える根拠になるのは、公開資料、SEP status、merged commit、tagged release、conformance testなど検証可能なartifactである。</p>'},
+      {heading:'重要ニュース',html:'<p><strong>MCP Dev Summit Toronto — 10月5〜6日開催</strong><br>Linux Foundation公式scheduleでは、Torontoで2日間開催され、初日は9時30分EDTのopening remarksから始まる。40以上のsessionが予定され、MCP protocol、SDKと拡張、security・identity・trust、enterprise adoptionなどが議題である。</p><p><strong>事実：</strong>event開催とagendaは公式に確認できるが、開幕時点で新しいMCP仕様releaseやAAIF governance決定は公開されていない。<strong>分析：</strong>登壇内容をそのまま「標準化済み」として実装へ持ち込むのではなく、どのrepository、proposal、versionへ結び付くかを確認してから評価する必要がある。</p>'},
+      {heading:'OSS別アップデート',html:'<p><strong>MCP — WATCH</strong><br>前回観測後の新規commitと正式releaseは確認できない。最新正式仕様は引き続き<code>2026-07-28</code>である。Summitで示される可能性のある方向性と、現在の互換性baselineを混同しない。</p><p><strong>A2A — WATCH</strong><br>新規commit・releaseはなく、最新specification releaseはv1.0.1のままである。MCPとの役割分担や相互運用に関する発表があっても、A2A version、SDK、TCK／ITKへの反映を別途確認する。</p><p><strong>agentgateway — WATCH</strong><br>v1.6.0以後の追加commitは観測期間内にない。routing、OIDC／JWT、cost tracking、MCP compatibility、graceful drainingはv1.6.0を評価基準とする。</p><p><strong>Agent Router — WATCH</strong><br>新規commit・releaseはなく、正式版はv1.1.0。main上のJSON Schema 5万node budgetなどが次のreleaseへ収録されるか継続確認する。</p><p><strong>goose — WATCH</strong><br>新規commitと正式releaseはなく、正式版はv1.52.0。AAIF公式project pageには10月2日付のGoose紹介が掲載されているが、release artifactの変更ではない。</p><p><strong>AGENTS.md — WATCH</strong><br>新規commitは確認できない。instruction formatやgovernanceの変更もない。</p>'},
+      {heading:'ガバナンスと標準化',html:'<p>Summitの情報を標準化の証拠として扱う際は、次の段階を区別する。<strong>①sessionでの問題提起、②公開proposal／SEP、③maintainer reviewとstatus変更、④specificationへのmerge、⑤tagged releaseとSDK反映、⑥conformance testとmigration guidance</strong>である。前半は方向性、後半は導入判断の根拠になる。</p><p>AAIFのWorking Groupsは共同作業の場だが、meeting予定や登壇者の見解だけでは採択済みpolicyにならない。議事録、charter、deliverable、Technical Committeeの正式決定へ到達した時点で、governance差分として記事へ反映する。</p>'},
+      {heading:'技術トレンド',html:'<p>注目点は、Agent protocolの議論が「接続できる」から<strong>trust、security、interoperability、observabilityを証明できる</strong>へ移っていることである。protocol proposalだけでなく、SDKのversion、Gatewayのpolicy、trace属性、conformance suiteが同じ変更を表現できなければ、本番運用では採用しにくい。</p><p>event起点の情報収集では、発表数を追うより、発表からartifactまでのtraceabilityを持つ方が価値が高い。各signalへsource、status、target version、reference implementation、test、security impactを付ければ、将来のrelease時に「何が正式化されたか」を機械的に照合できる。</p>'},
+      {heading:'Agentic Opsへの示唆',html:'<p>Summit後のPoC更新は、発表内容を直接production設定へ反映せず、change intakeを通す。</p><ul><li>発表ごとに公式資料、repository、issue／SEP、ownerを記録する</li><li>採択状況とtarget protocol／SDK versionを確認する</li><li>MCP client、server、gatewayのcompatibility matrixへ影響範囲を追加する</li><li>認証・委譲・tool permission・schema validationへのsecurity影響をnegative testへ変換する</li><li>latency、token、tool error、policy decision、delegation hopに必要なtrace項目を定義する</li><li>reference implementationとconformance testが揃うまでexperimental laneで評価する</li><li>upgrade、rollback、旧version併存の手順をcanaryで検証する</li></ul><div class="insight"><span class="dialog-kicker">OPERATOR NOTE</span><p>conferenceの価値は発表の多さではなく、翌日の設計・試験・監視へ変換できるかで決まる。正式artifactへ結び付かない情報は「仮説」として保持する。</p></div>'},
+      {heading:'要ウォッチ項目',html:'<ul><li>10月5〜6日の公式slides、session recording、発表資料</li><li>MCP Steering Committeeやmaintainerが示す次期specification timeline</li><li>新しいSEP、extension、SDK release、conformance要件</li><li>security・identity・trust sessionから生まれる正式proposal</li><li>MCPとA2Aの相互運用に関するreference implementation</li><li>agentgateway／Agent Routerへのprotocol変更の実装時期</li><li>AAIF Working Groupsの議事録、deliverable、Technical Committee決定</li><li>goose v1.53.0とAgent Router次期releaseの正式公開</li></ul>'}
+    ],sources:[
+      ['MCP Dev Summit Toronto','https://events.linuxfoundation.org/mcp-dev-summit-toronto/'],
+      ['MCP Dev Summit Toronto official schedule','https://events.linuxfoundation.org/mcp-dev-summit-toronto/program/schedule/'],
+      ['MCP Dev Summit Toronto call for proposals and topic tracks','https://events.linuxfoundation.org/mcp-dev-summit-toronto/program/cfp/'],
+      ['AAIF official site and events','https://aaif.io/'],
+      ['AAIF Working Groups','https://aaif.io/working-groups'],
+      ['AAIF Goose project page','https://aaif.io/projects/goose'],
+      ['MCP official releases','https://github.com/modelcontextprotocol/modelcontextprotocol/releases'],
+      ['A2A official releases','https://github.com/a2aproject/A2A/releases'],
+      ['agentgateway v1.6.0 release','https://github.com/agentgateway/agentgateway/releases/tag/v1.6.0'],
+      ['Agent Router official releases','https://github.com/theagentrouter/agent-router/releases'],
+      ['goose official releases','https://github.com/aaif-goose/goose/releases']
+    ]
+  },
+  {
     date:'2026-10-04', level:'LOW', tags:['Operations','MCP','A2A'],
     title:'大きな変更なし、Summit前の基準線を固定する',
     summary:'仕様・release・securityの実質差分はなし。次の発表を正しく比較するため現状を記録する。',
