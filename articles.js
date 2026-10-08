@@ -14,15 +14,15 @@ const ARTICLES = [
       {heading:'要ウォッチ項目',html:'<ul><li>Agent Router v1.2.x patchにInferencePool deduplication修正が含まれるか、release noteとtag commitを照合する。</li><li>複数route match・複数pool・複数listenerを組み合わせたconformance/load testが追加されるか。</li><li>agentgateway次期releaseにResumeActor trace、ext_proc status、provider path join修正が収録されるか。</li><li>MCP Inspectorがheadless環境のsecret fallbackをUIや起動logで明示し、memory-only/encryption設定を安定化するか。</li><li>goose v1.54系releaseでstate machine一本化後のempty response、tool retry、resume挙動がどう記載されるか。</li><li>AAIFのphysical agent議論がObservability/TraceabilityまたはIdentity/Trust WGの公開artifactへ発展するか。</li></ul>'}
     ],
     sources:[
-      {name:'Agent Router — fix: add one InferencePool ext proc filter per pool, not per route match',url:'https://github.com/theagentrouter/agent-router/commit/31ee356f6dc02a83a2630e774064f31284fef509'},
-      {name:'agentgateway — Fix Substrate resume trace propagation',url:'https://github.com/agentgateway/agentgateway/commit/73b52e38244eda5dd10edd71f49b048caa6a978e'},
-      {name:'agentgateway — ext_proc local gRPC errors preserve gRPC status',url:'https://github.com/agentgateway/agentgateway/commit/0c62b5a3afb8a8a50aad5b33b8485d8427b5651d'},
-      {name:'agentgateway — Fix Detect/Passthrough provider path joining',url:'https://github.com/agentgateway/agentgateway/commit/2eaccafc467abb32d4b5a13f271de8e73cada71e'},
-      {name:'MCP — Inspector security documentation and mcpdo client',url:'https://github.com/modelcontextprotocol/modelcontextprotocol/commit/c518f7a927cff918bce35d3522fcdb046d264d7c'},
-      {name:'goose — Delete legacy agent loop',url:'https://github.com/block/goose/commit/3b094d7afe681f78db63f3ce0b95d5124fc3341c'},
-      {name:'goose — Adaptive thinking for Claude Sonnet/Haiku 5.5',url:'https://github.com/block/goose/commit/a4189ec8c7c09a66ce300c8aca528385bdc13ff0'},
-      {name:'AAIF — The Agent Gets a Body',url:'https://aaif.io/blog/the-agent-gets-a-body'},
-      {name:'AAIF — Stateless MCP changes your security model',url:'https://aaif.io/blog/stateless-mcp-changes-your-security-model-how-to-harden-your-mcp-servers'}
+      ['Agent Router — fix: add one InferencePool ext proc filter per pool, not per route match','https://github.com/theagentrouter/agent-router/commit/31ee356f6dc02a83a2630e774064f31284fef509'],
+      ['agentgateway — Fix Substrate resume trace propagation','https://github.com/agentgateway/agentgateway/commit/73b52e38244eda5dd10edd71f49b048caa6a978e'],
+      ['agentgateway — ext_proc local gRPC errors preserve gRPC status','https://github.com/agentgateway/agentgateway/commit/0c62b5a3afb8a8a50aad5b33b8485d8427b5651d'],
+      ['agentgateway — Fix Detect/Passthrough provider path joining','https://github.com/agentgateway/agentgateway/commit/2eaccafc467abb32d4b5a13f271de8e73cada71e'],
+      ['MCP — Inspector security documentation and mcpdo client','https://github.com/modelcontextprotocol/modelcontextprotocol/commit/c518f7a927cff918bce35d3522fcdb046d264d7c'],
+      ['goose — Delete legacy agent loop','https://github.com/block/goose/commit/3b094d7afe681f78db63f3ce0b95d5124fc3341c'],
+      ['goose — Adaptive thinking for Claude Sonnet/Haiku 5.5','https://github.com/block/goose/commit/a4189ec8c7c09a66ce300c8aca528385bdc13ff0'],
+      ['AAIF — The Agent Gets a Body','https://aaif.io/blog/the-agent-gets-a-body'],
+      ['AAIF — Stateless MCP changes your security model','https://aaif.io/blog/stateless-mcp-changes-your-security-model-how-to-harden-your-mcp-servers']
     ]
   },
   {
