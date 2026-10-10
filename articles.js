@@ -1,6 +1,29 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    date:'2026-10-11', level:'LOW', tags:['Operations','Security'],
+    title:'大きな変更なし、正式版とmainの境界を固定する',
+    summary:'runtime変更は確認されず。release基準線と未収録修正を分けて記録する。',
+    sections:[
+      {heading:'今日のシグナル',html:'<p><strong>前回レポート以降、AAIFと主要6 projectに、正式仕様、runtime、security advisory、project加入・卒業へ該当する新しい重要変更は確認できなかった。</strong>週末の観測窓で確認できた新規commitは、agentgatewayへOSS scanner用Dockerfileを追加するbuild／security tooling差分だけである。scannerがCIやrelease gateへ組み込まれたこと、検出結果が公開されたこと、production data planeが変わったことは確認できない。</p><p>変更が少ない日は、main branchのcommit数をニュースとして膨らませず、productionで採用可能な正式artifactと、次期release候補の修正を分けて記録する。現在の正式基準線はMCP <code>2026-07-28</code>、A2A v1.0.1、goose v1.54.0、agentgateway v1.6.0、Agent Router v1.2.0である。</p>'},
+      {heading:'重要ニュース',html:'<p><strong>本日は重要ニュースなし。</strong>MCPの新しいspecification release／SEP Final、A2A protocol release、gooseのv1.54.0後のrelease、agentgateway v1.6.x、Agent Router v1.2.xは確認できなかった。AAIF Technical CommitteeまたはWorking Groupによる採択済みartifactも新たに確認できていない。</p><p>昨日までに確認したAgent RouterのInferencePool filter重複修正とQuotaPolicy live-update修正、agentgatewayのcredential非転送・MCPInfo cache・xDS ordering修正は、依然として正式最新版より後のmain差分である。修正commitが存在しても、tagged imageやHelm chartへ含まれるまではproduction upgradeの根拠にしない。</p>'},
+      {heading:'OSS別アップデート',html:'<ul><li><strong>agentgateway：</strong>Anthropicの<code>oss-scanner</code>をbuildするDockerfileが追加された。現時点で確認できるのはscanner imageを作るための資材追加までで、CI必須化、scan policy、結果の公開、v1.6.0 artifactへの反映ではない。正式最新版はv1.6.0。</li><li><strong>Agent Router：</strong>新規commit・patch releaseなし。正式最新版はv1.2.0。QuotaPolicy変更のlive反映、InferencePool filter deduplication、Gemini 3 Proのreasoning修正などはmain上に留まる。</li><li><strong>goose：</strong>新規commit・releaseなし。正式最新版はv1.54.0。release後のsession lease、lazy extension start、225k token compaction上限は次期release候補として分離して追跡する。</li><li><strong>MCP：</strong>新規commit・releaseなし。正式仕様は2026-07-28。Inspector security文書とServer Cards SEP-2127 Final以後の新しい規範的変更は確認できなかった。</li><li><strong>A2A：</strong>新規commit・releaseなし。正式最新版はv1.0.1。</li><li><strong>AGENTS.md：</strong>新規commitなし。Technical Charter追加以後の実質的な変更は確認できなかった。</li></ul>'},
+      {heading:'ガバナンスと標準化',html:'<p>AAIFのproject一覧はMCP、AGENTS.md、goose、agentgateway、A2A、Agent Routerの6件を維持している。Technical Committee、Working Groups、project proposal、新規加入・卒業、認定制度に関する新しい正式決定は確認できなかった。</p><p><strong>事実と推論の分離：</strong>repositoryへsecurity scanner用Dockerfileが入ったことは事実だが、foundation全体のsecurity policy変更や、SBOM／provenance要件の標準化を意味しない。今後workflow、branch protection、release attestation、公開scan reportまで揃った場合に、初めてsupply-chain governanceの変更として評価する。</p>'},
+      {heading:'技術トレンド',html:'<p>本日の差分が小さいこと自体より、<strong>release planeとdevelopment planeを別のinventoryとして管理する</strong>ことが重要である。mainには運用上重要な修正が複数存在する一方、正式artifactは一日前と変わっていない。脆弱性対応や障害回避でmain commitを先行利用する場合も、任意の最新mainではなく検証済みcommit SHA、build provenance、rollback先を固定する必要がある。</p><p>security scannerについても、導入の有無より、対象artifact、rule version、severity threshold、false-positive処理、例外期限、releaseを止める条件を観測できることが重要になる。</p>'},
+      {heading:'Agentic Opsへの示唆',html:'<ol><li>PoC compatibility matrixをMCP <code>2026-07-28</code>、A2A v1.0.1、goose v1.54.0、agentgateway v1.6.0、Agent Router v1.2.0へ固定する。</li><li>正式tagとmainを別test laneにし、main側はcommit SHAとcontainer digestを必ず保存する。</li><li>Agent Router mainでは、1 requestあたりのEPP call数とQuotaPolicy変更後のdata-plane反映を継続試験する。</li><li>agentgateway mainでは、playground credential非転送、MCPInfo更新、xDS generation安定性をnegative／idempotency testへ追加する。</li><li>goose v1.54.0では、承認時とdispatch時のTool集合、lease ID、schema hashをbaselineとして採取する。</li><li>scannerをrelease gateへ導入する場合、image内tool version、rule set digest、scan対象、例外、結果保存期間を明示する。</li><li>変更がない日も正常系trace、p95、Tool error率、policy decision数を保存し、次のupgrade比較点にする。</li></ol>'},
+      {heading:'要ウォッチ項目',html:'<ul><li>agentgatewayのOSS scannerがCI／release gateへ接続されるか、scan結果やpolicyが公開されるか</li><li>Agent Router v1.2.xへInferencePool、QuotaPolicy、ReferenceGrant関連修正が収録されるか</li><li>agentgateway v1.6.xへcredential非転送、MCPInfo cache、xDS ordering修正が収録されるか</li><li>goose v1.54.0の初期issueと次期release</li><li>MCP次期仕様、SDK、conformance、Server Card実装</li><li>A2A、AGENTS.md、AAIF TC／WGの正式artifact</li></ul>'}
+    ],
+    sources:[
+      ['agentgateway — Add dockerfile for oss-scanner','https://github.com/agentgateway/agentgateway/commit/f112c57e16980a1f09b51039e1c4731db3942963'],
+      ['agentgateway releases','https://github.com/agentgateway/agentgateway/releases'],
+      ['Agent Router releases','https://github.com/theagentrouter/agent-router/releases'],
+      ['goose releases','https://github.com/aaif-goose/goose/releases'],
+      ['MCP specification releases','https://github.com/modelcontextprotocol/modelcontextprotocol/releases'],
+      ['A2A releases','https://github.com/a2aproject/A2A/releases'],
+      ['AAIF official site','https://aaif.io/']
+    ]
+  },
+  {
     date:'2026-10-10', level:'HIGH', tags:['Operations','Security','MCP'],
     title:'goose v1.54.0、Tool選択とpolicy反映を固定する',
     summary:'実行対象をleaseで固定し、QuotaPolicyの変更を再起動なしでdata planeへ収束させる。',
