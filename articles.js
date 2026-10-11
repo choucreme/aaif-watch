@@ -1,6 +1,89 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-12",
+    "level": "MEDIUM",
+    "tags": [
+      "MCP",
+      "Operations",
+      "Security"
+    ],
+    "title": "MCP Governance WGを公開、gooseにAIgateway接続",
+    "summary": "MCPの意思決定記録を担うWG charterがmainへ統合。gooseには外部model gateway接続が追加された。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>本日の主要差分は、protocol機能ではなく「誰が、何を、どの手続きで決めたか」を残すためのgovernance基盤である。</strong>MCP repositoryのmainへGovernance Working Group charterが統合され、governance文書、decision record、Code of Conduct本文、community values、contributor cultureを継続的に扱う窓口が明文化された。</p><p>同時にgoose mainへ、外部のOpenAI互換model gatewayであるAIgatewayを宣言的providerとして選択する定義が追加された。これはAAIFの<strong>agentgateway</strong>や<strong>Agent Router</strong>とは別サービスであり、名前が似ていても同一componentとして扱ってはいけない。MCPの新仕様、security advisory、主要projectの新しい正式releaseは確認されていない。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>MCP Governance Working Group charter：</strong>WGの対象は、<code>docs/community/</code>配下のgovernance文書、意思決定の定義・批准者・記録場所、Code of Conduct本文、community values、contributor ladderを支える文化である。軽微なeditorial変更はWG側で扱える一方、意味を変える変更、新しいgovernance policy、Code of Conduct本文、contributor ladderの構造変更にはWG consensusとCore Maintainer approvalが必要とされる。</p><p>重要な境界も明記された。protocol specificationの作成、maintainer選任、個別のCode of Conduct事件処理、SDK固有governance、対人紛争の解決は対象外である。つまりこのWGはprotocolを直接決める組織ではなく、<strong>決定手続きと記録の品質を整える組織</strong>である。</p><p><strong>確認上の留保：</strong>charterはmainの公式docsへmergeされ、WG一覧にも追加された。ただし文書末尾のchangelogは「charter approved by Core Maintainers」をTBDのまま残している。したがって、本稿では「charterが公開・統合された」と確認し、最終批准日が確定したとは断定しない。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP — MEDIUM：</strong>Governance WG charterをmainへ統合。月次60分のworking session、3回連続で参加者・agendaがない場合のcadence見直し、decision-recording conventionなどのdeliverableが示された。別commitでClaude DesktopのLinux対応を各versionの接続・debug文書へ反映したが、wire protocolやsecurity要件の変更ではない。正式仕様は引き続き<code>2026-07-28</code>。</li><li><strong>goose — MEDIUM：</strong><code>aigateway</code> declarative providerをmainへ追加。OpenAI engine、<code>AIGATEWAY_API_KEY</code>、<code>https://api.aigateway.sh/v1/chat/completions</code>、dynamic model catalog、streaming対応を定義する。正式最新版はv1.54.0で、このprovider追加はまだrelease未収録。</li><li><strong>agentgateway：</strong>前回確認したOSS scanner用Dockerfile以後の新規commitなし。正式最新版はv1.6.0。</li><li><strong>Agent Router：</strong>新規commit・patch releaseなし。正式最新版はv1.2.0。QuotaPolicy live-update、InferencePool filter重複などの修正はmain上に留まる。</li><li><strong>A2A：</strong>新規commit・releaseなし。正式最新版はv1.0.1。</li><li><strong>AGENTS.md：</strong>新規commitなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>Governance WGの設計は、会議を増やすことより、<strong>decision provenance</strong>を揃える点に価値がある。何がproject decisionで、誰がratifyし、meeting notes・GitHub Discussions・SEPのどこへ残すかを標準化すれば、実装者はblogや会議発言を正式仕様と誤認しにくくなる。</p><p>計画上のdeliverableにはdecision-recording convention、community values、Code of Conduct reporting path、onboarding／mentorship文書が含まれる。ただしtargetは将来日付であり、現時点で成果物が完成したことを意味しない。AAIF全体のTechnical Committee、新規project proposal、加入・卒業project、認定制度については新しい正式決定を確認できなかった。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>本日の二つの差分は、control planeの<strong>identityとprovenance</strong>へ収束する。governanceでは「誰が承認した文書か」を、model routingでは「どのgateway、catalog、model、credentialを使ったか」を識別する必要がある。</p><p><code>AIgateway</code>、<code>agentgateway</code>、<code>Agent Router</code>のように名称が近いcomponentを、表示名だけでdashboardやrunbookへ集約すると誤配線を招く。運用inventoryでは少なくともproject ID、repository、endpoint owner、artifact version、credential issuerを別fieldで保持し、human-readable labelから分離する。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>governance判断を取り込む際は、source URL、status、ratifier、approval date、対象version、supersedesを記録する。merge済み文書でもTBD fieldがあれば未確定として扱う。</li><li>gooseのAIgateway providerを試す場合、AAIF agentgateway／Agent Routerとは別のexternal upstreamとしてasset inventoryへ登録する。</li><li><code>AIGATEWAY_API_KEY</code>をgoose process全体の共通環境変数として配布せず、workspace・tenant・sessionの境界に合わせて最小scope化する。</li><li>dynamic model catalogの取得結果、model ID、価格metadata、context limitを実行時snapshotとして保存し、catalog更新によるdriftを検出する。</li><li>provider切替試験では同一promptを固定し、latency、TTFT、token、error分類、Tool-call互換性、data residencyを比較する。</li><li>正式tagとmainを別laneに保ち、AIgateway providerの検証結果をv1.54.0へ誤って帰属させない。</li><li>MCP governance文書はprotocol conformance testと別のchange-control対象にし、批准済み決定だけをpolicyへ反映する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Governance WG charterのCore Maintainer approval日とchangelog更新</li><li>decision-recording convention、meeting notes、GitHub Discussions categoryの公開</li><li>gooseのAIgateway providerを含む次期正式releaseとcredential／catalog運用issue</li><li>類似名称のgateway間でのtelemetry・inventory識別方法</li><li>MCP次期仕様、SEP Final、SDK／conformance更新</li><li>Agent Router v1.2.x、agentgateway v1.6.xへのmain修正収録</li><li>A2A、AGENTS.md、AAIF Technical Committee／Working Groupsの正式artifact</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP — Governance Working Group charter commit",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/1e837b3efc1ebba4b60881759ea6b2fb644bcaca"
+      ],
+      [
+        "MCP — Merge Governance Working Group charter",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/4a04acdb151b8d3c6963fa566d9435cdfdc7bd43"
+      ],
+      [
+        "MCP — Linux support documentation update",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/1f520964b295d58494d944f2aea8a5ab51c79f77"
+      ],
+      [
+        "MCP specification releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "goose — Add AIgateway declarative provider",
+        "https://github.com/aaif-goose/goose/commit/a7010404b10896880dfb16c4dc10c1c48498428a"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "agentgateway releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "Agent Router releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AAIF official site",
+        "https://aaif.io/"
+      ]
+    ]
+  },
+  {
     date:'2026-10-11', level:'LOW', tags:['Operations','Security'],
     title:'大きな変更なし、正式版とmainの境界を固定する',
     summary:'runtime変更は確認されず。release基準線と未収録修正を分けて記録する。',
