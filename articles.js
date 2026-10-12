@@ -1,6 +1,106 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-13",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "Operations",
+      "MCP",
+      "A2A"
+    ],
+    "title": "Agent実行をtraceし、秘密・memory・quotaを境界内に戻す",
+    "summary": "gooseがACPからMCPまでtraceを接続。Gateway群ではsecret、buffer、quota会計の境界を修正した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>本日の差分は、Agent実行を「追えること」と、失敗時の影響を「境界内へ閉じ込めること」が同時に進んだ点にある。</strong>goose mainではACP promptで受けたW3C <code>traceparent</code>／<code>tracestate</code>をMCP Tool callまで伝播する変更が入り、利用者要求から推論、Tool実行までを一つのdistributed traceとして関連付けられるようになった。</p><p>一方、agentgatewayではdatabase URLのlog出力を全面redactし、stream中のreasoningやTool arguments、namespace展開、guardrail記録へbuffer上限を適用した。Agent Routerではtoken quotaのrequest-time checkが既定値の1 tokenを余分に消費していた問題を修正した。いずれもmainへmergeされた実装差分であり、正式releaseへの収録は未確認である。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>gooseのend-to-end trace：</strong>ACP promptから取り込んだW3C trace contextを、goose内部のspanだけでなくMCP request metadataへ渡す。これによりACP client、goose、MCP Serverが同じtrace treeへ接続できる。Prometheus／Alertmanager MCPのPoCでは、alert受信からTool call、結果の要約までを同一trace IDで追跡し、どの段階で遅延・失敗・再試行が発生したかを分離できる。</p><p><strong>agentgatewayのcredential保護：</strong>request-log databaseの接続URLがinfo levelのconfig logへそのままserializeされ、userinfoやquery parameterに含まれるpasswordが露出し得た。修正はURL全体をredactする。過去logからsecretが消えるわけではないため、該当構成ではlog保管先、転送先、backupを確認し、必要ならcredential rotationまで行う必要がある。</p><p><strong>resource exhaustion対策：</strong>streaming Tool argumentsの不要な全量保持、Bedrock redacted reasoningの無制限buffer、namespace Tool説明の展開増幅、realtime guardrail eventごとのlog entry蓄積が抑制された。単一の巨大requestだけでなく、小さな入力が変換処理で大きく膨らむ経路も対象である。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>goose — HIGH：</strong>ACPからMCP Tool callへW3C trace contextを伝播。別修正で、Tool approval待ちのturnに追加推論やsteeringを走らせないようにした。未承認Toolが残る間にconversationが進み、承認対象と実行contextがずれる競合を防ぐ。正式最新版はv1.54.0で、両修正はrelease未収録。</li><li><strong>agentgateway — HIGH：</strong>database URLをconfig serialization時にredact。複数のstream／conversion経路へbuffer limitを適用し、namespace説明はrequestあたり8 MiB超で<code>RequestTooLarge</code>にする。token推定も改善され、全model平均errorを36%から10%へ縮小したと報告されている。UIにはkey rotation時の新key自動生成も追加。正式最新版はv1.6.0。</li><li><strong>Agent Router — HIGH：</strong>QuotaPolicyのrequest-time checkへ<code>hits_addend=0</code>を明示。従来は省略時の既定値1とresponse完了時の実token数が両方加算され、28 tokenのrequestが29 tokenとして控除されていた。正式最新版v1.2.0には未収録。</li><li><strong>MCP — MEDIUM：</strong>TypeScript quickstartを<code>serveStdio(createServer)</code>へ変更。従来例は2025-era initializeだけを処理し、2026-07-28 clientとのversion negotiationに失敗し得た。仕様変更ではなく、公式sampleを現行仕様へ合わせる修正。正式仕様は2026-07-28。</li><li><strong>A2A — LOW：</strong>署名前canonicalization例を、有効なAgent Cardへ修正。required field不足や空のrequired arrayを解消したが、canonicalization rule本文は変更していない。正式最新版はv1.0.1。</li><li><strong>AGENTS.md：</strong>新規commitなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>MCP、A2Aともに本日の変更は、規範的なversion更新ではなく、公式documentation／exampleを既存仕様と一致させる修正である。sample codeやcanonicalization例は実装者がコピーするため、非規範的であってもinteroperabilityへ直接影響する。ただしexample修正を新しいprotocol要件として扱ってはいけない。</p><p>AAIF Technical Committee、Working Groups、新規project proposal、加入・卒業project、認定制度に関する新しい正式決定は確認できなかった。昨日扱ったMCP Governance WG charterの最終承認日も引き続きTBDである。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>共通する設計原則は、<strong>context propagationとbounded execution</strong>である。Trace contextはservice境界を越えて保持する一方、credential、memory、quota、approval stateは境界を越えて無制限に広げない。</p><p>Observabilityを追加するだけでは不十分で、traceやconfig log自体がsecretを漏らさないことが必要になる。またtoken推定の誤差は単なるdashboard品質ではなく、quota enforcement、chargeback、model routingの判断を変える。推定値、provider実測値、最終請求値を別metricとして保存し、混同しない構成が望ましい。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>ACP clientから<code>traceparent</code>を付与し、goose spanとMCP Server側spanが同じtraceへ接続されることを確認する。</li><li>Traceにはsession ID、Tool名、approval result、retry count、error classを載せるが、prompt本文、credential、Tool resultの機密値は既定で載せない。</li><li>agentgatewayのconfig log、集中log、backupからdatabase URL露出を検索し、passwordを含んでいた場合はrotationとaccess reviewを実施する。</li><li>巨大Tool arguments、reasoning stream、namespace Tool群を使った負荷試験で、上限超過が明示errorとなりmemoryが継続増加しないことを確認する。</li><li>QuotaPolicy testでは<code>request-time=0</code>、<code>stream-done=actual tokens</code>をtraceまたはRLS metadataで確認し、1 requestあたりの差分を集計する。</li><li>Tool approval待ちにsteeringや追加promptを送り、承認完了前に次の推論・Tool dispatchが始まらないことを回帰試験する。</li><li>MCP quickstart由来Serverをlegacy／modern双方のInspectorで接続し、version negotiationとTool一覧を確認する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>gooseのtrace propagationとapproval競合修正を含む次期release</li><li>Trace contextにtenant／session境界を越える情報が混入しないか</li><li>agentgatewayのsecret redaction、buffer limit、token推定改善を含むv1.6.x</li><li>過去logへdatabase credentialが記録された環境向けadvisoryの有無</li><li>Agent Router v1.2.xへのquota二重消費修正収録</li><li>Token推定値とprovider実測値を使うquota／chargebackの整合性</li><li>MCP sample、A2A canonicalization exampleをSDK test／conformanceへ反映する動き</li><li>AGENTS.md、AAIF TC／WG、新規projectの正式更新</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "goose — Propagate W3C trace context from ACP prompts to MCP tool calls",
+        "https://github.com/aaif-goose/goose/commit/1c3ac1ba1980426a2aad610aa01a9fe9a4e19aed"
+      ],
+      [
+        "goose — Do not infer or steer while Tool approval is pending",
+        "https://github.com/aaif-goose/goose/commit/29a1f73cdd974bd9d435c64d4c21eb9d7beaaf3f"
+      ],
+      [
+        "agentgateway — Redact database URL in config logs",
+        "https://github.com/agentgateway/agentgateway/commit/fec2a0cef0ac86e92bceaa55aca6db9f4c17d393"
+      ],
+      [
+        "agentgateway — Respect buffer limits on LLM paths",
+        "https://github.com/agentgateway/agentgateway/commit/781efcb0ed9915deb11673e089b614f0bc6e5d46"
+      ],
+      [
+        "agentgateway — Better token counting",
+        "https://github.com/agentgateway/agentgateway/commit/c5206d3899dea06a3432b17c782510cf0af1a998"
+      ],
+      [
+        "agentgateway — Auto-generate key on replacement",
+        "https://github.com/agentgateway/agentgateway/commit/461e4f9712b8d914043044bf1d68a98b60aa4578"
+      ],
+      [
+        "Agent Router — Avoid charging request-time quota hit",
+        "https://github.com/theagentrouter/agent-router/commit/81c3ccc41ada54fc8700b0f39ae864618abd47eb"
+      ],
+      [
+        "MCP — Serve TypeScript quickstart with serveStdio",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/3778656b2e0ba6725035e816fe3085374cbaa736"
+      ],
+      [
+        "A2A — Fix canonicalization example Agent Card",
+        "https://github.com/a2aproject/A2A/commit/7c861a597b93208de3c19357cc0d66b9f6250e9b"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "agentgateway releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "Agent Router releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "MCP specification releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-12",
     "level": "MEDIUM",
     "tags": [
