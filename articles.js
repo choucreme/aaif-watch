@@ -1,6 +1,97 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-14",
+    "level": "MEDIUM",
+    "tags": [
+      "MCP",
+      "Operations",
+      "Security"
+    ],
+    "title": "Progressive Disclosure WG発足、子Agentの権限境界を継承",
+    "summary": "MCPのTool群整理が正式WGへ。gooseとgateway群では権限・routing・request追跡の境界を補強した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>本日の中心は、Agentが扱う選択肢を段階的に絞り込み、実行時の権限と経路を曖昧にしない設計である。</strong>MCPではPrimitive Grouping Interest Groupが<strong>Progressive Disclosure Working Group</strong>へ移行した。flatなTool／Resource／Prompt／Task一覧が長大化する問題を、単なるUI改善ではなく、相互運用可能な整理・開示方式として検討する正式なWorking Groupになった。</p><p>実装面では、gooseがsubagentへ親sessionのhooks、mode、approval方針を引き継ぐよう変更した。agentgatewayではOIDC permissive modeとmodel wildcardの優先順位修正が入り、複数の認証・routing規則を組み合わせる際の境界を明確にしている。いずれもmain上の差分であり、正式releaseへの収録は未確認である。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>MCP Progressive Disclosure WG：</strong>旧Primitive Grouping IGは、長大なprimitive一覧をどう整理し、必要なものだけを段階的に提示するかを調査してきた。今回のcharter更新ではWGへ昇格し、技術設計はWG consensus、additiveな仕様変更はCore Maintainer承認、breaking changeはさらに広いreviewを必要とするdecision rightsが明記された。WG自身が仕様変更を単独承認するわけではなく、最終的な規範変更はSEP processを通る。</p><p>重要なのは、Tool searchを単なる文字列検索として扱わず、grouping、namespace、metadata、権限、利用文脈を使って「最初にmodelへ見せる面積」を減らす方向が正式な検討対象になったことだ。Tool数が増えるほどprompt token、selection error、cache invalidation、権限過剰提示が増えるため、progressive disclosureは性能とsecurityの双方に関係する。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP — MEDIUM：</strong>Primitive Grouping IGをProgressive Disclosure WGへ改称・昇格。週次meeting、leadership、decision rights、success metricsをcharterへ追加した。正式仕様は引き続き<code>2026-07-28</code>で、wire protocolの変更ではない。</li><li><strong>goose — MEDIUM：</strong>subagentを親Agentのhooks、Goose mode、Tool approvalへbindする変更をmerge。子Agentだけが監査hookを外れたり、親より緩い実行modeになる構成を避ける。Anthropicの<code>request-id</code>とOpenAI互換の<code>x-request-id</code>もresponse／error／trace属性へ記録し、provider問い合わせと内部traceを関連付けられるようにした。正式最新版はv1.54.0で、変更は未収録。</li><li><strong>agentgateway — MEDIUM：</strong>OIDCに<code>permissive</code> modeを追加。browser navigationはloginへ誘導しつつ、non-browser requestや認識できないcredentialは後続の認証policyへ渡せる。ただし単独利用は認証bypassになり得るため、公式commentも別のauthorization enforcementとの併用を警告している。model routingでは<code>openai/*</code>のようなwildcardが<code>openai/gpt-5.5</code>のようなexact ruleを上書きしないよう、specificity順へ統一した。正式最新版はv1.6.0。</li><li><strong>Agent Router — MEDIUM：</strong>Go toolchainを1.27.1から1.27.2へ更新し、標準libraryの複数CVE修正を取り込む準備を行った。これはmainのbuild基準線変更で、v1.2.0 artifactが自動的に更新されたことを意味しない。未使用の<code>GCPWorkloadIdentityProvider</code>型も削除されたが、CRD schemaには元から含まれず利用者向けAPI変更ではない。</li><li><strong>A2A：</strong>新しいcommit・releaseなし。正式最新版はv1.0.1。</li><li><strong>AGENTS.md：</strong>新規commitなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>Progressive Disclosure WGの発足はMCP governance上の正式な組織変更だが、特定のgrouping方式が標準化されたわけではない。charterは複数方式を実験し、Python／TypeScriptのend-to-end reference、導入手順、deployment feedbackを揃えたうえで、conventionかprotocol extensionかをSEPへ提案する方針を示す。</p><p>AAIF Technical Committee、新規project proposal、加入・卒業project、認定制度については、新たな正式決定を確認できなかった。AAIF公式calendarではAccuracy &amp; ReliabilityおよびSecurity &amp; Privacyの会合が10月13日に掲載されているが、会合予定そのものを採択済み成果物とは扱わない。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>共通テーマは<strong>least disclosureとinherited policy</strong>である。親Agentが許可されたToolだけを選び、そのsubsetを子Agentへ渡し、子Agentは親のapproval・hook・modeを引き継ぐ。Gatewayはexact routeをwildcardより優先し、複数認証方式を使う場合も「誰が最終的に拒否するか」を明示する。</p><p>progressive disclosureを導入すると、Tool catalogの取得回数や選択latencyは増える可能性がある。その代わり、modelへ渡すschema tokenと誤選択を減らせる。評価では単純なtoken削減だけでなく、選択精度、権限外Toolの露出率、catalog cacheの更新遅延、選択から実行までのpolicy driftを同時に測る必要がある。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>親sessionとsubagentで、effective Tool set、approval mode、hook set、policy hashを記録し、子が親より広い権限を持たないことを検証する。</li><li>subagent作成後に親policyを変更し、既存の子へ即時反映するのかsnapshotを維持するのかを仕様として固定する。</li><li>provider request IDはtraceへ保存するが、利用者へ返すerror messageやlogでtenantをまたいで露出しないようscopeとretentionを定める。</li><li>agentgatewayのOIDC permissive modeは、後続のJWT、MCP auth、ext-authzなどが必ず最終判定する構成に限定する。認証policyを一つずつ削除するnegative testでfail openにならないことを確認する。</li><li>exact model rule、prefix wildcard、global wildcardを同時に設定し、期待するbackend、credential、rate limit、cost policyが選ばれるか回帰試験する。</li><li>Agent RouterのbuildではGo versionだけでなく、container digest、SBOM、stdlib CVEの消込結果を保存し、正式patch releaseまでmain buildをproduction基準線と混同しない。</li><li>Progressive Disclosure PoCでは、全Tool一覧と段階開示を同一task setで比較し、prompt token、選択成功率、p95 latency、権限外候補数を測る。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Progressive Disclosure WGのapproaches、reference extensions、最初のSEP</li><li>grouping metadataとMCP Server Card／Registry／Skills extensionの役割分担</li><li>gooseのsubagent policy継承とprovider request IDを含む次期release</li><li>親・子Agent間でのapproval、hook、modeのdriftと権限昇格issue</li><li>agentgateway OIDC permissive modeの安全なconfiguration例と正式release収録</li><li>model wildcard precedence修正を含むv1.6.x</li><li>Agent RouterのGo 1.27.2 buildを含むv1.2.xとsecurity note</li><li>A2A、AGENTS.md、AAIF TC／WGの正式artifact</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP — Promote Primitive Grouping IG to Progressive Disclosure WG",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/5ea996028df322ce97d1c906731cf8c05a6e268e"
+      ],
+      [
+        "MCP — Progressive Disclosure meeting notes",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/discussions/3375"
+      ],
+      [
+        "goose — Bind subagents to parent hooks, mode and approvals",
+        "https://github.com/aaif-goose/goose/commit/6ead9cb60161cb5d436b6d8463e8266681166e7b"
+      ],
+      [
+        "goose — Surface provider request IDs",
+        "https://github.com/aaif-goose/goose/commit/4376f40526be2b113826dcc4b21f9402be9923c0"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "agentgateway — OIDC permissive mode",
+        "https://github.com/agentgateway/agentgateway/commit/f02845731ab0c037781e11358824e51d9e5c34f0"
+      ],
+      [
+        "agentgateway — Correct AgentgatewayModel wildcard precedence",
+        "https://github.com/agentgateway/agentgateway/commit/3b37c922a9664a956ea5668e6f4e098b024bdf6c"
+      ],
+      [
+        "agentgateway releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "Agent Router — Upgrade to Go 1.27.2",
+        "https://github.com/theagentrouter/agent-router/commit/85c2d242670b2bdfb83828fa8532188fdd745e7b"
+      ],
+      [
+        "Agent Router releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AAIF Working Groups calendar",
+        "https://aaif.io/working-groups/calendar"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-13",
     "level": "HIGH",
     "tags": [
