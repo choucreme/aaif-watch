@@ -1,6 +1,101 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-15",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "MCP",
+      "Operations"
+    ],
+    "title": "Guardrailをfail closedへ、MCP session終了を全replicaで保証",
+    "summary": "agentgatewayが未mask通過とMCP session残留を修正。gooseはsession単位のcacheとsubagent実行を整理した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>本日の重要差分は、policyが理解できないresponseを「通してよい」と解釈しないことと、終了要求を受けたsessionを確実にupstreamまで閉じることである。</strong>agentgateway mainではWebhook guardrailのresponseに想定外fieldが含まれると、mask対象のmessageを正しくdeserializeできず、未mask contentが通過し得た経路をfail closedへ変更した。</p><p>同時にMCP <code>DELETE /mcp</code>は、再起動後や別replicaで受けてもencoded session IDから接続先を再構築し、upstream sessionへDELETEをfan-outするようになった。複数replica構成で「local memoryにsessionがない＝終了済み」と誤認する範囲を縮小する。どちらも正式最新版v1.6.0には未収録である。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>Guardrailのfail-closed化：</strong>Webhook guardrailの<code>PassAction</code>へ未知fieldの拒否を追加した。修正前は、MaskAction相当のresponseへ追加message fieldが含まれる場合、schema解釈の失敗がpassとして扱われ、maskされていない本文をbackendまたはclientへ流す可能性があった。修正後は未知fieldを含むresponseをerrorとして拒否する。</p><p>安全側へ倒れる一方で、既存Webhookがpass responseへ独自metadataを追加している場合は動作が変わる。release前にschema validationを行い、<code>reason</code>以外のfieldを返していないか確認が必要である。</p><p><strong>MCP session cleanup：</strong>従来のDELETEはgatewayのin-memory mapだけを確認していたため、pod再起動や別replicaへのrouting後は<code>202 Accepted</code>を返しながらupstream sessionを閉じないことがあった。新実装はPOSTと同じsession resume経路を使う。ただしupstream close失敗は引き続きbest effortで、idle timeoutまで残る可能性がある。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>agentgateway — HIGH：</strong>Webhook guardrailの未知fieldを拒否し、未mask contentのsilent passを防止。MCP DELETEではsession IDからtargetを再構築し、再起動後・別replica・再試行でもupstream closeを試みる。Anthropicの1時間cache writeを5分cacheとは別単価で計測する変更も入り、cost／budget精度を改善した。正式最新版はv1.6.0で、すべてmain上の差分。</li><li><strong>goose — MEDIUM：</strong>repository内versionを1.55.0へ更新したが、公式ReleasesのLatestはv1.54.0のままであり、正式releaseとは扱わない。OpenAI Responses requestへsession IDを<code>prompt_cache_key</code>として渡し、同一session内でのprovider-side prompt cache affinityを改善。foreground subagent実行もGDK側へ統合した。</li><li><strong>Agent Router — LOW：</strong>MCP data-plane benchmarkのflaky testを修正。caseごとにMCP client sessionを閉じ、前caseのbackground streamが次のproxyへ再接続する混線を防いだ。production data planeの仕様変更ではなく、test reliabilityの改善。正式最新版はv1.2.0。</li><li><strong>MCP：</strong>dependency更新のみ。新しい仕様、SEP Final、security advisory、正式releaseなし。正式仕様は<code>2026-07-28</code>。</li><li><strong>A2A：</strong>新規commit・releaseなし。正式最新版はv1.0.1。</li><li><strong>AGENTS.md：</strong>新規commitなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>AAIF Technical Committee、project proposal、加入・卒業project、認定制度に関する新しい正式決定は確認できなかった。10月14日にはAgentic CommerceやObservability &amp; TraceabilityなどのWG会合が公式calendarへ掲載されているが、会合開催を仕様採択や成果物公開とは区別する。</p><p>AAIF公式blogでは、複数coding agentを長時間動かすsoftware factoryの実践例「Glass Town」が公開された。永続sandbox、session保存、細かなcheckpointによるpaper trailを重視する設計であり、規範的標準ではないが、Agentic Opsで再現性と事後説明を確保する実装例として参考になる。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>本日の共通テーマは<strong>distributed lifecycle ownership</strong>である。request、session、policy evaluationが複数podやsubagentへ跨ると、local processのmemoryだけでは「誰が作成し、誰が終了し、どのpolicyが適用されたか」を判断できない。</p><p>Session IDは単なる相関IDではなく、target再構築とcleanupのためのcontrol-plane handleになる。一方、cache affinityへ同じIDを使う場合は、tenant間で共有されない十分なentropyとscopeが必要である。Guardrail responseも「parseできない＝許可」ではなく、schema version、action、reason、transformation結果を明示し、不明な状態を拒否する必要がある。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>Webhook guardrailへ未知field、欠損field、型違い、巨大payloadを返し、すべてfail closedになることをnegative testする。</li><li>MaskAction testでは、secretや個人情報を埋めた本文がbackend log、trace、client responseのどこにも残らないことを確認する。</li><li>MCP sessionを作成したpodを停止し、別replicaへDELETEを送り、全upstreamでsession／stream／resourceが解放されるか確認する。</li><li>DELETEの202だけを成功条件にせず、upstream active session数、open stream数、idle reaper件数を観測する。</li><li>upstream close失敗はbest effortのため、idle timeoutを無制限にせず、session leak用SLOとalertを設ける。</li><li><code>prompt_cache_key</code>にはraw user IDやcredentialを使わず、tenant内で安定しtenant間で衝突しないopaque session IDを用いる。</li><li>Anthropic cacheでは5分／1時間のwrite tokenを別metricで保存し、budget policyとchargebackが実請求に一致するか比較する。</li><li>Agent Routerのbenchmark同様、test終了時にsession、stream、port、child processを明示的に閉じ、次caseへの状態持越しを検査する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Webhook guardrail fail-closed修正を含むagentgateway v1.6.x</li><li>独自metadataを返す既存guardrail webhookの互換性issue</li><li>MCP DELETEのupstream close失敗を可視化するmetric／trace</li><li>idle reaperがupstream DELETEを送らない設計の改善</li><li>goose v1.55.0の正式tag、release note、artifact digest</li><li>session IDをprompt cache keyへ使う際のtenant分離とcache hit率</li><li>5分／1時間cache write別のcost・quota整合性</li><li>MCP、A2A、AGENTS.md、AAIF TC／WGの正式artifact</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "agentgateway — Fail closed on unknown Webhook guardrail fields",
+        "https://github.com/agentgateway/agentgateway/commit/af24457c63fa4c907b05c7a33a6c88abd395aecf"
+      ],
+      [
+        "agentgateway — Resume MCP sessions on DELETE",
+        "https://github.com/agentgateway/agentgateway/commit/f27afc68669f1feb6f5123f9134cc0c714fbfafa"
+      ],
+      [
+        "agentgateway — Price one-hour cache writes separately",
+        "https://github.com/agentgateway/agentgateway/commit/09ebfb8d0823103636203b60306fead6f555d32a"
+      ],
+      [
+        "agentgateway releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "goose — Bump repository version to 1.55.0",
+        "https://github.com/aaif-goose/goose/commit/9686d674000a5fbb8139214863289e4820714771"
+      ],
+      [
+        "goose — Use session ID as OpenAI Responses prompt_cache_key",
+        "https://github.com/aaif-goose/goose/commit/39c540b05bd9cde57f2dec232b3deeae5168c8d2"
+      ],
+      [
+        "goose — Run foreground subagents in GDK",
+        "https://github.com/aaif-goose/goose/commit/2116fed07a2a0e963e0aa2ff09b0f17e6fd23da0"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "Agent Router — Stabilize MCP data-plane benchmark lifecycle",
+        "https://github.com/theagentrouter/agent-router/commit/5a9c6ef6354eeb77354f19b1a93a623d5ff50008"
+      ],
+      [
+        "Agent Router releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AAIF — Welcome to Glass Town",
+        "https://aaif.io/blog/welcome-to-glass-town-building-a-software-factory-with-a-paper-trail"
+      ],
+      [
+        "AAIF Working Groups calendar",
+        "https://aaif.io/working-groups/calendar"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-14",
     "level": "MEDIUM",
     "tags": [
