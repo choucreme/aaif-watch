@@ -1,6 +1,101 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-17",
+    "level": "HIGH",
+    "tags": [
+      "Operations",
+      "Security",
+      "MCP"
+    ],
+    "title": "goose v1.55.0正式公開、quota境界を全経路へ",
+    "summary": "trace・承認・subagent制御が正式版へ。Gateway群はnamespaceとLLM種別を越えるquota適用を補強した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>goose v1.55.0が10月16日に正式公開された。</strong>前日までmain上の変更として追跡していた、ACPからMCP Tool callへのW3C trace context伝播、provider request IDの記録、Tool承認待ち中の推論停止、親Agentからsubagentへのhook・mode・approval継承、既定225k tokenのauto-compaction上限などが、tagと配布artifactを持つproduction基準線へ移った。</p><p>Gateway側では、Agent RouterがQuotaPolicyから別namespaceのAIServiceBackendを参照できるようにし、agentgatewayはchat以外のEmbeddings、Rerank、Decisions、SystemOneにもresponse tokenを使うrate-limit処理を広げた。共通する動きは、Agent実行の経路が増えてもquota、approval、traceを一部経路だけの機能にしないことである。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>goose v1.55.0：</strong>今回のreleaseは新機能の追加だけでなく、実行制御の一本化が中心である。Sessionが選んだextensionをleaseとして固定し、初回利用時に起動する。Tool承認待ちの間は次の推論やsteeringを進めず、subagentも親sessionのhooks、Goose mode、approval方針へbindする。これにより、承認画面で見たToolとdispatch対象のずれや、子Agentだけが監査・承認を外れる構成を減らす。</p><p>ObservabilityではACP promptの<code>traceparent</code>／<code>tracestate</code>をMCP Tool callへ伝播し、providerの<code>x-request-id</code>もresponse・errorへ公開する。運用者はAlert、Agent推論、Tool実行、provider問い合わせを同じincident timelineへ結び付けられる。ただしtrace属性へprompt、credential、個人情報を載せない設計は引き続き必要である。</p><p>配布assetにはhashが公開されている。main追従ではなくv1.55.0のtag、binary／package hash、session schema、rollback先を固定してupgrade testを行える段階になった。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>goose — HIGH：</strong>v1.55.0を正式公開。AIgateway provider、ACP→MCP trace伝播、provider request ID、225k token compaction上限、subagent policy継承、Tool承認中の推論停止、legacy agent loop削除を収録した。release後のmainでは、ACPがlive model catalogを読み込む修正、Skills discoveryのGDK移動、PCTX code modeのJavaScript runtimeをV8系からBoaへ置換する変更が進行中で、これらはv1.55.0には含まれない。</li><li><strong>Agent Router — HIGH：</strong>QuotaPolicyが別namespaceのAIServiceBackendをtargetにできるようになった。許可にはbackend側namespaceの<code>ReferenceGrant</code>が必要で、未許可時は<code>RefNotPermitted</code>として扱う。namespaced identityをcontroller、xDS descriptor、ext-proc metadataまで伝播し、policy削除時も影響routeを更新する。正式最新版v1.2.0には未収録。</li><li><strong>agentgateway — HIGH：</strong>response tokenに基づくrate limitをChatだけでなくEmbeddings、Rerank、Decisions、SystemOneへ拡大。Request policy段階で<code>llmRequest</code>と<code>llm.requestModel</code>をCELから参照でき、provider変換前のrequested modelで早期判定できる。Unknown model 404やmodel authorization 403など、upstreamへ到達しないlocal responseもrequest snapshotへ残す。正式最新版はv1.6.0で、変更はmainのみ。</li><li><strong>MCP：</strong>dependency更新のみ。新仕様、SEP Final、security advisory、正式releaseなし。正式仕様は<code>2026-07-28</code>。</li><li><strong>A2A：</strong>新規protocol commit・releaseなし。正式最新版はv1.0.1。</li><li><strong>AGENTS.md：</strong>新規commitなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>AAIF Technical Committee、Working Groups、project proposal、加入・卒業project、認定制度について、新しい正式決定は確認できなかった。MCP、A2A、AGENTS.mdにも規範的な仕様変更はない。</p><p>goose v1.55.0はAAIF傘下repositoryから配布された正式artifactであり、main上の実験とrelease planeを分けて評価できる。一方、Agent Routerのcross-namespace quotaとagentgatewayの全LLM種別rate limitはmerge済みでも未releaseである。production導入では「mergeされた事実」「tagに収録された事実」「使用中image digest」の三つを別々に記録する。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>本日の共通テーマは<strong>policy completeness</strong>である。Chat requestだけ、親Agentだけ、同一namespaceだけ、upstream成功時だけにpolicyを適用しても、別経路が無制限なら境界として成立しない。</p><p>Quotaは<code>namespace/name</code>で対象を一意にし、cross-namespace参照はReferenceGrantで明示的に許可する。LLM rate limitはChat、Embedding、Rerank、Decisionなどformatごとにtoken取得方法が違っても、最終的な利用量を同じ会計へ収束させる。Agent実行では親子Agentのapprovalとhookを継承し、traceはprotocol境界を越えて関連付ける。機能単位ではなく、すべてのexit pathとexecution pathを列挙してpolicy coverageを測る考え方が重要になる。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>goose v1.54.0とv1.55.0で同じAlert triage taskを実行し、Tool集合、approval回数、trace接続率、p95、token使用量を比較する。</li><li>承認待ち中に追加promptやsteeringを送り、承認対象のTool callより先に次の推論が始まらないことを確認する。</li><li>親Agentとsubagentのhook set、mode、approval、effective Tool setを記録し、子が親より広い権限を持たないことをnegative testする。</li><li>ACP clientからtrace contextを注入し、goose spanとMCP Server spanが同じtraceへ接続されるか確認する。</li><li>225k token上限に達する長時間sessionで、compaction後もAlert evidence、実行済みTool、未完了actionが維持されるか試験する。</li><li>Agent Routerでは別namespace参照をReferenceGrantあり／なし／削除後で試し、status、xDS、quota descriptorが正しく収束するか確認する。</li><li>agentgatewayではChat、Embedding、Rerank、Decisionsごとに既知token量を流し、rate-limit counterと実請求を照合する。</li><li>Unknown model、authorization拒否、local rate-limit拒否もrequest IDとsnapshotを残し、upstream callなしの失敗を通常traceから欠落させない。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>goose v1.55.0のupgrade issue、artifact hash、session migration</li><li>trace contextとprovider request IDのtenant境界</li><li>225k token compaction後の長時間Agent精度</li><li>Skills discoveryのGDK移動とruntime別path／symlink安全性</li><li>Boa JavaScript runtimeへの置換に伴うcode mode互換性とsandbox境界</li><li>Agent Router cross-namespace quotaを含むv1.2.x</li><li>agentgateway全LLM種別rate limitを含むv1.6.x</li><li>MCP、A2A、AGENTS.md、AAIF TC／WGの正式更新</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "goose v1.55.0 release",
+        "https://github.com/aaif-goose/goose/releases/tag/v1.55.0"
+      ],
+      [
+        "goose — Load live model catalog in goose-acp",
+        "https://github.com/aaif-goose/goose/commit/3df2d7b28c49621d3ba1eb0347f3ef1ce42592f2"
+      ],
+      [
+        "goose — Move Skills discovery into GDK",
+        "https://github.com/aaif-goose/goose/commit/435868bf20345dceaad0eccad3b8cc76dc816284"
+      ],
+      [
+        "goose — Replace PCTX code mode with Boa JavaScript runtime",
+        "https://github.com/aaif-goose/goose/commit/1de2f75742457e3cf6350426e20ab8d3a579d4a8"
+      ],
+      [
+        "Agent Router — Support cross-namespace quota backends",
+        "https://github.com/theagentrouter/agent-router/commit/12fef6422579f544e84be8167d0979527d3576d4"
+      ],
+      [
+        "Agent Router releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "agentgateway — Apply rate limit to all LLM types",
+        "https://github.com/agentgateway/agentgateway/commit/ef1c6a62b92d33167819be52ae8693a6400ed11a"
+      ],
+      [
+        "agentgateway — Expose LLM request fields to early CEL policies",
+        "https://github.com/agentgateway/agentgateway/commit/884c2e6ee060629efe0e25d137ebc81474afb206"
+      ],
+      [
+        "agentgateway — Snapshot locally answered requests",
+        "https://github.com/agentgateway/agentgateway/commit/a71f417aa729158d379bbac77d677ba758ed012a"
+      ],
+      [
+        "agentgateway releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "MCP releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AAIF Blog",
+        "https://aaif.io/blog"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-16",
     "level": "HIGH",
     "tags": [
