@@ -1,6 +1,88 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-18",
+    "level": "LOW",
+    "tags": [
+      "Operations",
+      "MCP"
+    ],
+    "title": "gooseのmodel catalog更新、正式版は変化なし",
+    "summary": "provider情報の更新が中心。仕様・release・Gateway群に新たな重要差分はなく、静穏な一日となった。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>本日は大きな仕様変更、security advisory、新しい正式releaseは確認できなかった。</strong>前回レポート以降の実質的な差分は、goose mainにおけるOpenCode Go／Zen向けmodel catalogの更新である。GLM、Kimi、Qwen、MiMoなどのmodel追加とcontext limit修正が行われた。</p><p>これはprotocolやAgent実行loopの変更ではない。しかしmodel catalogは、利用者が選べるmodel、長文contextの許容量、compaction開始位置、cost・latency試験の前提を決める運用データである。コード変更が小さくても、誤ったcontext limitはsession途中の失敗や想定外の圧縮につながるため、productionでは実行時のmodel metadataを証跡として残す価値がある。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>gooseのOpenCode provider定義を更新：</strong>OpenCode Goでは、GLM 5.2／5.3系、Kimi K3、Qwen 3.7／3.8系、MiMo 2.6系などを追加し、複数modelのcontext limitを修正した。OpenCode ZenでもGLM 5.2／5.3系を追加し、Kimi K3やMiniMax M3などの上限を見直している。これはgoose v1.55.0公開後のmain変更であり、v1.55.0配布artifactへ含まれる機能とは扱わない。</p><p><strong>評価：</strong>catalog値はproviderが実際に受け付ける上限と常に一致するとは限らない。gatewayやprovider側のmodel alias、account tier、reasoning token、Tool schema分の予約領域によって、有効contextは小さくなる場合がある。宣言値だけで長時間Agentの安全上限を決めず、実測とprovider errorを併用する必要がある。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>goose — LOW：</strong>OpenCode Go／Zenのmodel catalogへ不足modelを追加し、context limitを更新。正式最新版はv1.55.0のままで、今回のcatalog修正はmainのみ。あわせてCore MaintainerのAlex Hancock氏をEmeritusへ移し、issue assignment rosterから外す名簿更新が行われた。これはmaintainer構成の変更であり、projectの停止やtechnical policy変更を意味しない。</li><li><strong>agentgateway：</strong>新しい正式releaseなし。最新はv1.6.0。backend callの大きなasync stack frameを分離する内部refactorはあるが、公開APIやpolicy semanticsの変更としては評価しない。</li><li><strong>Agent Router：</strong>新規の重要commit・releaseなし。正式最新版はv1.2.0。前日までに確認したcross-namespace quota backendは引き続きmainのみ。</li><li><strong>MCP：</strong>新しい仕様、SEP Final、security advisory、releaseなし。正式仕様は<code>2026-07-28</code>。</li><li><strong>A2A：</strong>新規protocol変更・releaseなし。正式最新版はv1.0.1。</li><li><strong>AGENTS.md：</strong>新規commitなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>gooseではCore Maintainer一名がEmeritusへ移り、maintainer一覧と自動issue assignment用rosterが更新された。確認できる事実は役割変更までであり、後任選任、権限移譲、release承認手順の変更は示されていない。個人の異動をproject riskへ直結させず、CODEOWNERS、review分布、release signer、未処理issueの推移を継続して確認する。</p><p>AAIF Technical Committee、MCP Working Groups、project proposal、新規加入・卒業project、認定制度について、新しい正式決定は確認できなかった。会合予定やmain上の編集を採択済み標準とは扱わない。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>本日の論点は<strong>model metadataをcontrol-plane stateとして扱うこと</strong>である。Agentは同じmodel名でも、provider、endpoint、account、catalog更新時点によってcontext limitや機能が変わる。静的な設定ファイルだけを正とすると、routingは成功してもcompaction、cost推定、fallback、再現試験がずれる。</p><p>実行ごとに<code>provider</code>、<code>requested_model</code>、<code>resolved_model</code>、catalog version、declared context limit、実際のinput／output token、provider request IDを記録すれば、model追加後の品質変化を説明しやすい。これはmodel inventoryを単なるUI候補一覧ではなく、Agentic Opsの構成管理対象へ引き上げる考え方である。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>goose v1.55.0のbundled catalogとmainのcatalogを分け、検証対象のcommit SHAを固定する。</li><li>PoC開始時にprovider、model ID、declared context limit、catalog hashをsnapshotとして保存する。</li><li>context上限の70％、90％、超過付近で同じAlert triage taskを再生し、compaction時点、回答品質、p95、error種別を比較する。</li><li>catalogにあるがprovider accountでは利用できないmodelを選び、明確なerrorと安全なfallbackになるか確認する。</li><li>providerが返すlive metadataとbundled値が異なる場合、どちらを優先したかをtraceへ記録する。</li><li>maintainer変更については、review待ち時間、release署名者、security issueの応答時間を観測し、名簿変更だけでリスクを断定しない。</li><li>更新が少ない日も正常系trace、Tool成功率、token実測値を保存し、release後の比較基準にする。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>OpenCode Go／Zen catalog修正を含むgoose次期release</li><li>declared context limitとprovider実測上限の差</li><li>live model catalogとbundled fallbackの優先順位</li><li>goose maintainer roster変更後のreview・release体制</li><li>Agent Router cross-namespace quotaを含むv1.2.x</li><li>agentgateway全LLM種別rate limitを含むv1.6.x</li><li>MCP、A2A、AGENTS.md、AAIF TC／WGの正式更新</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "goose — Update OpenCode Go and Zen model catalogs",
+        "https://github.com/aaif-goose/goose/commit/bfcc6ee6f1ee18d0c4c852a65c49b25f87ee40dc"
+      ],
+      [
+        "goose — Move a Core Maintainer to Emeritus",
+        "https://github.com/aaif-goose/goose/commit/59e588dfd941ae129f2938deb7acf9f80b6edd02"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "agentgateway — Refactor backend call stack",
+        "https://github.com/agentgateway/agentgateway/commit/955d56fae09b45f3cb8e85e797dbb1eb06134f77"
+      ],
+      [
+        "agentgateway releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "Agent Router releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "MCP releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AGENTS.md commits",
+        "https://github.com/agentsmd/agents.md/commits/main"
+      ],
+      [
+        "AAIF Blog",
+        "https://aaif.io/blog"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-17",
     "level": "HIGH",
     "tags": [
