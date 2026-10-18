@@ -1,6 +1,88 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-19",
+    "level": "HIGH",
+    "tags": [
+      "MCP",
+      "Operations"
+    ],
+    "title": "BedrockでMCP確認後の全ターン失敗を修正",
+    "summary": "gooseが内部確認blockの空文字変換を停止。MCPではSEP索引と参照リンクを修復した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>gooseのBedrock経路で、MCP elicitationまたはTool確認を一度通ったsessionの後続turnがすべて失敗する問題が修正された。</strong>原因は、Agent内部の<code>ActionRequired</code>と<code>ToolConfirmationRequest</code>をBedrockへ渡す際、空文字の<code>ContentBlock::Text(\"\")</code>へ変換していたことにある。Bedrockはcontent list内の空text blockを拒否するため、確認処理自体が終わっていても履歴を再送する次turn以降が継続不能になっていた。</p><p>修正後は、この二種類のcontrol blockをprovider向けmessageへ変換する前に除外する。modelへ渡す会話と、人間承認・protocol制御の状態を分離する変更である。正式最新版v1.55.0公開後のmain変更であり、配布artifactには未収録である。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>事象：</strong>MCP Serverがelicitationを要求した場合、またはTool実行に利用者確認が必要な場合、gooseのsession履歴には<code>ActionRequired</code>／<code>ToolConfirmationRequest</code>が残る。Bedrock serializerはこれらを空文字へ変換していた。確認後の新しいpromptで履歴全体をBedrockへ送ると、空text fieldを含むrequestとして拒否され、以後のturnも同じ履歴を再送するため失敗が継続した。</p><p><strong>修正：</strong>control blockをfilterし、それだけで構成されたmessageは空content listとする。provider層に既存のempty-message skipがあるため、Bedrockへ不正なblockを送らない。OpenAI、Google、Databricks、Snowflakeでは既に同種のfilterを行っており、今回Bedrockの挙動を揃えた。</p><p><strong>影響：</strong>BedrockでMCP elicitationやTool approvalを使うAgentは、単発のAPI errorではなくsession継続不能になる可能性がある。v1.55.0利用時は該当flowを避ける、修正commitを限定的にbackportする、または次期releaseまで別providerで検証する判断が必要になる。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>goose — HIGH：</strong>Bedrock変換時に<code>ActionRequired</code>と<code>ToolConfirmationRequest</code>を空textへ変換せず除外するよう修正。実際のelicitation request／responseを使うregression testも追加された。正式最新版はv1.55.0で、この修正はmainのみ。</li><li><strong>MCP — LOW：</strong>SEP-2640 Skills Extension内のSEP-2133参照が404になるMarkdown記法を修正。あわせてSEP indexを再生成し、既にFinalだったSEP-2127 MCP Server Cardsのredirectを追加、Final件数を42から43へ補正した。新しいSEPが本日Finalになったわけではなく、generated documentationの同期修正である。</li><li><strong>agentgateway：</strong>前回以降の新規重要commit・releaseなし。正式最新版はv1.6.0。</li><li><strong>Agent Router：</strong>新規重要commit・releaseなし。正式最新版はv1.2.0。</li><li><strong>A2A：</strong>新規protocol変更・releaseなし。正式最新版はv1.0.1。</li><li><strong>AGENTS.md：</strong>新規commitなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>MCPの変更は仕様内容の改訂ではなく、参照リンク、redirect、generated indexの整合性修正である。SEP-2127 MCP Server Cardsは以前からFinalであり、Final件数が43へ増えた表示だけを見て新たな標準化決定と解釈してはいけない。</p><p>この事例は、規範文書のsource、生成済みdocs、redirect、index countが別々にdriftし得ることを示す。標準の監視ではcommit messageだけでなく、SEP status metadataと生成物を照合する必要がある。AAIF Technical Committee、Working Groups、project proposal、新規加入・卒業project、認定制度には、新しい正式決定を確認できなかった。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>本日の共通テーマは<strong>control-plane messageとmodel transcriptの分離</strong>である。Agentのsessionには、利用者の発話、model出力、Tool resultだけでなく、承認要求、elicitation schema、UI状態、retry情報などが共存する。しかしproviderへ送るべきものはその一部であり、内部control eventを無理にtextへ変換すると、今回のようなvalidation failureや不要なtoken消費が生じる。</p><p>運用上はsession storeを一つに保っても、provider serializerで<code>model-visible</code>、<code>human-visible</code>、<code>control-only</code>、<code>audit-only</code>を分類する必要がある。さらにproviderごとに同じ分類規則を適用しなければ、OpenAIでは動くworkflowがBedrockでは壊れるという移植性問題になる。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>MCP elicitationを要求するtest serverを用意し、accept／decline／cancel後に次の通常promptが成功するか確認する。</li><li>Tool approvalの承認・拒否後も同じsessionを継続し、Bedrock requestに空text blockが含まれないことをcaptureする。</li><li>同じ保存済みtranscriptをBedrock、OpenAI、Google系adapterへreplayし、provider間の成功率と送信message数を比較する。</li><li>control blockはmodel requestから除外しても、承認者、判断、対象Tool、policy hashをaudit logへ残す。</li><li>session failure時に新規sessionへ逃げるだけでなく、どの履歴blockがprovider validationを破ったかをdiagnosticへ記録する。</li><li>v1.55.0をproduction基準線にする場合、elicitation／approvalを含むworkflowをrelease gateへ追加する。</li><li>MCP docs監視ではSEP statusの変更と、index・redirectだけの再生成を区別する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Bedrock control-block修正を含むgoose次期release</li><li>v1.55.0利用環境でのelicitation後session失敗報告</li><li>provider adapter間でのcontrol event filterの統一</li><li>elicitation内容を除外した後のaudit trail完全性</li><li>SEP-2640 Skills Extensionの進展とSEP-2133との関係</li><li>MCP SEP index生成を必須化するCI修正</li><li>agentgateway v1.6.x、Agent Router v1.2.x</li><li>A2A、AGENTS.md、AAIF TC／WGの正式更新</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "goose — Filter Bedrock ActionRequired and ToolConfirmationRequest blocks",
+        "https://github.com/aaif-goose/goose/commit/34a222e3f2b95d8b4a43482b53c2cc957ecce26d"
+      ],
+      [
+        "goose PR #12843 — Bedrock session failure details",
+        "https://github.com/aaif-goose/goose/pull/12843"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "MCP — Fix SEP-2640 references and regenerate SEP index",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/1155ca460e5097019f32769b38dcba194432e2fb"
+      ],
+      [
+        "MCP releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "agentgateway releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "Agent Router releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AGENTS.md commits",
+        "https://github.com/agentsmd/agents.md/commits/main"
+      ],
+      [
+        "AAIF Blog",
+        "https://aaif.io/blog"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-18",
     "level": "LOW",
     "tags": [
