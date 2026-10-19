@@ -1,6 +1,113 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-20",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "Operations",
+      "MCP"
+    ],
+    "title": "動的接続先を閉じ、子Agentの暴走を抑える",
+    "summary": "agentgatewayが内部宛て動的接続を既定拒否。gooseは子Agent同時実行を5に制限した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>今日の中心は、Agentが動的に決める接続先・並列数・再試行を「無制限な自由」から明示的な境界へ戻す変更である。</strong>agentgatewayはrequestごとに選ばれるdynamic backendについて、DNS解決後のloopback／link-local宛て接続を既定で拒否し、Unix socket指定も受け付けないようにした。設定やCEL式から内部service、metadata endpoint、gateway自身へ到達する経路を狭めるsecurity hardeningである。</p><p>同時にgooseは、親sessionごとのsubagent同時実行数を既定5に制限した。追加taskはslotが空くまで待機する。AAIF公式blogも、Agentの失敗を単一の<code>failed</code>へ潰さず、発生箇所、外部作用、再試行可否、次に必要な情報・承認を保存すべきだと整理した。コードと運用指針の両方が、Agentic Opsを「境界と回復可能性の設計」として扱う方向へ揃っている。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>agentgatewayのdynamic backendが、DNS解決後にloopback、link-local、特定のunspecified addressへ到達する場合、既定で拒否される。</strong>文字列上のhostnameだけを確認するのではなく、実際の解決先socket addressで判定するため、内部addressへ解決される名前にも適用される。内部接続が必要な環境向けに<code>allow_dynamic_loopback</code>があるが、明示的なopt-inとなった。</p><p>さらにstandalone modeでは、MCP session IDを暗号化するsession keyを未設定のまま起動した場合、書込み可能なfile modeではconfigへ、database modeではDBへ自動生成・保存する変更が入った。安全な既定値への移行だが、旧session IDはupgrade後に拒否されるbreaking changeであり、新しいsessionの再確立が必要になる。<code>config.session.key=disabled</code>で無効化できるものの、session IDの秘匿性を下げるため例外運用として扱うべきである。</p><p>vendor guardrailにも検査scopeが導入され、既定scopeはsystem prompt、通常message、Tool outputとなった。Tool inputはopt-in、Webhook guardrailは従来どおりsystem promptとmessageを検査する。この変更もpolicyの適用面が変わるため、upgrade前に既存ruleの再評価が必要である。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>agentgateway — HIGH：</strong>dynamic backendからloopback／link-localへの接続を既定拒否し、Unix socket targetも拒否。MCPのhost／port／path形式ではhost欄にpath等を混在させた不正設定をload時に検出する。standaloneのsession key自動生成とvendor guardrail scopeはbreaking change。正式最新版はv1.6.0で、これらはmain上の未release変更である。</li><li><strong>goose — MEDIUM：</strong><code>GOOSE_MAX_CONCURRENT_SUBAGENTS</code>を追加し、親session当たりの同時実行を既定5に制限。超過taskはqueueで待機する。custom providerがcache read／write単価を宣言でき、推定costへ反映できるようになった。長大conversationのDesktop描画も先頭20件と直近200件を中心にwindow化した。正式最新版v1.55.0には未収録。</li><li><strong>Agent Router — MEDIUM：</strong>複数controller replicaが起動時に同じMutatingWebhookConfigurationのCA bundleを更新してConflictになり、敗者replicaが再起動する競合をretry-on-conflictで修正。報告では3 replicaのfresh install 15回中10回で再現していた。正式最新版v1.2.0には未収録。</li><li><strong>MCP：</strong>前回以降の新しい仕様・SEP Final・正式releaseなし。</li><li><strong>A2A：</strong>GitHub Actions dependency更新のみで、protocol変更やreleaseなし。正式最新版はv1.0.1。</li><li><strong>AGENTS.md：</strong>新規commitなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>AAIF公式blogは10月19日、Agentの失敗記録について実務的な整理を公開した。規範仕様ではないが、failure recordが最低限答えるべき問いとして、①どこで失敗したか、②外部作用が発生・未発生・部分発生・不明のどれか、③再試行が適切か、④継続に情報・承認・停止の何が必要か、を提示している。承認待ちは障害ではなく、応答喪失後の外部作用不明は単純retryしてはいけないという区別が重要である。</p><p>AAIF Technical Committee、Working Groups、project proposal、新規加入・卒業project、認定制度には新しい正式決定を確認できなかった。10月22〜23日のAGNTCon + MCPCon North AmericaにはMCP、security、observability、cost、分散simulationのsessionが予定されているが、開催予定を採択済み仕様とは扱わない。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>共通テーマは<strong>bounded autonomyとrecoverable execution</strong>である。Agentへ動的routing、子Agent生成、Tool実行、retryを許すほど、従来の静的allowlistだけでは制御できない。必要なのは、名前ではなく解決後addressで接続先を評価し、並列数をresource budgetとして制限し、外部作用の確定状態を保存することである。</p><p>また、top-level statusだけでなく、<code>failure_location</code>、<code>effect_state</code>、<code>retry_class</code>、<code>required_action</code>を構造化すれば、自動retryと人間escalationを分離できる。これは単なるobservability改善ではなく、二重実行、内部network到達、承認の迂回、resource枯渇を防ぐcontrol planeの入力になる。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>dynamic backendへ<code>127.0.0.1</code>、<code>::1</code>、link-local、内部IPへ解決されるDNS名、Unix socketを与え、すべて既定拒否されるかnegative testする。</li><li>cloud metadata endpointだけでなく、Prometheus、Alertmanager、管理API、Kubernetes APIなどgatewayから到達可能な内部serviceをasset inventory化する。</li><li><code>allow_dynamic_loopback</code>を使う場合はgateway単位で有効化せず、専用instance、network policy、egress proxyでblast radiusを限定する。</li><li>agentgateway upgrade前に既存MCP sessionをdrainし、session keyをSecret管理して全replicaで共有する。key rotation時のsession失効手順も決める。</li><li>guardrailのscopeごとにsystem prompt、message、Tool input、Tool outputへ同じsecret／禁止語を置き、想定した面だけが検査されるか確認する。</li><li>gooseの同時subagent数を2、5、10で比較し、CPU、memory、provider rate limit、Tool backend負荷、完了時間、失敗率を計測する。</li><li>失敗記録へ<code>location</code>、<code>external_effect</code>、<code>retryable</code>、<code>next_action</code>、idempotency keyを保存し、外部作用不明時は自動retryを止める。</li><li>Agent Routerを3 replica以上でfresh installし、CA bundle更新時のrestart countとConflict eventをrelease gateへ追加する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>dynamic backend制限、session key、guardrail scopeを含むagentgateway次期release</li><li>dynamic DNSの再解決・DNS rebindingに対する継続的なaddress検査</li><li>session key生成失敗時に暗号化なしで継続するwarningの監視方法</li><li>guardrail scope変更による既存policyの互換性</li><li>gooseのsubagent queueに対するtimeout、cancel、公平性</li><li>cache read／write単価とprovider請求額の整合</li><li>Agent Router修正のrelease/v1.1 backportとv1.2.x収録</li><li>AAIF failure taxonomyがOpenTelemetry semantic conventionやconformance testへ発展するか</li><li>AGNTCon + MCPCon North Americaでの正式発表・新規project proposal</li><li>MCP、A2A、AGENTS.md、AAIF TC／WGの正式更新</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "agentgateway — Deny dynamic destinations resolving to loopback",
+        "https://github.com/agentgateway/agentgateway/commit/9d677a3e74c6f0ebd36a6b127c0a63b829d4e047"
+      ],
+      [
+        "agentgateway — Always use a standalone session key",
+        "https://github.com/agentgateway/agentgateway/commit/20cfb34b57d5a75b710b5ccab5def9fb58138a22"
+      ],
+      [
+        "agentgateway — Guardrail scope support",
+        "https://github.com/agentgateway/agentgateway/commit/49e1f5b890b3beeb6ec95abfcb0b5e6c49bff469"
+      ],
+      [
+        "agentgateway — Reject invalid MCP hosts",
+        "https://github.com/agentgateway/agentgateway/commit/1cb1915f41021a9b7c14ebc8730a3da3b3cba619"
+      ],
+      [
+        "agentgateway releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "goose — Limit concurrent subagents",
+        "https://github.com/aaif-goose/goose/commit/62d35011344abe39997cd493613d147bb84a29c7"
+      ],
+      [
+        "goose — Provider-defined cache prices",
+        "https://github.com/aaif-goose/goose/commit/4ea7c2c6dc40cfea391df555afd7ad4eade5a659"
+      ],
+      [
+        "goose — Bound long conversation rendering",
+        "https://github.com/aaif-goose/goose/commit/cf3ce0ab545c74a35fcc35afd4e714d895647594"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "Agent Router — Retry admission webhook CA bundle conflicts",
+        "https://github.com/theagentrouter/agent-router/commit/9d32e9c010e2f4620bc91c4c7dc2841661855f0d"
+      ],
+      [
+        "Agent Router releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "AAIF — Why agent failed does not tell you enough",
+        "https://aaif.io/blog/why-agent-failed-doesn-t-tell-you-enough"
+      ],
+      [
+        "AGNTCon + MCPCon North America",
+        "https://events.linuxfoundation.org/agntcon-mcpcon-north-america/"
+      ],
+      [
+        "MCP releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AGENTS.md commits",
+        "https://github.com/agentsmd/agents.md/commits/main"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-19",
     "level": "HIGH",
     "tags": [
