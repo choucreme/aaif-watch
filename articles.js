@@ -1,6 +1,110 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-21",
+    "level": "HIGH",
+    "tags": [
+      "MCP",
+      "Operations",
+      "Security",
+      "A2A"
+    ],
+    "title": "MCP、TasksとEventsを正式WGへ集約",
+    "summary": "MCPは長時間処理と通知を専任WGへ移管。A2AはTSCを9席へ拡大した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>今日の中心は、Agent間連携を一枚岩の「Agent仕様」にせず、長時間処理・通知・Agent境界を別々に成熟させるガバナンス変更である。</strong>MCPはTasksの安定化とcore protocol昇格、callback、subscription lifecycle、delivery semantics、event orderingを「Tasks and Events Working Group」に集約した。一方、従来のAgents Working GroupはAgents Interest Groupへ変更され、agent-as-tool、remote agent、supervisor/sub-agentの実装事例を基に、専用Agents Extensionが本当に必要かを評価する役割へ絞られた。</p><p>これはAgent連携を止める決定ではない。<strong>確定した実装課題はWGで仕様化し、まだ境界が曖昧なAgent概念はIGで検証する</strong>という分離である。同じ日に、gooseは失敗・取消済みsubagentのresumeを実装し、Agent Routerとagentgatewayは外部入力で資源消費やpanic、UI注入が起きる経路を狭めた。標準化と実装の双方が、durable executionと安全な再開へ寄っている。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>MCPのTasks and Events WGは、Tasks extensionの安定化とcore昇格に加え、serverからclientへ状態変化を能動通知するcallback機構を担当する。</strong>現在のpollingやSSE接続維持だけに依存せず、webhook等を含む仕組み、subscription、配送、transport横断の順序保証を仕様化する。目標にはaccepted SEP、Tier-1 SDK 2件以上のreference implementation、conformance testが含まれる。</p><p>Agents IGは、専用extensionを前提とせず、既存MCP primitive、Tasksの拡張、Agents Extensionの三案をprototypeで比較する。planning、memory、model選択、orchestration内部は対象外である。この線引きにより、製品固有runtimeと相互運用境界を混同しにくくなる。</p><p>A2AではBloombergのVinay Ramesh氏がTSCへ加わり、席数が8から9へ増えた。protocol releaseではないが、金融・enterprise利用者の視点がtechnical governanceへ直接入る変更である。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP — HIGH：</strong>Tasks and Events WGを設置し、旧Triggers and Events WGへTasksの責務とleadを統合。Agents WGはAgents IGへ移行した。新しいprotocol releaseそのものではなく、今後の仕様決定主体の変更である。</li><li><strong>goose — MEDIUM：</strong>失敗または取消済みdelegateをsubagent IDでresume可能にした。完了済みdelegateは再開不可で、親sessionに属するsubagentだけを再開できる。既定の再開指示は「中断地点から続ける」。正式releaseへの収録は未確認のmain変更である。</li><li><strong>agentgateway — MEDIUM：</strong>不正hostnameをTLS SNIへ変換した際のpanicをerrorへ変更。log Markdownはsanitized DOM fragmentとして描画し、<code>dangerouslySetInnerHTML</code>を除去した。LiteLLM importerは<code>default_fallbacks</code>と<code>max_fallbacks</code>を扱うが、unknown modelやconditional fallbackは意味差が残るためmanual findingを出す。正式最新版はv1.6.0で、これらはmain上の変更。</li><li><strong>Agent Router — MEDIUM：</strong>OAuth authorization server metadataを1 MiBで上限化し、超過documentをrejectする。user supplied URLからの無制限body readを防ぐhardeningである。Anthropic passthroughではquery string保持も修正された。正式最新版はv1.2.0。</li><li><strong>A2A — MEDIUM：</strong>BloombergをTSCへ追加。新しいprotocol releaseはなく、正式最新版はv1.0.1。</li><li><strong>AGENTS.md：</strong>前回以降の新規commit・releaseなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認できた事実：</strong>MCPでは「仕様を決めるWG」と「要否を調べるIG」の権限が分離された。Tasks and Events WGはSEP triage、技術設計、core maintainer承認を経た仕様変更を進める。Agents IGはuse case、PoC、推奨事項を出すが、一般的なAgent frameworkやruntimeを標準化しない。A2AはTSCを9席へ拡張した。AAIF公式news、Technical Committee、新規project proposal、加入・卒業project、認定制度については、前回以降の新しい正式発表を確認できなかった。</p><p><strong>分析：</strong>MCPとA2Aの競合を意味する変更ではない。MCP側はtool／resource境界でのdurable taskとevent deliveryを詰め、Agent同士の相互運用を専用extensionにするかは保留した。実装者は「agent」という名前ではなく、task lifecycle、callback認証、ordering、replay、capability discoveryごとに適用protocolを選ぶべきである。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>注目点は<strong>resumabilityをconversation機能ではなく、運用上の状態機械として扱う流れ</strong>である。gooseは失敗・取消済みsubagentへ同じsession IDで新しい指示を追加して継続する。MCPは長時間taskと通知を専任WGへ移し、polling以外の完了通知を標準化対象にした。両者に共通するのは、実行を一回のrequest/responseへ閉じず、停止・再接続・再開を通常系として設計する点である。</p><p>同時に、境界入力を有限化する変更も続く。Agent Routerの1 MiB上限、agentgatewayのinvalid SNI error化、sanitized DOM fragmentは、metadata、hostname、logという「制御情報」にも攻撃面と障害面があることを示す。Agentic Opsではmodel outputだけでなく、discovery document、routing metadata、observability UIまで信頼境界に含める必要がある。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>MCP TasksのPoCでは、polling、SSE切断、callback再送、順序逆転、duplicate deliveryを試験し、task IDとevent IDで冪等化する。</li><li>callback endpointは署名検証、audience固定、replay window、tenant bindingを持たせる。通知受信だけでtask結果を確定せず、必要ならauthoritative stateを再取得する。</li><li>gooseのresumeでは、subagentが中断前に外部作用を起こしたかを記録する。支払、deploy、ticket作成等はidempotency keyなしで自動resumeしない。</li><li>agentgateway移行時はLiteLLMのunknown model、default fallback、再帰fallback、content policy fallbackをgolden testで比較する。変換結果のmanual／approximate findingをrelease gateにする。</li><li>OAuth metadataへ1 MiB超、slow response、invalid JSON、redirect loopを与え、memory、timeout、alternate endpointへのfallbackを確認する。</li><li>log UIへ<code>&lt;script&gt;</code>、event handler、外部imageを含むTool outputを投入し、DOM生成とnetwork requestが発生しないことをE2Eで確認する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Tasks and Events WGが出すcallback／subscription SEP、delivery ordering、認証方式、Tier-1 SDK実装。</li><li>Agents IGが専用Agents Extension、Tasks拡張、既存primitiveのどれを推奨するか。</li><li>MCP Tasks extensionのcore protocol昇格時期とconformance coverage。</li><li>goose resume機能の正式release、resume時の重複外部作用防止、background delegate対応。</li><li>agentgateway main変更の次期release収録とLiteLLM移行時のsemantic差。</li><li>A2A TSC拡大後のroadmap・投票結果、次期protocol release。</li><li>AGNTCon + MCPCon North America（10月22〜23日）の仕様・security・observability関連発表。開催予定と採択済み仕様は区別して追跡する。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP — Tasks and Events WG / Agents IG charter change",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/80041ab0a139a8f4fb3adbc99f7ae9113ea59671"
+      ],
+      [
+        "A2A — Add Bloomberg to the TSC",
+        "https://github.com/a2aproject/A2A/commit/98279d62316361ba8451eaef300f72b72e169185"
+      ],
+      [
+        "goose — Resume failed or cancelled delegates",
+        "https://github.com/aaif-goose/goose/commit/e0cf7a4ff74647eaa4f5060cc9fd97a4b07bc7e5"
+      ],
+      [
+        "agentgateway — Error instead of panic on invalid SNI",
+        "https://github.com/agentgateway/agentgateway/commit/f51a7fbca57dfe56bf639b8df21be49db76e9ebc"
+      ],
+      [
+        "agentgateway — Sanitize log Markdown DOM",
+        "https://github.com/agentgateway/agentgateway/commit/87c66ad02bbc33e96585bbcb3197607b00b3bd42"
+      ],
+      [
+        "agentgateway — LiteLLM default fallbacks import",
+        "https://github.com/agentgateway/agentgateway/commit/d8d1b8ecef961f610ca95642f541ade8b5f02075"
+      ],
+      [
+        "agentgateway releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "Agent Router — Limit OAuth metadata response to 1 MiB",
+        "https://github.com/theagentrouter/agent-router/commit/7bcb45477c51b2429f32a7bd895af6408fe4ed79"
+      ],
+      [
+        "Agent Router releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "MCP releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AGENTS.md commits",
+        "https://github.com/agentsmd/agents.md/commits/main"
+      ],
+      [
+        "AAIF blog",
+        "https://aaif.io/blog"
+      ],
+      [
+        "AAIF news",
+        "https://aaif.io/news"
+      ],
+      [
+        "AGNTCon + MCPCon North America",
+        "https://events.linuxfoundation.org/agntcon-mcpcon-north-america/"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-20",
     "level": "HIGH",
     "tags": [
