@@ -1,6 +1,117 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-22",
+    "level": "HIGH",
+    "tags": [
+      "Operations",
+      "Security",
+      "MCP"
+    ],
+    "title": "失敗を成功にせず、競合listenerをtrafficから外す",
+    "summary": "gooseはACPのerror turnを失敗化。agentgatewayは競合listenerと認可ログを修正した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>今日の中心は、Agent基盤の「実行結果」と「実際に流れたtraffic」を観測上の事実と一致させる修正である。</strong>gooseはACP経由のturnがerror messageで終わった場合、prompt requestを成功として返さず、<code>turn_failed</code>として失敗させるよう変更した。agentgatewayは同じport上でhostnameやprotocolが競合するlistenerについて、状態だけを残し、data planeへはprogramしないようにした。</p><p>どちらも新しいAgent能力ではないが、運用上は重要度が高い。上位orchestratorが失敗を成功と誤認すれば次工程へ進み、競合listenerがtrafficを受ければ意図しないrouteやpolicyが選ばれる。<strong>制御面のstatus、clientへ返す結果、data planeの実態を一致させること</strong>が、Agentic Opsの安全なretry、alert、rolloutの前提になる。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>gooseのACP修正では、turn streamの最後がerrorならsession prompt全体を失敗として返す。</strong>従来はstream内にerrorがあってもrequestが正常終了したように見える場合があり、呼び出し側が成功と誤判定できた。修正後はreasonを<code>turn_failed</code>として返し、失敗時にもsession使用量の更新を試みる。認証切れやcredit不足を安全に伝える既存経路も維持される。</p><p><strong>agentgatewayはGateway APIのlistener競合を検出し、敗者listenerをtrafficから除外する。</strong>競合側は<code>Accepted=False</code>、<code>Programmed=False</code>としてstatusに残るため、単に消すのではなく「設定は存在するが配信されない」状態を運用者が把握できる。同時に、MCP authorization拒否は内部logで<code>Authorization</code>理由として識別できるようにしつつ、clientには従来どおり<code>unknown resource</code>を返し、resource列挙を防ぐ。</p><p>またMCP upstream sessionの<code>DELETE</code>が404または405を返した場合、agentgatewayはcleanup成功として扱う。404は既にsessionがなく、405はserverがclient主導の終了を許さない状態であり、500等の実障害とは分離される。不要なwarningと再試行を減らすidempotentな終了処理である。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>goose — HIGH：</strong>ACP turn末尾のerrorを明示的な失敗へ変更。MCP tool名はOpenAI等のprovider制約に合う公開名へsanitizeし、元名のhashを付けて衝突を防ぐ。server呼出しでは元のtool名を維持する。<code>--dangerous-include-history</code>は最近のshell commandをmodel contextへ渡すopt-in機能で、command lineにcredentialや機密値が残る危険を明記している。versionはmain上で1.56.0へ更新されたが、正式releaseとしての公開は確認できず、最新版はv1.55.0として扱う。</li><li><strong>agentgateway — HIGH：</strong>競合listenerをprogrammed trafficから除外し、statusは保持。MCP認可拒否の内部分類、session DELETEの404／405成功扱い、TLS終端proxyでOrigin schemeが変わる場合のCSRF判定修正が入った。Anthropic、Vertex AI Anthropic、Bedrock向けprompt cacheの一貫化と、AWS Bedrock native Runtime endpointの初期対応もmainへ入った。正式最新版はv1.6.0で、今回の変更は未release。</li><li><strong>MCP：</strong>前回記事のTasks and Events WG／Agents IG変更以降、新しい仕様commit、SEP Final、正式releaseを確認できなかった。</li><li><strong>A2A：</strong>新しいprotocol releaseはなく、正式最新版はv1.0.1。前回のTSC拡大以降の正式ガバナンス変更も確認できなかった。</li><li><strong>Agent Router：</strong>前回扱ったOAuth metadata 1 MiB上限以降、独立した大型変更や新releaseは確認できず、正式最新版はv1.2.0。</li><li><strong>AGENTS.md：</strong>前回以降の新規commit・releaseなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認できた事実：</strong>AAIF公式blogは10月21日、Agentがuserの許可を持つことと、第三者serviceがそのAgentを受け入れることは別の判断だと整理した。Shopify UCPの例では、anonymous、署名済み、token付きの各Agentでrate limitや許可操作が異なり、購入や注文情報には適切なscopeが必要になる。本人性、委任、scope、user presenceを一つの「ログイン済み」へ潰さない考え方である。AAIF Technical Committee、Working Group、新規project proposal、加入・卒業project、認定には、前回以降の新しい正式決定を確認できなかった。</p><p><strong>分析：</strong>agentgatewayがclientへの<code>unknown resource</code>と内部の<code>Authorization</code>を分けた変更は、この考え方を運用へ落とす一例である。外部へresource存在を漏らさず、内部では認証失敗、認可拒否、存在しないresourceを区別できれば、securityを保ったまま正しいalertとremediationを選べる。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>第一の流れは<strong>failure semanticsの構造化</strong>である。HTTP statusやprocess exitだけでなく、turnがどのeventで終わったか、外部作用が発生したか、再試行可能かを上位orchestratorへ返す必要がある。gooseの<code>turn_failed</code>とagentgatewayのlistener conditionは、Agent runtimeとnetwork control planeの双方で「黙って成功にしない」設計へ寄せる。</p><p>第二は<strong>provider差を境界adapterで吸収する</strong>流れである。MCP tool名はprotocol上有効でもLLM providerに拒否され得る。公開名を安全な文字列へ変換しつつ、hashで一意性を保ち、server側には元名を送る設計により、tool実装をprovider都合で変更せずに済む。</p><p>第三は<strong>便利なcontext共有を明示的なdata exfiltration面として扱う</strong>ことだ。shell historyは復元力を高める一方、token、password、URL query、顧客名がcommand lineに残り得る。危険な機能を名前・flag・warningで明示し、既定offにすること自体がsecurity controlになる。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>ACP clientのE2E testで、stream途中error、最終error、認証切れ、credit不足、usage更新失敗を分け、成功eventや次工程が発火しないことを確認する。</li><li>retry policyは<code>turn_failed</code>だけで即時再試行せず、外部Tool作用の有無、idempotency key、error classを併せて判定する。</li><li>Gateway APIへ同一port・重複hostname・異なるprotocolのlistenerを投入し、競合側が<code>Accepted=False</code>かつ実trafficを受けないことをconformance testへ加える。</li><li>MCP authorizationについて、client responseはresource存在を漏らさず、内部log／metricでは認証、認可、not foundを区別できるかを確認する。logへresource名やcredentialを過剰記録しない。</li><li>MCP session cleanupでは404／405を正常終了、5xxやtimeoutを失敗として扱い、warning rateとretry stormが減るかを観測する。</li><li>MCP tool名にdot、space、非ASCII、64文字超、sanitize後に同名となる組合せを与え、provider登録名の一意性と元toolへのroutingを試験する。</li><li><code>--dangerous-include-history</code>は共有端末、CI、production運用で無効を既定にし、利用時はshell historyへsecretを保存しない設定、redaction、短い保持期間、送信先providerのdata policyを確認する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>goose v1.56.0の正式releaseと、ACP failure semantics／provider-safe tool名／history機能の収録範囲。</li><li>shell history contextのredaction、許可command、最大件数、audit表示の追加。</li><li>agentgatewayの競合listener修正、認可log、session DELETE処理、prompt cache、Bedrock Runtime対応を含む次期release。</li><li>listener競合時のpolicy attachment、status伝播、複数controller replicaでの一貫性。</li><li>MCP Tasks and Events WGのcallback／subscription SEPとconformance test。</li><li>A2A v1.1 roadmap、Agent Router次期release、AGENTS.mdの正式更新。</li><li>10月22〜23日のAGNTCon + MCPCon North Americaで公表される仕様、security、observability関連の一次資料。session発表と採択済み仕様は分けて扱う。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "goose — Fail ACP prompt when turn ends on error",
+        "https://github.com/aaif-goose/goose/commit/122834086b62ae39adf721de32ae59fcde904a8c"
+      ],
+      [
+        "goose — Provider-safe MCP tool names",
+        "https://github.com/aaif-goose/goose/commit/78f2ba90eabdb465e5add4482bf68c181574a4be"
+      ],
+      [
+        "goose — Dangerous include history",
+        "https://github.com/aaif-goose/goose/commit/497aa76c23b6aaa4b3d53a5372afa37645352501"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "agentgateway — Keep conflicted listeners out of traffic",
+        "https://github.com/agentgateway/agentgateway/commit/2cd6624c814098ed191fcf99da9b52cd36ac128d"
+      ],
+      [
+        "agentgateway — Distinguish authorization denials in logs",
+        "https://github.com/agentgateway/agentgateway/commit/8ce0a28abaa3b358159cab5861ccd056e0117f83"
+      ],
+      [
+        "agentgateway — Treat MCP session DELETE 404/405 as success",
+        "https://github.com/agentgateway/agentgateway/commit/01ad985e80e4ffc93d964f2666aa67a10329d52b"
+      ],
+      [
+        "agentgateway — CSRF Origin host comparison",
+        "https://github.com/agentgateway/agentgateway/commit/21b793e7b9b93a698ef8f0ee1e477fca2369eb40"
+      ],
+      [
+        "agentgateway — Consistent prompt caching",
+        "https://github.com/agentgateway/agentgateway/commit/974e1a304cacbabde4b96b9635944f27584ade7f"
+      ],
+      [
+        "agentgateway — Native AWS Bedrock endpoint support",
+        "https://github.com/agentgateway/agentgateway/commit/ea7f5edf39036722ce9d1d3e06527da97a10dc42"
+      ],
+      [
+        "agentgateway releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "AAIF — AI agents can't just walk in",
+        "https://aaif.io/blog/ai-agents-can-t-just-walk-in"
+      ],
+      [
+        "MCP releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "Agent Router releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "AGENTS.md commits",
+        "https://github.com/agentsmd/agents.md/commits/main"
+      ],
+      [
+        "AGNTCon + MCPCon North America",
+        "https://events.linuxfoundation.org/agntcon-mcpcon-north-america/"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-21",
     "level": "HIGH",
     "tags": [
