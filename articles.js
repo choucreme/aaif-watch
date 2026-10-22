@@ -1,6 +1,109 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-23",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "MCP",
+      "Operations"
+    ],
+    "title": "MCP sessionをrouteへ束縛、認可の迂回路を閉じる",
+    "summary": "Agent Routerがcross-route session再利用とprompt selector迂回を修正した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>今日の中心は、認証済みsessionを利用者だけでなく、実際に通過したsecurity routeへ束縛する変更である。</strong>Agent Routerは、OAuthで保護されたMCPRoute上で作成したsessionを、同じGateway上の別の非保護routeから再開できる経路を修正した。session IDに含まれるrouteと、現在のrequestにGateway内部headerとして付与されたrouteが一致しなければ、GET、POST、DELETEのいずれでもsessionを拒否する。</p><p>同時に、<code>prompts/list</code>ではselectorで非表示にしたpromptを、名前を知る利用者が<code>prompts/get</code>またはcompletion requestで直接取得できる不整合も閉じられた。<strong>Discoveryから隠すことと、実行時に拒否することは別のcontrolであり、両方が必要</strong>という典型例である。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>cross-route session再利用の問題では、元sessionがOAuth保護routeで作られていても、別route側でJWT検証が行われなければ、caller suppliedのsubjectやclaimが認可ruleの入力になり得た。</strong>修正では、frontendが上書きする内部route headerを信頼境界とし、session ID内のrouteと現在routeを比較する。同じsubjectでもrouteが異なれば<code>session ID was issued for a different route</code>として拒否され、元routeを通ったrequestだけがbackendへ到達する。</p><p>prompt selectorについても、一覧応答だけをfilterする従来動作から、個別の<code>prompts/get</code>と<code>completion/complete</code>で同じselectorを強制する形へ変わった。Tool selectorと同様に、直接参照を実行時に検査する。これらはmain上のcommitであり、正式最新版v1.2.0には未収録である。</p><p>Agent Routerにはさらに、Envoy dynamic metadataからrequest単位のquota limitとdurationを受け取る機能が追加された。静的値をbaselineとして残し、metadataが解決できない場合はfallbackする。認証・契約tier・tenant planの判定結果を、後段のrate limitへ渡す構成が取りやすくなる。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>Agent Router — HIGH：</strong>MCP sessionを作成routeへ束縛し、OAuth保護routeから非保護routeへのsession持出しを拒否。prompt selectorを<code>prompts/get</code>とcompletionにも適用した。QuotaPolicyはdynamic metadataからlimit／durationをoverride可能になり、短寿命credentialの事前rotation windowも既定5分からglobal設定で変更できる。正式最新版はv1.2.0で、今回の変更はmain上。</li><li><strong>agentgateway — MEDIUM：</strong>v1.7.0-alpha.1をpre-releaseとして公開。stableはv1.6.0のまま。mainではGemini tool callのthought signatureをAnthropic Messagesのthinking blockまたはOpenAI Responsesのreasoning itemで保持し、次turnへ戻す修正が入った。従来は変換でsignatureが落ち、tool結果を返す2turn目がHTTP 400になる場合があった。非Gemini providerにはsignatureを渡さない。</li><li><strong>goose — MEDIUM：</strong>Toolとして起動したshellをcancel／timeoutした際、親processだけでなく所有するprocess treeをUnix process groupまたはWindows Job Object単位で終了するよう変更。正常終了後に意図的にbackground化したprocessは維持する。利用不能なdefault providerでCLIを起動した場合は、即時終了ではなくprovider設定dialogへ誘導する。</li><li><strong>MCP：</strong>前回以降の新しい仕様commit、SEP Final、正式releaseなし。</li><li><strong>A2A：</strong>新しいprotocol commit・releaseなし。正式最新版はv1.0.1。</li><li><strong>AGENTS.md：</strong>新規commit・releaseなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認できた事実：</strong>AGNTCon + MCPCon North Americaは10月22〜23日に開催中で、Linux Foundationはagent trustを中心テーマの一つとして案内している。ただし、session発表やdemoを採択済み仕様、security advisory、AAIFの正式決定とはみなさない。AAIF Technical Committee、Working Groups、project proposal、新規加入・卒業project、認定制度について、前回以降の新しい規範的artifactは確認できなかった。</p><p><strong>分析：</strong>Agent Routerの修正は、session identityを<code>subject</code>だけで表現できないことを示す。実際の権限は、subject、route、そこで実施されたJWT検証、適用policy、backend集合の組合せで決まる。sessionを再開するときは、それらのsecurity contextも同じであることを確認しなければならない。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>第一の流れは<strong>session-bound authorization</strong>である。長寿命MCP sessionでは、初回接続時に選ばれたroute、backend、selector、認証方式がsession状態へ持ち越される。再開requestが別routeを通れると、最初のsecurity policyを迂回できるため、session IDの暗号化やsubject bindingだけでは不十分になる。</p><p>第二は<strong>enumeration controlとauthorization enforcementの分離</strong>である。listから項目を除外することは情報露出を減らすが、名前を推測・記録・別経路で取得したcallerを止めない。Tool、prompt、resourceは、listとget／callの双方で同じselectorを評価する必要がある。</p><p>第三は<strong>認証結果をquota controlへ接続する</strong>動きである。dynamic metadataによるlimit overrideを使えば、ext_authz等が判定したtenant planをrequest単位のrate limitへ渡せる。一方、metadata namespaceとkeyを信頼できるproducerだけが書けるようにしないと、利用者自身がlimitを引き上げる危険がある。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>同じGatewayへOAuth保護routeと非保護routeを作り、保護routeで発行したsession IDを別routeのGET、POST、DELETEへ送ってすべて拒否されるか確認する。</li><li>session ID検証ではsubjectだけでなく、route、tenant、audience、認証方式、policy versionをbinding候補として整理する。</li><li><code>prompts/list</code>で除外したprompt名を直接<code>prompts/get</code>と<code>completion/complete</code>へ渡し、backendへ到達しないことをnegative testする。Toolとresourceにも同じ試験を展開する。</li><li>dynamic quota metadataを欠損、型違い、未知unit、巨大値、0、static baseline未満／超過で試験し、解決不能時のfallbackとfail modeを記録する。</li><li>metadataを書けるfilter chainとnamespaceを固定し、client headerから直接quota overrideを生成しない。</li><li>短寿命credentialのrotation windowはtoken寿命、controller停止時間、API rate limitを基に設定し、expiry前に新credentialがdata planeへ収束した時刻をmetric化する。</li><li>GeminiをAnthropic Messages／OpenAI Responses経由で呼び、tool call→tool result→次応答までthought signatureが保持されるかE2Eで確認する。</li><li>gooseで孫processを生成するshellをcancelし、orphan、open port、残存file lockがないことをLinux／Windows双方で試験する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Agent Routerのroute bindingとprompt selector修正を含むv1.2.x／次期release、およびsecurity advisoryの公開有無。</li><li>MCP sessionへbindingすべきroute、subject、tenant、policy revisionの標準的な表現。</li><li>dynamic quota metadataのproducer認証、上限値、shadow mode、service quota対応。</li><li>agentgateway v1.7.0正式版とalphaからのbreaking／behavior change。</li><li>Gemini thought signature修正のResponses、Messages、Vertex間conformance。</li><li>goose process-tree cleanupのcontainer、SSH、background taskへの影響と正式release収録。</li><li>AGNTCon + MCPConで公開されたslide、recording、proposalがAAIF WG、MCP SEP、A2A roadmapへ反映されるか。</li><li>MCP、A2A、AGENTS.md、AAIF TC／WGの正式更新。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "Agent Router — Bind MCP sessions to the current route",
+        "https://github.com/theagentrouter/agent-router/commit/ef5ce076b40a62d11bd82d5034afcf9080b2ff41"
+      ],
+      [
+        "Agent Router — Enforce prompt selectors for prompts/get",
+        "https://github.com/theagentrouter/agent-router/commit/178b957cc9f3fbf199ba4d9f901af7490187612f"
+      ],
+      [
+        "Agent Router — Dynamic quota limits from metadata",
+        "https://github.com/theagentrouter/agent-router/commit/52ddc244907cce94370a62d0824ba4aa1d6d3cec"
+      ],
+      [
+        "Agent Router — Configurable credential pre-rotation window",
+        "https://github.com/theagentrouter/agent-router/commit/c7c4bf0b4451663850f72ff430f6460e621961b4"
+      ],
+      [
+        "Agent Router releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "agentgateway — Preserve Gemini tool-call thought signatures",
+        "https://github.com/agentgateway/agentgateway/commit/ae33d8103ef08f66115ed388d2ae9bfcf06dd389"
+      ],
+      [
+        "agentgateway v1.7.0-alpha.1 / releases",
+        "https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0-alpha.1"
+      ],
+      [
+        "goose — Terminate owned shell process trees on cancellation",
+        "https://github.com/aaif-goose/goose/commit/5be3f8d3db9a2c4dfd5162bc50c3a35c648b7706"
+      ],
+      [
+        "goose — Configure unavailable default provider",
+        "https://github.com/aaif-goose/goose/commit/8069dc4aa462bd3b00ad0287d1d42954d98011b8"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "MCP releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AGENTS.md commits",
+        "https://github.com/agentsmd/agents.md/commits/main"
+      ],
+      [
+        "AGNTCon + MCPCon North America schedule",
+        "https://events.linuxfoundation.org/agntcon-mcpcon-north-america/"
+      ],
+      [
+        "Linux Foundation Newsletter — October 2026",
+        "https://www.linuxfoundation.org/blog/linux-foundation-newsletter-october-2026"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-22",
     "level": "HIGH",
     "tags": [
