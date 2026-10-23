@@ -1,6 +1,133 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-24",
+    "level": "HIGH",
+    "tags": [
+      "Operations",
+      "Security",
+      "MCP"
+    ],
+    "title": "AAIFに4プロジェクト加入、agent stackを実行基盤まで拡張",
+    "summary": "Skills・model API・RL環境・sandboxがAAIFの共通基盤へ加わった。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>AAIFはAgent Skills、Open Responses、OpenEnv、OpenSandboxの4プロジェクトを新たに受け入れ、傘下を10プロジェクトへ拡大した。</strong>従来のMCP、A2A、AGENTS.md、goose、Agent Router、agentgatewayが主に指示、接続、Agent間通信、実行・routingを担ってきたのに対し、今回の加入で能力package、model API互換、RL学習環境、隔離実行環境まで同じ中立的なgovernanceの対象になる。</p><p>同時にgoose v1.56.0が正式公開された。前日までmain上の未release変更として追っていたsubagent再開・同時実行上限、Bedrockの会話継続修正、context圧縮改善、provider別cache単価などが配布基準線へ入った。<strong>今日は「新しい構想」の発表だけでなく、実運用へ載せるrelease基準線も更新された日</strong>である。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p>4プロジェクトの役割は明確に分かれている。Agent Skillsは<code>SKILL.md</code>を中心に指示、script、reference、templateを持ち運ぶ形式。Open Responsesはproviderを越えてrequest、output item、streaming event、tool callを表現する共通model API。OpenEnvは<code>reset</code>、<code>step</code>、<code>state</code>を備えるcontainer化されたRL・評価環境。OpenSandboxはcoding／GUI Agent、評価、code実行、RL trainingを隔離するlifecycle・execution APIとDocker／Kubernetes runtimeを提供する。</p><p>これは単なるproject数の増加ではない。Skillに含まれるcodeをSandboxで実行し、Open Responses経由でmodelを切り替え、OpenEnvで同じtaskを反復評価し、MCPやA2Aで外部systemと接続する、というend-to-endの構成がAAIF内で成立する。一方、仕様が同じfoundationに入っただけで相互運用が自動的に保証されるわけではない。identity、artifact署名、network policy、trace context、cost、conformance testをプロジェクト間でどう接続するかが次の課題になる。</p><p>goose v1.56.0では、失敗・取消済みdelegate subagentの再開、親session単位の同時実行上限、automatic thinking level、Boa JavaScript runtimeによるcode mode、Bedrockへ内部確認blockを空文字送信しない修正などを正式収録した。更新判断では、機能追加だけでなく、subagent再開前の外部作用確認と<code>--dangerous-include-history</code>によるshell履歴送信範囲を確認する必要がある。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>Agent Skills — NEW：</strong>能力と手順をfolder単位で配布するopen format。scriptやresourceも同梱できるため、導入時はcode review、依存関係、署名、最小権限を監視対象にする。</li><li><strong>Open Responses — NEW：</strong>OpenAI Responses APIを基にしたmulti-provider仕様。streaming、tool invocation、item lifecycleとacceptance testを追跡する。10月22日にLF Projectsの最終Technical Charterを採用した。</li><li><strong>OpenEnv — NEW：</strong>container化したRL／評価環境を共通interfaceで利用するframework。正式最新版v0.10.0が10月22日に公開された。</li><li><strong>OpenSandbox — NEW：</strong>多言語SDK、sandbox protocol、Docker／Kubernetes runtimeを提供。正式最新版は1.1.1。filesystem identity、egress、snapshot、resource limitを重点監視する。</li><li><strong>goose — HIGH：</strong>v1.56.0を正式公開。release後のmainではcustom system promptのtemplate errorを一般promptへ黙ってfallbackせず利用者へ返す変更、Claudeへsummarized thinkingを要求する変更、caller指定session IDの検証と重複拒否も入った。</li><li><strong>agentgateway — MEDIUM：</strong>設定したpublic Authorization Server URLをMCP metadataのissuer／endpointへ反映。Bedrockの引数なしTool callを空文字でなく有効なJSON <code>{}</code>へ変換し、空のTool一覧はBedrockへ送らない。いずれもmain上で、stableはv1.6.0。</li><li><strong>Agent Router — MEDIUM：</strong>MCP session暗号化seedをprocess引数ではなくSecret由来のfilter configへ渡すよう変更し、旧seedをfallbackとして使うrotation経路を追加。stableはv1.2.0。</li><li><strong>MCP：</strong>maintainerのGitHub handleと所属情報を更新。仕様、SEP Final、releaseの変更ではない。</li><li><strong>A2A／AGENTS.md：</strong>前回以降の新しいprotocol／format変更、正式releaseなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認できた事実：</strong>AAIFの正式発表により4プロジェクトが加入し、傘下は10になった。Agent SkillsとOpen ResponsesはImpact、OpenEnvはGrowth、OpenSandboxはSandboxとしてproposalが提出され、いずれもTechnical Committee承認を示す記録がある。加えてAAIFは会員数が305組織に達し、直近四半期にGold 7、Silver 33、Associate 18の計58組織が加わったと発表した。</p><p><strong>分析：</strong>model API、skill packaging、training environment、runtime isolationを個別に標準化しても、安全性は境界の組合せで決まる。今後のgovernanceでは、各projectのcharterだけでなく、SkillからSandboxを起動する権限、OpenEnv trajectoryのprovenance、Open ResponsesとGateway間のerror／usage semanticsなど、project横断の責任分界が重要になる。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>第一は<strong>agentic stackの部品化</strong>である。能力、model interface、evaluation environment、sandboxを交換可能な契約へ分けることで、特定vendorのAgent runtimeだけに依存しない構成を目指している。</p><p>第二は<strong>実行可能artifactを信頼境界として扱う</strong>流れである。Skillは説明文だけでなくscriptやresourceを含み、OpenEnvとOpenSandboxはcontainerや実行APIを扱う。repositoryの知名度だけで信頼せず、digest、SBOM、署名、egress、secret mount、resource quota、監査logまで含めて採用判断する必要がある。</p><p>第三は<strong>stateとidentityの可搬性</strong>である。Open Responsesのitem、gooseのcaller指定session ID、MCP session、A2A taskを連携できれば追跡性が上がる一方、外部IDの衝突、tenant越境、再生、二重実行を防ぐnamespaceとbindingが不可欠になる。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>新規4プロジェクトを監視台帳へ追加し、repository、正式release、charter、security advisory、conformance testを別々に記録する。</li><li>Agent Skillsは未知のscriptを含む前提で、取得元、commit SHA、署名、依存関係を固定し、read-only filesystemとnetwork denyで試験する。</li><li>Open Responsesは同じTool callを複数providerで再生し、stream event順序、引数JSON、usage、error、cancelの差をgolden test化する。</li><li>OpenEnvとOpenSandboxではcontainer image digest、CPU／memory／時間上限、egress allowlist、secret非注入、cleanup完了をrelease gateにする。</li><li>goose v1.56.0は失敗したsubagentの再開前に、ticket作成、deploy、支払等の外部作用が完了・未実行・不明のどれか確認する。</li><li><code>GOOSE_MAX_CONCURRENT_SUBAGENTS</code>を2、5、10で比較し、LLM rate limit、CPU、memory、完了時間、失敗率を計測する。</li><li>MCP metadataはinternal host名ではなく設定済みpublic issuerを返すこと、Bedrockの引数なしToolが<code>{}</code>として到達することをE2Eで確認する。</li><li>Agent Routerのcontroller／extprocのprocess list、pod spec、logにsession encryption seedが露出せず、旧seedで作成したsessionがrotation中だけ再開できることを確認する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Agent Skills、Open Responses、OpenEnv、OpenSandboxのrepository移管、charter、maintainer、release署名、security policy。</li><li>4プロジェクトとMCP／A2A／Gateway群を結ぶ公式integrationおよびconformance suite。</li><li>goose v1.56.0のbreaking／behavior changeと、release後main修正を含む次期patch。</li><li>Open Responsesのdated specification releaseとprovider実装間のevent互換性。</li><li>OpenEnv v0.10.0とOpenSandbox 1.1.1のcontainer isolation、egress、snapshot、multi-tenant境界。</li><li>agentgatewayのMCP Authorization Server metadata修正とBedrock Tool修正のv1.7.0収録。</li><li>Agent Routerのsession seed Secret化を含む次期releaseとrotation手順。</li><li>MCP、A2A、AGENTS.md、AAIF TC／WGの新しい正式artifact。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "Linux Foundation — AAIF announces Agent Skills, Open Responses, OpenEnv, and OpenSandbox",
+        "https://www.linuxfoundation.org/press/agentic-ai-foundation-announces-four-new-projects-agent-skills-open-responses-openenv-and-opensandbox"
+      ],
+      [
+        "Linux Foundation — AAIF surpasses 300 members",
+        "https://www.linuxfoundation.org/press/agentic-ai-foundation-surpasses-300-members-in-less-than-one-year"
+      ],
+      [
+        "AAIF Project Proposal — Agent Skills",
+        "https://github.com/aaif/project-proposals/issues/47"
+      ],
+      [
+        "AAIF Project Proposal — Open Responses",
+        "https://github.com/aaif/project-proposals/issues/41"
+      ],
+      [
+        "AAIF Project Proposal — OpenEnv",
+        "https://github.com/aaif/project-proposals/issues/50"
+      ],
+      [
+        "AAIF Project Proposal — OpenSandbox",
+        "https://github.com/aaif/project-proposals/issues/26"
+      ],
+      [
+        "Agent Skills specification repository",
+        "https://github.com/agentskills/agentskills"
+      ],
+      [
+        "Open Responses specification repository",
+        "https://github.com/openresponses/openresponses"
+      ],
+      [
+        "Open Responses — Adopt final LF Projects technical charter",
+        "https://github.com/openresponses/openresponses/commit/8907bc3b7c4300ff5c21fd647cfde9929243afa1"
+      ],
+      [
+        "OpenEnv v0.10.0",
+        "https://github.com/openenv/OpenEnv/releases/tag/v0.10.0"
+      ],
+      [
+        "OpenSandbox 1.1.1",
+        "https://github.com/opensandbox-group/OpenSandbox/releases/tag/release-1.1.1"
+      ],
+      [
+        "goose v1.56.0",
+        "https://github.com/aaif-goose/goose/releases/tag/v1.56.0"
+      ],
+      [
+        "goose — Surface custom system prompt render errors",
+        "https://github.com/aaif-goose/goose/commit/c3bfc5f7b0e230180ba3164ec1ee84fd951eaf0d"
+      ],
+      [
+        "goose — Request summarized thinking from Claude",
+        "https://github.com/aaif-goose/goose/commit/e970eea8ac23067eb5f3bbad767e51cfaf917a91"
+      ],
+      [
+        "goose — Allow validated caller-supplied session IDs",
+        "https://github.com/aaif-goose/goose/commit/3effaa5f15a641017ee8a4d8009b1bdd27e49c62"
+      ],
+      [
+        "agentgateway — Honor configured Authorization Server URL in MCP metadata",
+        "https://github.com/agentgateway/agentgateway/commit/eec642991defbcd76a1c6c06d89f0448268f677e"
+      ],
+      [
+        "agentgateway — Fix empty Bedrock tool arguments",
+        "https://github.com/agentgateway/agentgateway/commit/6f68f92f80fb20da04e16ef19464c3e03fd88f29"
+      ],
+      [
+        "Agent Router — Pass MCP session seeds through Secret-backed filter config",
+        "https://github.com/theagentrouter/agent-router/commit/6d63a4f71f56e9cc370ced2da862787d8d04f06c"
+      ],
+      [
+        "MCP — Update maintainer handle and affiliation",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/dae694f61a31f7a3ec2af3aff709e11f70f61e48"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AGENTS.md commits",
+        "https://github.com/agentsmd/agents.md/commits/main"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-23",
     "level": "HIGH",
     "tags": [
