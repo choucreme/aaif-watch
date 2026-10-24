@@ -1,6 +1,113 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-25",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "Operations",
+      "MCP"
+    ],
+    "title": "gooseとOpenSandbox、外部実行をfail-closed化",
+    "summary": "policy取得失敗と非冪等retryを安全側へ倒す修正が進んだ。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>今日の共通テーマは、外部から取得するpolicyと外部作用を伴うretryを「安全だと確認できない限り進めない」ことである。</strong>gooseは拡張機能allowlistをHTTPSでのみ取得し、redirect先も同じ条件で再検査するよう変更した。policyが取得・解析できない場合は拡張機能のinstallを停止し、設定済みallowlistが空ならdeny-allとして扱う。</p><p>OpenSandboxではGo SDKのretry規則をmethod別に変更した。GET等の冪等methodは一時的な429／502／503／504を再試行する一方、sandbox作成、command実行、file更新などを含み得るPOST／PATCHは、requestが送信前だったと証明できる接続・TLS失敗だけを既定のretry対象にする。<strong>Agentが判断を誤る前に、runtimeとSDKが危険な曖昧性を閉じる方向が明確になった。</strong></p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p>gooseの<code>GOOSE_ALLOWLIST</code>は、初期URLだけでなく最大10回のredirect先もHTTPSか検証し、全体を30秒でtimeoutする。HTTPへのdowngrade、壊れたURL、証明書・network error、HTTP error、形式不正を検知するとpolicyを利用不能としてinstallをblockする。従来、未設定と空listの区別が曖昧だったが、未設定はpolicyなし、空の<code>extensions: []</code>は明示的deny-allとなった。この変更はv1.56.0公開後のmainにあり、正式releaseには未収録である。</p><p>OpenSandboxのGo SDKは、非冪等writeのstatus-code retryをopt-inへ変更した。例外は<code>OpenSandbox-Wake: expired</code>付き503で、serverがrequestをsandboxへ転送していないことを示すためmethodを問わず安全に再送できる。SSE接続のbootstrapは部分実行やcommand送信済みの可能性があるためgeneric retryを使わない。これは「通信失敗」と「未実行」を同義にしない実装であり、deployや復旧操作を扱うAgentic Opsに直接関係する。</p><p>AAIFは初のAnnual Technical Excellence Awards受賞者も発表した。特にOpen Agentic AI Innovation Awardでは、MCP serverごとにAgentへ渡すtoolをscopeするSRE向けharness <strong>AURA</strong>、実行証跡を残すAgenTrust、AGENTS.mdとMCPを実案件へ組み込むVstormが選ばれた。標準化だけでなく、productionでの最小権限と監査可能性を評価軸に置いた点が重要である。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>goose — HIGH：</strong>allowlist URLをHTTPS限定にし、redirect、timeout、HTTP／network error、YAML構造を検証。policy取得失敗時はinstallをblockし、空allowlistをdeny-allとして扱う。GDKはv0.1.0-alpha.13を公開したが、goose本体の正式最新版はv1.56.0。</li><li><strong>OpenSandbox — HIGH：</strong>Go SDKでPOST／PATCHのstatus retryを既定無効化。Go／Kotlin SDKはcommandの<code>execution_complete.exit_code</code>を保持し、Python SDKはstream先頭のUTF-8 BOMで最初のSSE eventを失わないよう修正した。code interpreterは429等の構造化errorと<code>Retry-After</code>を保持する。</li><li><strong>OpenSandbox runtime — MEDIUM：</strong>Docker snapshotから復元する際にsystem labelを新sandboxへ継承せず、image labelを利用者指定metadataとして返さないよう修正。PTY takeover時は出力write中でも専用close codeを送る。stableは1.1.1、pre-releaseは1.2.0-rc.2で、今回のmain修正はその後の変更。</li><li><strong>AAIF project proposal：</strong>kernel-enforced sandbox、credential proxy、policy、監査log、Sigstoreによるinstruction検証を提供する<code>nono</code> proposal #61に更新があった。Sandbox stage希望だが、TC承認・GB投票・加入決定を示すlabelはまだ確認できないため、現時点ではAAIF傘下projectとして扱わない。</li><li><strong>MCP／A2A／AGENTS.md：</strong>前回以降の新しい仕様・正式release・重要commitなし。</li><li><strong>agentgateway／Agent Router：</strong>前回記事で扱ったMCP metadata、Bedrock Tool、session seed Secret化以降の新しい重要差分なし。</li><li><strong>Agent Skills／Open Responses／OpenEnv：</strong>前回記事以降の重要commit・正式releaseなし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認できた事実：</strong>AAIF初のTechnical Excellence Awardsは、Governing BoardとTechnical Advisory Council、communityからなるvolunteer Selection Committeeが3部門を審査し、foundationが最高位のKeystone Awardを授与した。MCPの認可・Python SDK、MCP Meetup Tokyo、agentgatewayの普及、SRE harness、実行証跡など、仕様作成と現場実装の双方が評価された。</p><p><code>nono</code>はAAIF project proposalとして公開されているが、提案は加入決定ではない。proposal本文はApache-2.0、maintainer council、NEP、private disclosure、Sigstore attestation、外部security audit予定を示す一方、TC／GBによる正式承認は未確認である。</p><p><strong>分析：</strong>既存OpenSandboxがcontainer／Kubernetes単位の隔離を担うのに対し、nonoはhost上のAgent processへfilesystem、network、command、credential policyを適用する提案である。両者は競合だけでなく、local developer Agentとserver-side sandboxという異なるdeployment境界を補完する可能性がある。採択判断では、OSごとのenforcement差、fail-open経路、policy bypass、credential proxy、監査証跡を比較する必要がある。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>第一は<strong>fail-closed policy distribution</strong>である。中央policyは便利だが、取得失敗を「制限なし」と解釈するとcontrol plane障害がそのまま権限拡大になる。未設定、空policy、取得失敗、形式不正を別状態として扱う必要がある。</p><p>第二は<strong>effect-aware retry</strong>である。HTTP statusだけでretryを決めず、methodの冪等性、request送信前か、serverがbackendへforwardしたか、streamが部分配信済みかを判定材料にする。AAIFが前に示した<code>external_effect=unknown</code>のfailure modelと整合する。</p><p>第三は<strong>structured execution result</strong>である。exit code、rate-limit code、Retry-After、request ID、WebSocket close reasonをSDK間で保持すれば、Agentは曖昧な文字列から推測せず、retry、停止、承認要求を決められる。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>gooseのallowlist serverを停止、証明書期限切れ、HTTP redirect、redirect loop、不正YAML、空listの各状態にし、拡張機能installが安全側へ停止することを確認する。</li><li>policy取得元はHTTPSだけでなく、管理下domain、固定path、署名またはdigestも検証する。今回の変更だけでは接続先の組織的信頼やcontent改ざんを完全には保証しない。</li><li>OpenSandboxで同じPOSTを503後に再実行し、sandbox、session、command、file mutationが二重作成されないことを確認する。</li><li>write retryを有効にする場合はidempotency key、operation ID、事後状態照会を必須にし、単なるHTTP methodだけで安全性を判断しない。</li><li>Alert triageからticket作成や復旧commandへ進むworkflowでは、<code>request_sent</code>、<code>external_effect</code>、<code>retryable</code>、<code>retry_after</code>、<code>exit_code</code>をtraceへ保存する。</li><li>snapshot復元後にsystem label、tenant metadata、credential、network policyが前sandboxから残らないことをnegative testに加える。</li><li>SDK言語別に同一commandを失敗させ、Go、Kotlin、Pythonでexit code・structured error・stream eventが一致するかconformance testを行う。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>goose allowlist hardeningを収録するv1.56.xまたはv1.57.0と、URL host／IP、response size、署名検証の追加。</li><li>OpenSandbox 1.2.0正式版と、今回のretry・exit code・snapshot修正が収録されるrelease。</li><li>OpenSandbox各SDKでの非冪等retry規則とidempotency keyの標準化。</li><li>nono proposal #61のTC review、lifecycle label、contribution agreement、公開security audit。</li><li>OpenSandboxとnonoの責任分界、共通policy・audit format・Sigstore連携。</li><li>AAIF Awardsで評価されたAURA／AgenTrustの運用patternがWorking Groupやconformance資料へ発展するか。</li><li>MCP、A2A、AGENTS.md、Agent Skills、Open Responses、OpenEnv、agentgateway、Agent Routerの次の正式artifact。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "goose — Require HTTPS and validate allowlist redirects; fail closed on policy errors",
+        "https://github.com/aaif-goose/goose/commit/0276d567aa00d426161c51e9c0f52baabe5958ea"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "OpenSandbox — Stop retrying non-idempotent writes by default",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/d0ee083a4e416db4cfa6932cbfebd6e3e3e3e74d"
+      ],
+      [
+        "OpenSandbox — Surface execution_complete exit code in Go and Kotlin SDKs",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/c11b81b414e1d8619992b02da0b55ae023f5d4fd"
+      ],
+      [
+        "OpenSandbox — Preserve first SSE event after UTF-8 BOM",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/3fb3d7fe55b4dcf1e89126cbe0eb86c433a706e2"
+      ],
+      [
+        "OpenSandbox — Preserve structured code interpreter errors",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/1d03d6fbbbc89e47482e12b1de82e8dd6a51a7d7"
+      ],
+      [
+        "OpenSandbox — Do not inherit system labels from snapshot images",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/830425a4abdacfdd313c85b1938c01a9226dfc07"
+      ],
+      [
+        "OpenSandbox — Send PTY takeover close frame during output writes",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/9b94059a4fb2c123e6a81f4e9fd8b53c5378bef4"
+      ],
+      [
+        "OpenSandbox releases",
+        "https://github.com/opensandbox-group/OpenSandbox/releases"
+      ],
+      [
+        "AAIF — First Annual Technical Excellence Awards winners",
+        "https://aaif.io/blog/winners-of-the-first-aaif-annual-technical-excellence-awards"
+      ],
+      [
+        "AAIF Project Proposal — nono",
+        "https://github.com/aaif/project-proposals/issues/61"
+      ],
+      [
+        "nono repository",
+        "https://github.com/nolabs-ai/nono"
+      ],
+      [
+        "nono releases",
+        "https://github.com/nolabs-ai/nono/releases"
+      ],
+      [
+        "MCP releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AGENTS.md commits",
+        "https://github.com/agentsmd/agents.md/commits/main"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-24",
     "level": "HIGH",
     "tags": [
