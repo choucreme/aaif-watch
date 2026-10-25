@@ -1,6 +1,112 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-26",
+    "level": "MEDIUM",
+    "tags": [
+      "Operations",
+      "Security"
+    ],
+    "title": "OpenEnvの運営拡大、通信・隔離境界を修正",
+    "summary": "TC参加と、企業CA・CONNECT・DNS・隔離sessionの運用修正が進んだ。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>今日の差分は、Agent基盤が「接続できる」段階から、企業networkと長時間運用の例外を正しく扱う段階へ進んでいることを示す。</strong>gooseはVoice用WebSocketを通常のHTTP clientと同じTLS設定へ統合し、OSのtrust storeや構成済みcustom CAを利用できるようにした。agentgatewayはHTTP/2のCONNECT先を<code>:authority</code>から保持し、tunnel再入場後も要求されたportを失わないよう修正した。</p><p>OpenSandboxでは、DNS over TCPのforward、client切断後もisolated sessionを維持する実行model、同時Docker lifecycle操作の404／409への整理、metadata・resource名の末尾空白拒否など、productionで起きる境界条件がまとめて補強された。<strong>いずれも新機能の追加より、control planeとdata planeの間で意味を失わないことに重点がある。</strong></p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>OpenEnvのgovernance文書が更新され、BenchFlowがTechnical Committee参加組織として、PostTrain Arenaがcommunity initiativeとして追加された。</strong>これはOpenEnvを環境記述のinterfaceだけでなく、環境を使ったpost-trainingと評価のecosystemへ接続する動きである。確認できたのはgovernance文書への追加であり、AAIF全体のTC構成変更や新project加入を意味するものではない。</p><p>gooseのVoice WebSocketは、従来の個別WebSocket TLS stackから<code>reqwest</code>系clientへ寄せられた。provider APIで使うsystem trust、custom CA、client certificate設定をVoice接続にも適用し、未信頼証明書は拒否しつつ、明示的に構成したCAと正しいhostnameは受け入れるtestが追加された。企業proxyやprivate PKI下でVoiceだけ接続失敗する差を縮める変更だが、main上のcommitであり正式release収録は未確認である。</p><p>agentgatewayではSubstrate ingressのCONNECT targetをheaderの<code>Host</code>から推測せず、元のURI authorityとしてconnectionに保持する。HTTP/2ではCONNECT先が<code>:authority</code>に入り、従来は<code>application.example:9090</code>がport 80へ誤配送され得た。HTTP/1でHostが食い違う場合とHTTP/2の双方に回帰testが追加されている。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>OpenEnv — MEDIUM：</strong>BenchFlowをTechnical Committeeへ、PostTrain Arenaをcommunity initiativeへ追加。protocol実装と、環境を使ったtraining／held-out評価の接点がgovernance上に明示された。</li><li><strong>goose — MEDIUM：</strong>Voice WebSocketがsystem trustとprovider TLS設定を利用。custom CA、hostname検証、未信頼証明書拒否をtest。正式最新版v1.56.0より後のmain変更。</li><li><strong>agentgateway — MEDIUM：</strong>Substrate ingressでCONNECT authorityをtunnel再入場まで保持し、HTTP/2やHost不一致時のport誤配送を修正。</li><li><strong>OpenSandbox — MEDIUM：</strong>clientがTCPで送ったDNS queryをupstreamにもTCPでforward。isolated sessionではforeground runがcancel／disconnectされてもsessionを残し、後続runを可能にした。Docker同時操作は「対象消失」を404、「別操作中」を409へmapする。</li><li><strong>OpenSandbox — Security：</strong>JavaScript SDKはAPI key headerの大文字小文字にかかわらず利用者の明示値を優先。label、volume、PVC名はregexの部分一致ではなく全文一致とし、末尾改行・空白を拒否した。Fast Sandbox egressはOSEP-0023に沿いsubject再bind中のpolicy／credential vault遷移を収束させる大規模修正を取り込んだ。</li><li><strong>MCP／A2A／AGENTS.md／Agent Skills／Open Responses／Agent Router：</strong>前回以降、新しい重要commit、正式release、仕様変更は確認できなかった。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認できた事実：</strong>OpenEnvの<code>GOVERNANCE.md</code>は、BenchFlowをTCの参加組織一覧へ追加し、PostTrain ArenaをOpenEnv ecosystemのcommunity initiativeとして列挙した。AAIFのproject proposal repositoryとWorking Group proposal repositoryには、前回以降の新しいcommitは確認できず、新規加入・卒業project、Working Group採択、AAIF仕様変更も確認できなかった。</p><p><strong>分析：</strong>環境protocolのgovernanceにtraining／evaluation運営者が入ることで、API互換性だけでなく、taskの再現性、verifierの信頼性、held-out評価、compute quota、artifact provenanceが標準化議題になりやすい。PoCでは「OpenEnv互換」を接続成功だけで判定せず、同じtask snapshotとseedでscore・artifact・失敗分類が再現するかを見るべきである。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>第一は<strong>transport semanticsの保存</strong>である。CONNECTのauthority、DNSのUDP／TCP選択、WebSocketのtrust設定は、protocol層を跨ぐと失われやすい。Agent gatewayやsandboxは内部変換のたびにこれらを明示的なcontextとして保持する必要がある。</p><p>第二は<strong>sessionとrunの分離</strong>である。OpenSandboxはforeground runのcancelやclient切断をisolated session終了と同一視しなくなった。長時間Agentでは、network断をworkload停止へ直結させず、session lease、run ID、再接続、明示closeを別々に管理する方向が重要になる。</p><p>第三は<strong>入力境界の全文検証</strong>である。metadataやresource名をregexの先頭一致だけで受理すると、改行や余分なsuffixが後段のKubernetes名、監査log、policy照合で別の意味を持ち得る。正規化前後の値と、明示headerの優先順位まで含めたnegative testが必要である。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li>企業CAを導入した環境で、gooseの通常API、MCP、Voice WebSocketが同じtrust policyを使うか確認する。未信頼CA、誤hostname、期限切れ、mTLS client certificateを分けてtestする。</li><li>agentgatewayでHTTP/1 CONNECT、HTTP/2 CONNECT、Hostとauthority不一致、非標準portを通し、宛先portとpolicy判定が一致するかtraceする。</li><li>DNS responseを512 byte超やDNSSEC付きにし、UDP truncation後のTCP、clientが最初からTCPを使う場合、egress deny時の挙動を確認する。</li><li>isolated session実行中にSDK processをkill、networkを切断、cancelを送信し、sessionが残るか、次のrunを受け付けるか、孤立sessionがlease／TTLで回収されるかを測る。</li><li>Docker create／start／stop／deleteを並行実行し、404と409をretry可能性の異なるstructured errorとしてAgentへ渡す。409はbackoff後に状態再取得、404はdesired stateと照合して停止する。</li><li>API key headerをcase違いで二重指定しない。明示値、環境fallback、metrics／diagnostic clientの全経路で同一credentialが選ばれるか監査logで確認する。</li><li>OpenEnv taskのPoCではtask snapshot、model、seed、verifier version、training artifact digestを保存し、PostTrain Arena型評価を再実行可能にする。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>gooseのsystem trust／custom CA修正を含む次回正式releaseと、Voice以外のWebSocket経路とのconformance。</li><li>agentgatewayのCONNECT authority修正が含まれるrelease、HTTP/3 CONNECTやextended CONNECTへの適用。</li><li>OpenSandbox 1.2.0正式版と、DNS TCP、isolated session keepalive、Docker conflict、Fast Sandbox subject遷移の収録状況。</li><li>isolated sessionのdisconnect後TTL、quota、課金、強制回収、observability指標。</li><li>OSEP-0023の実装収束後に公開されるsecurity review、credential vaultのfencing、rebind中の503契約。</li><li>OpenEnv TCでBenchFlowが担う範囲と、PostTrain Arenaのtask／verifier provenance・held-out評価規則。</li><li>AAIF Technical Committee、Working Groups、project proposals、新規加入・卒業projectの次の一次情報。</li><li>MCP、A2A、AGENTS.md、Agent Router、Agent Skills、Open Responsesの次の正式artifact。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "OpenEnv — Add BenchFlow to Technical Committee and PostTrain Arena to community initiatives",
+        "https://github.com/openenv/OpenEnv/commit/9b2c0bea348d0d0844e8ebef485a9f6ec3bce8b0"
+      ],
+      [
+        "goose — Use system trust for Voice WebSockets",
+        "https://github.com/aaif-goose/goose/commit/e45707d29730e7d8e90b318b3d1bf67520e70a97"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "agentgateway — Preserve CONNECT authority for Substrate ingress",
+        "https://github.com/agentgateway/agentgateway/commit/cfa8d1b84996b0c4e3ce204a81a86bd64f257921"
+      ],
+      [
+        "OpenSandbox — Forward DNS over TCP",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/98733555f51529a836d4b2c0761c4812044764b7"
+      ],
+      [
+        "OpenSandbox — Keep isolated session alive after run cancellation or disconnect",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/707e2b639f4d946d28399e27ece3012cc0d7bcef"
+      ],
+      [
+        "OpenSandbox — Map concurrent Docker lifecycle conflicts to 404/409",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/19c33747cc564281976aa965ad4a92a5b95c212f"
+      ],
+      [
+        "OpenSandbox — Converge Fast Sandbox subject transitions for OSEP-0023",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/a224ca1c028e003ca2cb53c542713f038cd52c26"
+      ],
+      [
+        "OpenSandbox — Honor JavaScript API key headers regardless of casing",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/1b25b8334a0826f9ad3ef9437cd56b58d31b65bf"
+      ],
+      [
+        "OpenSandbox — Reject trailing newlines in labels and resource names",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/563da4b75918f14f207626be8612dff4d119bcad"
+      ],
+      [
+        "OpenSandbox releases",
+        "https://github.com/opensandbox-group/OpenSandbox/releases"
+      ],
+      [
+        "AAIF project proposals",
+        "https://github.com/aaif/project-proposals"
+      ],
+      [
+        "AAIF working group proposals",
+        "https://github.com/aaif/working-group-proposals"
+      ],
+      [
+        "MCP releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AGENTS.md commits",
+        "https://github.com/agentsmd/agents.md/commits/main"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-25",
     "level": "HIGH",
     "tags": [
