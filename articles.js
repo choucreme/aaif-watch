@@ -1,6 +1,154 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-29",
+    "level": "HIGH",
+    "tags": [
+      "MCP",
+      "Operations",
+      "Security",
+      "A2A"
+    ],
+    "title": "MCP周期確定、証跡・鍵レス運用が前進",
+    "summary": "仕様リリース、検証可能な証跡、短期資格情報、隔離実行の境界が具体化した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>前回公開記事（10月26日）以降、MCPは仕様公開を3月・9月の年2回へ固定するプロセスをAcceptedにしました。AAIFのSecurity &amp; Privacy WGでは、Agentの行為・判断・承認・結果を第三者が検証できる証拠にする「Attestation &amp; Evidence WG」が90日間のpilot候補として議論されています。実装側ではAgent RouterのWorkload Identity Federation、OpenSandboxのatomic upload、OpenEnvのEnvironment Services RFCがmainへ入りました。</p><p><strong>分析：</strong>今回の共通項は、Agentの能力追加ではなく、<em>いつ仕様が固まるか、誰が何を実行したか、どのidentityで外部APIを呼んだか、失敗時に状態を壊さないか</em>を制御可能にすることです。production導入ではmodel精度と同じ重さで、release calendar、証跡、短期credential、atomicityを設計対象にする必要があります。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>MCPは3月・9月の予測可能なrelease cadenceへ</h3><p><strong>確認済み事実：</strong>AcceptedとなったSEP-3398は、原則として毎年3月・9月の最終火曜日に仕様を公開します。各cycleは8か月で、計画開始、Core Maintainer review、soft freeze、Tier 1 SDK beta、hard freezeを明示します。未完成のSEPはrelease日を遅らせず次cycleへ送られ、2026年12月予定だった次回releaseは2027年3月へ移ります。</p><p><strong>なぜ重要か：</strong>仕様、SDK、gateway、clientの更新時期を一つのcalendarで計画できます。企業側はsoft freeze後に互換性試験を始め、SDK betaでstagingを回し、hard freeze後にproduction rollout判定を行うrelease trainを組めます。</p><h3>検証可能なAgent証跡がcross-WG課題へ</h3><p><strong>確認済み事実：</strong>10月27日のSecurity &amp; Privacy WG議事録では、Attestation &amp; Evidence WGを90日間のpilotとして進める案が共有されました。提案は、Agentのaction、decision、authorization、outcomeについて、後から第三者が検証できるportable evidence bundle、witness・root of trust、multi-party attestationを扱います。正式なWG採択ではなくproposal段階です。</p><p><strong>分析：</strong>OpenTelemetry traceは「観測した内容」を残せますが、それだけで改ざん耐性や当事者間の一致を証明するわけではありません。今後はtrace IDに加えて、署名、policy revision、approval、外部作用、evidence completenessを結び付ける設計が必要になります。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP — HIGH：</strong>SEP-3398でrelease周期をAccepted。旧protocol versionでは<code>initialize</code>中の<code>capabilities.extensions</code>を使う既存実装があることも文書化され、相手がextensionを広告しない場合はgraceful degradationするよう整理されました。Tasks対応表などの文書更新はありますが、新しい正式spec releaseはありません。</li><li><strong>Agent Router — HIGH：</strong><code>OpenAICredentials</code>とWorkload Identity Federationを追加。controllerがSPIFFE JWT-SVIDまたはOIDC subject tokenをOpenAIの短期access tokenへ交換し、期限前にrotationします。policyから任意のtoken URLを指定できず、subject token送信先を固定している点も重要です。これはmain上の変更で、安定版への収録は未確認です。</li><li><strong>OpenSandbox — HIGH：</strong>既存fileのuploadをstaging file経由のatomic replaceへ変更。書込み失敗時に旧fileを保持し、staging fileを<code>0600</code>で作成して通常・隔離directory listingから隠します。Go SDKのcode interpreter断片結合や、ublk wedgeのself-healも進みました。main上の変更で正式release収録は未確認です。</li><li><strong>OpenEnv — MEDIUM：</strong>RFC 014「Environment Services」をdesign-onlyで採択。episodeと外部provider jobの連携、checkpoint scoring、network policy、cancel、secret・score transportを扱います。加えてLinux Foundation Projects向けtechnical charterがrepositoryへ追加されました。RFCは実装完了を意味しません。</li><li><strong>goose — MEDIUM：</strong>source versionは1.57.0へbumpされましたが、GitHub Releasesで確認できる正式最新版はv1.56.0です。Bedrockでdocument block非対応modelをdefault inferenceへfallbackする修正、process内のAgent／AgentManagerを一つのStateMachineServicesへ統合する変更、zstdのRUSTSEC対応がmainへ入りました。</li><li><strong>agentgateway — MEDIUM：</strong>Gemini 4／Gemma 4では<code>thinkingBudget</code>ではなくmodel familyに応じた<code>thinkingLevel</code>を送るよう修正。MCP Appsの<code>ui://</code> URI delimiterをclient互換性に合わせて設定可能にしました。go-jose v4.1.6へ更新し、JWK parsing時のRSA modulusを既定4096 bitへ制限するsecurity fixも取り込んでいます。release pageで確認できるstableはv1.6.0です。</li><li><strong>A2A：</strong>LF Projects antitrust policy追加のみで、protocol仕様・正式releaseの差分はありません。</li><li><strong>AGENTS.md／Agent Skills／Open Responses：</strong>前回以降の新規commit・releaseは確認されませんでした。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>AAIF Technical Committee、project加入・卒業、既存10projectのlifecycle変更に新しい確定決定はありません。一方、Security &amp; Privacy WG議事録は、現在のWG構成を10projectとのfeedback loopが働く形へ再編する案、Attestation &amp; Evidenceをcross-cutting workstreamまたはWGとして扱う案を記録しています。Observability &amp; Traceability WGの月次報告は、coding agent間でOpenTelemetry span構造、session ID、usage attribute、approval記録が不統一なため、gooseの現行telemetryをreference baselineにしてgapを実証する方針を示しました。</p><p>新規proposalとして、MCP tool descriptionのprompt injectionをcanonical schemaとstatic predicateで検査する<strong>ToolSurface</strong>、YAMLからAgent applianceを構築する<strong>kdeps</strong>が提出されています。また、Attestation &amp; Evidence WG proposalも公開されています。いずれも審査中で、AAIF傘下への正式加入・WG設置は未決定です。</p><p>AAIF公式ブログは、MCPをtool interface、microVMをexecution boundaryとして分離する構成を解説しました。別記事では、採用領域のOpen Job Context Protocol（OJCP）が6つのMCP tool、<code>/.well-known/ojcp.json</code>、HTTP Message Signatures、candidate consentを組み合わせる案を紹介しています。これらは参考実装・提案であり、MCP coreやAAIF community specificationとして採択済みとは確認していません。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<ol><li><strong>calendar-driven interoperability：</strong>仕様releaseを固定し、SDK betaとfreezeを明示することで、protocol・SDK・gatewayの互換性試験を同期する。</li><li><strong>workload identityから短期tokenへ：</strong>静的API keyを配らず、SPIFFE／OIDCのsubject tokenをscopeされた短期credentialへ交換し、rotationと監査をcontrol planeが担う。</li><li><strong>traceからevidenceへ：</strong>spanの記録だけでなく、誰の観測か、どのpolicy・approvalに基づくか、外部作用が確定したか、後から検証可能かを証拠bundleにする。</li><li><strong>failure atomicity：</strong>upload、sandbox command、ticket作成などの外部作用を、途中失敗しても旧状態を維持できる操作と、事後照会・冪等keyが必要な操作へ分ける。</li><li><strong>interfaceとenforcementの分離：</strong>MCPはtool invocationを標準化しても、CPU・memory・network・filesystem・credential境界はsandboxとpolicy engineが別途強制する。</li></ol><p><strong>分析：</strong>AAIF stackはprotocolの接続性だけでなく、identity、release engineering、sandbox、evidenceを横断する方向へ進んでいます。単一OSSの機能比較より、これらの境界で意味が失われないかをE2Eで検証することが重要です。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>次のPoC項目をrelease gateへ追加できます。</p><ul><li>MCPのsoft freeze後にclient／server／gateway matrixを固定し、Tier 1 SDK betaで旧version・新version・extension未対応相手のgraceful degradationを試す。</li><li>Agent RouterでSPIFFE socket unavailable、audience不一致、expired JWT、OpenAI token exchange 401、rotation失敗を再現し、policy statusとtraffic拒否を確認する。</li><li>controllerのSPIFFE IDから取得可能なOpenAI service accountを最小化し、Kubernetes RBAC・ReferenceGrant・NetworkPolicyを合わせて検証する。</li><li>OpenSandbox upload中にdisk full、process kill、symlink swapを発生させ、旧file保持、staging fileのmode、listing非表示、残骸回収を確認する。</li><li>Agent traceへ<code>agent_id</code>、<code>session_id</code>、<code>policy_revision</code>、<code>approval_id</code>、<code>external_effect</code>、<code>evidence_digest</code>を関連付ける。秘密値や個人情報は証跡へ直接保存しない。</li><li>MCP経由のcode executionでは、tool authorizationとsandbox isolationを別々にnegative testし、network deny、credential非注入、CPU／memory／wall-clock上限を確認する。</li></ul><p>特に自動復旧では、「traceがある」ことを「安全にretryできる」ことと同一視してはいけません。外部作用が不明なら状態照会へ分岐し、二重実行を防ぐ必要があります。</p>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>2027年3月MCP release calendarの具体日程、soft freeze、Tier 1 SDK beta</li><li>SEP-3398に基づく次cycle優先SEPとTasks／Events／Skills extensionの扱い</li><li>Attestation &amp; Evidence WGの90日pilot承認、charter、evidence class、conformance artifact</li><li>ToolSurface／kdeps proposalのTC review、sponsor、security・governance確認</li><li>Agent RouterのOpenAI Workload Identity Federationを収録する正式releaseとdata-plane E2E</li><li>OpenSandbox atomic uploadの正式release収録、crash残骸GC、cross-SDK挙動</li><li>OpenEnv RFC 014のprototype・security review・provider障害時のepisode semantics</li><li>goose v1.57.0の正式releaseとStateMachineServices移行後のsession互換性</li><li>agentgateway v1.7.0の正式release確認、JWK上限変更による既存keyへの影響</li><li>A2A、AGENTS.md、Agent Skills、Open Responsesの次期仕様・release</li><li>AAIFのVoice Agents Forum（11月5日）で公開されるlatency、interrupt、tool recovery、observability成果物</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP — SEP-3398 Release Cycle Updates",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/ccaf9102ec5eb656eab50ca8333ef49dcd259c26"
+      ],
+      [
+        "MCP — Legacy extension negotiation guidance",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/2ff7595300887f96c3dc28309be5e0cfcd156486"
+      ],
+      [
+        "AAIF Security & Privacy WG — 2026-10-27 meeting notes",
+        "https://github.com/aaif/wg-security-and-privacy/commit/7718f615757b989a79c4b908d9d1238231c8c3e3"
+      ],
+      [
+        "AAIF Observability & Traceability WG — September report",
+        "https://github.com/aaif/wg-observability-and-traceability/commit/c2e042ba1ff06ed750f7080504268a81c818f479"
+      ],
+      [
+        "AAIF Working Group Proposal — Attestation & Evidence WG",
+        "https://github.com/aaif/working-group-proposals/issues/6"
+      ],
+      [
+        "AAIF Project Proposal — ToolSurface",
+        "https://github.com/aaif/project-proposals/issues/64"
+      ],
+      [
+        "AAIF Project Proposal — kdeps",
+        "https://github.com/aaif/project-proposals/issues/65"
+      ],
+      [
+        "Agent Router — OpenAI Workload Identity Federation",
+        "https://github.com/theagentrouter/agent-router/commit/3b8f8393107eeab706d907b155dbfcbc70b7f596"
+      ],
+      [
+        "OpenSandbox — Atomic upload replacement",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/90bb5ad676e9e3ac07c41b9fb450976ab8c33325"
+      ],
+      [
+        "OpenSandbox — Private hidden upload staging",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/c941c435ac00ef643e3ad4e5d63f2a718df29150"
+      ],
+      [
+        "OpenEnv — RFC 014 Environment Services",
+        "https://github.com/openenv/OpenEnv/commit/aca76d95347bbbfb6017709dfa9bc666ca893489"
+      ],
+      [
+        "OpenEnv — Adopted technical charter",
+        "https://github.com/openenv/OpenEnv/commit/568fedb0f8e5accb6dbad03d962a492d4542173d"
+      ],
+      [
+        "goose — Source version 1.57.0 bump",
+        "https://github.com/aaif-goose/goose/commit/8a16788137c8af25f9d6d17ee87bbedb53ea9325"
+      ],
+      [
+        "goose — Bedrock fallback for models without document blocks",
+        "https://github.com/aaif-goose/goose/commit/ee8500d5e060eea6f2bcee92e8a5e351f12c3a70"
+      ],
+      [
+        "goose — StateMachineServices refactor",
+        "https://github.com/aaif-goose/goose/commit/3bff323e5f9666e4006d8333a99fd0d2d2b9286e"
+      ],
+      [
+        "agentgateway — Gemini 4 and Gemma 4 thinking levels",
+        "https://github.com/agentgateway/agentgateway/commit/a94094d1dd264d0310ef47193a815c57525900cc"
+      ],
+      [
+        "agentgateway — MCP ui:// delimiter interoperability",
+        "https://github.com/agentgateway/agentgateway/commit/da72b0a04938810af81b0ce52130bfe0ac1487a8"
+      ],
+      [
+        "agentgateway — go-jose v4.1.6 security update",
+        "https://github.com/agentgateway/agentgateway/commit/2d009429f32a24b12e06b0d107523c1702e0493f"
+      ],
+      [
+        "A2A — LF Projects antitrust policy",
+        "https://github.com/a2aproject/A2A/commit/89699392a324fb24ac19824041f3bbda131789ad"
+      ],
+      [
+        "AAIF Blog — Isolating agent-generated code with MCP and Microsandbox",
+        "https://aaif.io/blog/isolating-agent-generated-code-with-mcp-and-microsandbox"
+      ],
+      [
+        "AAIF Blog — Agents are applying for jobs: building an open protocol for hiring",
+        "https://aaif.io/blog/agents-are-applying-for-jobs-building-an-open-protocol-for-hiring"
+      ],
+      [
+        "AAIF Blog — Where voice agents fail in production: Part 1",
+        "https://aaif.io/blog/where-voice-agents-fail-in-production-part-1-latency-turns-and-interruptions"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "agentgateway releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "Agent Router releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "OpenSandbox releases",
+        "https://github.com/opensandbox-group/OpenSandbox/releases"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-26",
     "level": "MEDIUM",
     "tags": [
