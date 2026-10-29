@@ -1,6 +1,118 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-30",
+    "level": "HIGH",
+    "tags": [
+      "MCP",
+      "Operations",
+      "Security",
+      "A2A"
+    ],
+    "title": "MCP拡張の成熟度と運用証跡が前進",
+    "summary": "拡張の安定性区分、実行環境の所有権、上流呼び出しの可視化が具体化した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>前回レポート以降、MCPは公式拡張をExperimental、Beta、Stableの3段階で管理するSEP-3392を取り込みました。OpenEnvはv0.11.0を正式公開し、OpenSandboxは遅延した管理イベントによるresourceの再生・所有者すり替えを防ぐstrict owner fencingをmainへ追加しました。agentgatewayではclientが指定した元modelと実際のrequest／response modelを分け、MCPを含む上流HTTP callを<code>upstreamCalls</code>としてaccess logから参照できるようになりました。</p><p><strong>分析：</strong>今日の共通項は「動くか」から「どの成熟度の契約を、誰の所有物として、どの経路・modelで実行したか」へ管理対象が広がったことです。protocol extension、sandbox、gateway、agent runtimeのそれぞれに、変更可能性・所有権・実行経路・失敗状態を機械判定できる情報が揃い始めています。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>MCP拡張にproduction採用の判断軸</h3><p><strong>確認済み事実：</strong>SEP-3392ではExperimentalは予告なしに変更・廃止可能、Betaは破壊的変更を稀にして文書化、Stableは同じcore protocol revision内で挙動を固定します。拡張はExperimentalから始まり、Extensions Track SEPでBeta、2本目のSEPでStableへ進みます。BetaからStandards Track SEPを経てcoreへ昇格する経路もあります。公式repositoryでは<code>specification/experimental</code>、<code>beta</code>、<code>stable</code>のdirectoryがstageを示します。現時点の一覧ではOAuth Client Credentials、Enterprise-Managed Authorization、MCP AppsがStable、MCP TasksがBetaでcore昇格を目指すと整理されました。</p><p><strong>なぜ重要か：</strong>これまでは「公式拡張」であることと互換性保証の強さを分けて扱いにくい状態でした。今後はinventoryへextension stageとprotocol revisionを記録し、Experimentalは検証環境限定、Betaはrollback可能な段階導入、Stableはrevision固定の互換性試験というrelease gateを設定できます。</p><h3>OpenEnv v0.11.0を正式公開</h3><p><strong>確認済み事実：</strong>10月29日のv0.11.0には、TextArena環境へ<code>reset(seed=...)</code>を転送する再現性修正、Gitea資格情報をserver URLと整合させて保存する修正、SFTからGRPOまでのWordle学習例、実験的post-training environment prototypeとRFC 014、採択済みtechnical charterが含まれます。</p><p><strong>運用上の意味：</strong>評価・学習環境ではseedを渡しただけで同一episodeになるとは限りません。v0.11.0の変更は再現性と環境service化を前進させますが、provider job、checkpoint、secret、score transportを扱うRFC 014はdesign／prototype段階です。production採用ではversion、image digest、seed、dataset revision、scorer revisionを同時に固定する必要があります。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP — HIGH：</strong>SEP-3392のextension lifecycleを取り込み。拡張IDはstageが変わっても維持され、archived directoryも定義されました。新しいcore spec releaseではありません。</li><li><strong>OpenEnv — HIGH：</strong>v0.11.0を正式公開。再現性修正、環境serviceのdesign／prototype、technical charterを収録しました。</li><li><strong>OpenSandbox — HIGH：</strong>Actions API v2向けstrict owner domain validationを追加。owner mismatch、rebind、retiring／retired ownerへの操作を拒否し、owner不在でremoveされた場合もterminal fenceを残して遅延SETによるresource復活を防ぎます。host bind mount allowlistではPOSIX rootとWindows drive rootの扱いを修正し、全SDKでpartial downloadのstatus、range、total sizeを取得可能にしました。いずれもmain上の変更で正式release収録は未確認です。</li><li><strong>agentgateway — HIGH：</strong><code>llm.originalModel</code>をfirst-class化し、cost lookupをresponse model、request model、original modelの順でfallback。さらにCEL access logへ<code>upstreamCalls</code>を追加し、MCP target、token exchange等のpolicy call、送信header、status、duration、errorをfan-outごとに記録できます。参照された場合だけ収集する設計です。package registryではv1.7.0 imageを確認できますが、GitHub Releasesの正式release note反映は未確認です。</li><li><strong>goose — MEDIUM：</strong>429応答でprovider独自経路も<code>Retry-After</code>を尊重するよう統一。OpenRouterのtyped context overflowを識別し、manual compaction失敗時は元contextを保持したままerrorを返すよう修正しました。main上の変更で、確認できる直近release lineはv1.57.0です。</li><li><strong>Open Responses — MEDIUM：</strong>charterとmaintainer rosterをrepository rootへ分離。missionをmulti-providerのlanguage model call、streaming、agent workflow合成を支える共通schemaと明記しました。protocol releaseではなくgovernance整備です。</li><li><strong>A2A：</strong>partner documentation link修正のみで、protocol仕様・正式releaseの差分はありません。</li><li><strong>AGENTS.md／Agent Skills／Agent Router：</strong>前回以降、採用判断を変える新規release・merged changeは確認されませんでした。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>AAIF Technical Committeeのproject表が更新され、Agent Skills、AGENTS.md、goose、MCP、Open ResponsesをImpact Stage、Agent Router、A2A、agentgateway、OpenEnvをGrowth Stage、OpenSandboxをSandbox Stageとして一覧化しました。新規加入決定ではなく、既存projectの公式な現状整理です。</p><p>Observability &amp; Traceability WGの10月28日議事録では、agent interactionの「turn」を単一inputから一連のactionへ至る単位として定義し、stepと区別する案をOpenTelemetry GenAI SIGへ提出する方針、token usage attribution、cross-domain tracing／provenance、privacy、attestationの連携が議論されました。これはWGの作業計画で、OTel semantic conventionとして採択済みではありません。</p><p>新規project proposalとして<strong>bbot and Agent Face Protocol（AFP）</strong>が10月29日に提出されました。agentのthinking、working、waiting、error等をtransport非依存JSONで表し、MCP bindingも提案しています。現時点ではSandbox希望の審査中proposalであり、AAIF projectとして採択された事実はありません。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<ol><li><strong>成熟度をmachine-readableな契約へ：</strong>extension stageとprotocol revisionをSBOM／service catalogへ入れ、採用可能範囲をpolicyで判定する。</li><li><strong>所有者フェンシング：</strong>resource IDだけでなくowner epoch／terminal stateを永続化し、遅延eventやcontrol-plane再起動で削除済みresourceが復活しないようにする。</li><li><strong>model identityの分離：</strong>client指定model、alias／policy適用後model、response modelを別々に記録し、routing、課金、品質評価の根拠を失わない。</li><li><strong>上流callを一級telemetryへ：</strong>fan-out、token exchange、MCP target callをrequest traceの下に結び、失敗箇所と実際に送ったcredential contextを追跡する。</li><li><strong>turn semanticsの標準化：</strong>step、tool call、turn、sessionを区別してtoken、latency、approval、outcomeを同じ粒度で集計する。</li></ol><p><strong>分析：</strong>observabilityの価値はlog項目の多さではなく、client意図、policy変換、実行、外部作用、結果を同じ因果鎖で復元できることに移っています。credentialそのものを保存せず、audience、issuer、key ID、policy decision、digestなど検証に必要な最小metadataへ落とす設計が重要です。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>本日の差分をPoC／release gateへ落とす場合、次を優先できます。</p><ul><li>MCP extension inventoryにstage、extension ID、protocol revision、fallback behaviorを追加し、Experimentalをproductionで拒否するpolicyを試す。</li><li>Stable extensionでもcore昇格と同一視せず、相手がextensionを広告しない場合のgraceful degradationとrollbackを確認する。</li><li>OpenSandboxでowner Aのresourceへowner Bがrebind／removeを試みる、remove後に遅延SETを注入する、control plane再起動後にterminal fenceが残る、というnegative testを行う。</li><li>host mount allowlistは<code>/</code>を許可できても共有環境では狭いprefixを使用し、空listが全bind mountを拒否することをtestする。</li><li>agentgatewayでalias／virtual model／provider rewriteを通し、original、request、response modelとcost attributionが一致するか検証する。</li><li><code>upstreamCalls</code>でtoken exchange、cache hit、MCP fan-out、transport failureを追跡しつつ、authorization headerを平文保存しないredaction ruleを先に適用する。</li><li>gooseの429 testではdelay-secondsとHTTP-date形式、異常に長い値、context overflow、manual compaction失敗後の次prompt継続を確認する。</li><li>OpenEnvの再現性試験では同一seedを複数process・複数runで繰り返し、observation、reward、termination reasonまで比較する。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>MCP各公式extensionのstage変更、Tasksのcore昇格SEP、Stable extensionと次protocol revisionの関係</li><li>agentgateway v1.7.0のGitHub Release公開、<code>upstreamCalls</code>とoriginal modelの正式収録・upgrade note</li><li>OpenSandbox strict owner fencingの正式release収録、snapshot／state transfer対応、retired fenceの保持期間</li><li>OpenEnv RFC 014のproduction implementation、security review、provider job障害時のepisode semantics</li><li>Observability WGのturn定義PR、OpenTelemetry GenAI SIGでのreview、cross-domain provenanceとprivacy要件</li><li>bbot／AFP proposal #66のTC sponsor、multi-vendor implementation、accessibility・security review</li><li>Open Responses charterに基づくTSC構成と次期schema release</li><li>gooseのRetry-After／compaction修正を含む正式release</li><li>A2A、AGENTS.md、Agent Skills、Agent Routerの次期仕様・release</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP — SEP-3392 Extension Lifecycle",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/84d845729393f79b3fd3d392aa17cb86f5b6f95c"
+      ],
+      [
+        "OpenEnv — v0.11.0 release",
+        "https://github.com/openenv/OpenEnv/releases/tag/v0.11.0"
+      ],
+      [
+        "OpenEnv — Release 0.11.0 commit",
+        "https://github.com/openenv/OpenEnv/commit/2c6f5cee196bfac3af14e06329b007a26a5068a3"
+      ],
+      [
+        "OpenSandbox — strict legacy management and owner fencing",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/9b7ddab6d5438c251c448af4b200678eeff0c41e"
+      ],
+      [
+        "OpenSandbox — host path root allowlists",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/e680ff82a52bfbce7d2d0ba9dde45775b7e8a3cf"
+      ],
+      [
+        "OpenSandbox — SDK download response metadata",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/97031ea81fee1b853e4cd89e5490b1be9f5ead55"
+      ],
+      [
+        "agentgateway — original model as first-class concept",
+        "https://github.com/agentgateway/agentgateway/commit/1a72e4cc62b6ac3308c7541d03699e453aad2221"
+      ],
+      [
+        "agentgateway — upstreamCalls in CEL access logs",
+        "https://github.com/agentgateway/agentgateway/commit/014fd2a5208a75501d02ca0006ae55eb00ce808b"
+      ],
+      [
+        "agentgateway — package registry",
+        "https://github.com/agentgateway/agentgateway/pkgs/container/agentgateway"
+      ],
+      [
+        "goose — honor Retry-After across provider paths",
+        "https://github.com/aaif-goose/goose/commit/361003ea3263587f4241a0f906affdcc0d5c9c1f"
+      ],
+      [
+        "goose — typed OpenRouter context overflow",
+        "https://github.com/aaif-goose/goose/commit/b6c0093e9ebe26bda7adae5b0e16e826885ebc4e"
+      ],
+      [
+        "goose — preserve context on manual compaction failure",
+        "https://github.com/aaif-goose/goose/commit/c85a58d7c71033d4a0ffdb3419a9f948f1254cf9"
+      ],
+      [
+        "AAIF Technical Committee — project lifecycle table",
+        "https://github.com/aaif/technical-committee/commit/ac08e71a9073be6cf7f8c77bb0ad913893fe6d87"
+      ],
+      [
+        "AAIF Observability & Traceability WG — 2026-10-28 meeting summary",
+        "https://github.com/aaif/wg-observability-and-traceability/commit/03fe412fff46cf88f59e3d5148a02e4c9d7009dd"
+      ],
+      [
+        "AAIF Project Proposal — bbot and Agent Face Protocol",
+        "https://github.com/aaif/project-proposals/issues/66"
+      ],
+      [
+        "Open Responses — root charter and maintainer roster",
+        "https://github.com/openresponses/openresponses/commit/dce9ddb91921427c2ba06901c7dfaf0cc7056799"
+      ],
+      [
+        "A2A — documentation partner link fix",
+        "https://github.com/a2aproject/A2A/commit/d9240be42b60dbddcc7e4760d8a9b683fbcff8a6"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-29",
     "level": "HIGH",
     "tags": [
