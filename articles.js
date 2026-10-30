@@ -1,6 +1,102 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-10-31",
+    "level": "HIGH",
+    "tags": [
+      "Operations",
+      "Security",
+      "MCP",
+      "A2A"
+    ],
+    "title": "切断・変換の黙示的成功を止める",
+    "summary": "session置換、添付欠落、credential交換、snapshot不完全を明示的な失敗へ変える。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>前回レポート以降、OpenEnvはWebSocket切断後に別environmentへ自動接続してepisodeを継続したように見せる挙動を止め、<code>SessionLostError</code>を返すようにしました。agentgatewayはOpenAIのinline fileとAnthropicのbase64 documentがBedrock変換で黙って消える問題を修正しました。OpenSandboxはcredential exchangeの未知field／null markerと、image digestを欠くrootfs snapshotを失敗扱いにしました。gooseは次の推論を発生させずにcontext内訳を確認できるreportを追加しました。</p><p><strong>分析：</strong>今日の共通シグナルは「処理が続いた」ことを成功とみなさず、state、入力、資格情報、証跡が期待どおりかを検証する方向への収束です。Agentic Opsではretryの成功率だけでなく、同じepisodeか、modelが実際に添付を見たか、credentialが意図したscopeか、snapshotが再現可能かをSLOの前提条件として扱う必要があります。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>agentgateway v1.7.0の正式releaseを確認</h3><p><strong>確認済み事実：</strong>10月27日付のv1.7.0 releaseでは、standalone MCP sessionの暗号化が既定化され、prompt guardはtool outputも既定で検査し、同名headerのCEL参照はlistを返します。dynamic backendはloopback／link-localを既定で拒否し、client向けerrorから内部detailを除去します。model metadataを返す<code>/v1/models</code>、agent session tracking、analytics、追加provider／routerも含まれます。</p><p><strong>従来との差と重要性：</strong>以前の記事ではpackageとimageの公開までは確認できたものの、stable releaseの確定を保留していました。今回は公式releaseを一次情報で確認できました。既定値の変更はsecurityを強める一方、session keyの永続化、tool outputの誤検知、header型、private backend接続に互換性影響があります。更新前にnegative testを含むmigration testが必要です。</p><h3>切断後の「別episode継続」を禁止</h3><p><strong>確認済み事実：</strong>OpenEnvのWebSocket clientは、episode中にsocketが閉じた場合、従来は再接続先の新environmentに対して<code>step()</code>が走り得ました。修正後はepisodeを担うsocketを記憶し、切断後の<code>step()</code>／<code>state()</code>は<code>SessionLostError</code>となり、<code>reset()</code>で新episodeを明示的に開始します。production MCP clientは同じHTTP MCP sessionへ再接続できるため、sessionが保持される構成ではepisode継続が可能です。</p><p><strong>運用での使い方：</strong>transport retryとdomain session recoveryを分離し、前者の成功だけでstepを再送しないことが重要です。episode ID、environment instance ID、last acknowledged stepを監査logに残し、session喪失時は自動継続ではなくreset／human approvalへ遷移させます。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>Filesystems Working Group charterがwrite中心から一般的なfilesystem semanticsへ拡張されました。scoped listing、server-side search／glob、bulk read／seek、create・update・delete・stat、optimistic concurrency、typed error、cache／change notificationが対象です。POSIX APIの全面再現やhost sandbox policyは対象外です。Enterprise-Managed Authorizationについては、IdPがID-JAGを発行しauthorization serverが受理する実装の文書化も進みました。</li><li><strong>goose：</strong>unstable endpoint <code>_goose/unstable/context/report</code>とContext X-ray UIが追加されました。model、context limit、local tokenizerによるtoken推計、system prompt、extension instruction、tool definition、compaction summary、message等の内訳、provider-managed context、auto-compaction pendingをmodel callなしで確認できます。OpenAI Responsesではtool turnをまたぐreasoning replayも修正されました。</li><li><strong>agentgateway：</strong>OpenAI inline fileとAnthropic base64 documentをBedrock documentへ変換する修正が入りました。従来は変換経路で内容が黙って欠落していました。streaming responseのCELにもrequest側LLM contextが渡り、<code>llm.provider</code>、request model、streaming flagをresponse policyで参照できます。</li><li><strong>OpenEnv：</strong>WebSocket episodeのsession喪失を明示する修正を追加しました。</li><li><strong>OpenSandbox：</strong>OSEP-0025のcredential contractとstrict snapshot parserを実装しました。未知fieldはsnapshot全体をfail closedにし、exchange markerは厳密な形だけを許容します。rootfs snapshotは全containerのimage digestが揃った場合だけ成功し、不完全な結果はruntime podを残して再試行可能にします。null exchange markerの拒否とcredential表示のredactionも追加されました。</li><li><strong>A2A：</strong>確認できた差分はdocumentationのbroken link修正のみで、protocol／releaseの変更はありません。</li><li><strong>AGENTS.md、Agent Skills、Agent Router、Open Responses：</strong>前回以降、一次情報で重要な新規commit／releaseは確認できませんでした。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>AAIF Technical Committee、Observability WG、Security WGでは前回以降の新規decisionを確認できませんでした。新規project／Working Group proposalの提出・採択も確認できません。OpenSandbox proposal #26の更新はありましたが、既にaccept済みのproposal更新であり、新規加入ではありません。</p><p>MCP Filesystems WGのcharter拡張は実装detailではなく、相互運用で標準化する境界の変更です。単純なresource writeから、探索、部分読取、競合検知、typed failure、変更通知までを共通語彙に含めます。一方でOS-level sandbox policyをscope外としたため、protocol capabilityとhost authorizationを同一視しない設計が必要です。</p><p><strong>分析：</strong>filesystem操作が標準化されても、許可されたpath、tenant境界、symlink／mount越境、TOCTOU対策はdeployment側の責任として残ります。capability negotiation、authorization、auditを三層に分けて評価すべきです。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<h3>「黙って継続」を型付き失敗へ変換</h3><p>OpenEnvの<code>SessionLostError</code>、OpenSandboxのfail-closed parser、agentgatewayのdocument変換修正は、異なる層で同じ設計原則を示します。transport、schema、format conversionの境界で情報が失われたとき、成功responseを返さないことがagent systemの再現性と説明可能性を高めます。</p><h3>context budgetを観測可能なresourceへ</h3><p>gooseのcontext reportは、token総量だけでなく何がbudgetを消費しているかを分解します。system prompt、extension instruction、tool schema、conversation、compaction summaryを別々に測れるため、tool数削減、instruction短縮、compaction閾値調整を推測ではなく計測で行えます。</p><h3>encoding最適化は実測で判断</h3><p>AAIF公式blogでは、ApifyがMCP serverへTOONを追加して30日間production A/B testを行ったものの、一貫したtoken削減が得られず、最も利用の多いtoolではかえって高コストになったため削除した事例が公開されました。形式上の圧縮率だけでなく、実際のschema、payload分布、model挙動を含むend-to-end計測が必要です。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p><strong>推奨PoC確認項目：</strong></p><ol><li><strong>session同一性：</strong>episode中にWebSocketを強制切断し、transport再接続後の<code>step()</code>が別environmentへ流れないことを確認する。persistent MCP sessionと新sessionの双方を試す。</li><li><strong>添付完全性：</strong>PDF等のinline file、同名file、複数document、未対応source typeをBedrock経路へ送り、model responseだけでなく変換後requestにdocumentが存在することをgolden testで検証する。</li><li><strong>v1.7 migration：</strong>MCP session keyのrotation／restart、tool output guard、同名headerのlist化、loopback dynamic backend拒否、client error redactionと内部logのcorrelationを確認する。</li><li><strong>credential fail closed：</strong>addon snapshotへ未知field、null exchange marker、空header／substitution違反を注入し、資格情報なしのfallback送信が起きないことを確認する。</li><li><strong>snapshot証跡：</strong>multi-container環境で一つのimage digest取得を失敗させ、成功扱いされずruntime podが再試行用に残ることを確認する。</li><li><strong>context SLO：</strong>goose reportのcategory別比率とcompaction pendingをmetric化し、tool definition肥大やinstruction増加をrelease gateへ組み込む。</li></ol><p><strong>分析：</strong>再試行率、latency、HTTP statusだけでは今回の故障を検出できません。「同じstate」「完全なinput」「正しいcredential」「再現可能なartifact」というsemantic invariantを監視項目に追加する必要があります。</p>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>MCP Filesystems WGがlisting、search、bulk read、optimistic concurrency、typed errorをどの順序でSEP／schemaへ落とすか。</li><li>Enterprise-Managed AuthorizationのID-JAG draft version skewと、各実装のAvailable／Early access／Experimental差。</li><li>agentgateway v1.7.0利用者からのsession暗号化、prompt guard、header型変更、dynamic backend制限に関する互換性issue。</li><li>Bedrock変換で未対応のAnthropic text／URL／content source typeを明示的errorにするか、対応を拡張するか。</li><li>OpenEnvの<code>SessionLostError</code>をtraining／evaluation orchestratorがどう分類し、resetとresumeを選ぶか。</li><li>OpenSandbox OSEP-0025のresolver path完成とcredential exchangeのend-to-end test。</li><li>AAIF TC／WGの新規proposal、project graduation、security／observability共通仕様。現時点では新規decisionなし。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP — Update Filesystems WG Charter",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/82d60be17d75e69b350c9fe77df2e8cac202ac11"
+      ],
+      [
+        "MCP — Document Enterprise-Managed Authorization implementation support",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/710a132f56a6928b245a030376981ea73614677b"
+      ],
+      [
+        "goose — Add context window report and viewer",
+        "https://github.com/aaif-goose/goose/commit/6ec4e9a2abc0fdb13f8af2676ceaf848a1df716f"
+      ],
+      [
+        "goose — Replay OpenAI Responses reasoning across tool turns",
+        "https://github.com/aaif-goose/goose/commit/0aeb4077a9d969f8ade34d4381386728d85999e9"
+      ],
+      [
+        "agentgateway — v1.7.0 release",
+        "https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0"
+      ],
+      [
+        "agentgateway — Preserve inline files and base64 documents in Bedrock conversion",
+        "https://github.com/agentgateway/agentgateway/commit/187b3d06f7c2a66e1b7c9b2884f0475e13d52607"
+      ],
+      [
+        "agentgateway — Expose request LLM context to streaming response CEL",
+        "https://github.com/agentgateway/agentgateway/commit/7b193847c02e15d259af38f2f2f5d5af51dc351b"
+      ],
+      [
+        "OpenEnv — Raise SessionLostError after WebSocket episode loss",
+        "https://github.com/openenv/OpenEnv/commit/22ca1ab2a55960fc5255bd3b7d017cbb1c0f923a"
+      ],
+      [
+        "OpenEnv — Follow-up session-loss handling",
+        "https://github.com/openenv/OpenEnv/commit/d27431a36ff5c31d2913b31b14a7483ee8460cd6"
+      ],
+      [
+        "OpenSandbox — OSEP-0025 credential contracts and fail-closed parsing",
+        "https://github.com/alibaba/OpenSandbox/commit/c2f55b20e945d89efe3d35220942a997a3551751"
+      ],
+      [
+        "OpenSandbox — Reject null exchange markers and redact credentials",
+        "https://github.com/alibaba/OpenSandbox/commit/1a1fbac66dd42cfa3a8a3f12ab0e041096047496"
+      ],
+      [
+        "OpenSandbox — Require complete image digests for rootfs snapshots",
+        "https://github.com/alibaba/OpenSandbox/commit/9603b26fda54c4654bc4c9d65c8cfa733974202d"
+      ],
+      [
+        "AAIF — We added TOON to our MCP server, then removed it",
+        "https://aaif.io/blog/apify-toon-mcp-server"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-30",
     "level": "HIGH",
     "tags": [
