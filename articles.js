@@ -92,7 +92,7 @@ const ARTICLES = [
       ],
       [
         "AAIF — We added TOON to our MCP server, then removed it",
-        "https://aaif.io/blog/apify-toon-mcp-server"
+        "https://aaif.io/blog/we-added-toon-to-our-mcp-server-then-removed-it"
       ]
     ]
   },
