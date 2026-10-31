@@ -1,6 +1,98 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-01",
+    "level": "MEDIUM",
+    "tags": [
+      "MCP",
+      "Security",
+      "Operations",
+      "A2A"
+    ],
+    "title": "MCP Security IGを受付・routing機能へ再編",
+    "summary": "Security課題の受付、担当groupへの移管、月次追跡を明文化。SDK世代差も文書で可視化した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>前回レポート以降の重要差分はMCPに集中しました。Security Interest Group（IG）は、自ら全security課題を解決する場ではなく、MCP固有の脅威、security関連proposal、既存repositoryに収まらないdisclosureを最初に受け付け、Auth IG、Transports WG、Registry WG、Tool Annotations IG、SDK maintainersなど、実装責任を持つgroupへ振り分けるrouting groupとしてcharterを再定義しました。会合は隔週office hourから、公開agendaに基づく月次forum callと月次digestへ変更されます。</p><p><strong>分析：</strong>security窓口の価値は、相談件数ではなく、誰が判断し、どのartifactへ修正を反映し、いつまで追跡するかを明確にできるかで決まります。今回の変更はsecurity workを一つのgroupへ集中させず、protocol、transport、registry、SDKそれぞれのownerへ戻す運用設計です。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>MCP Security IGを「受付とrouting」の場へ</h3><p><strong>何が変わったか：</strong>Security IGのmissionにtriage and routingが明記されました。Discord／GitHubからsecurity topicを受け付け、threat modelingで共通の攻撃面を整理したうえで、担当groupまたはSEPへ移します。月次callのagendaは事前公開され、routed item、未解決topic、advisoryをまとめる月次digestも運用に追加されます。</p><p><strong>従来との違い：</strong>従来のcharterはthreatのcatalog化、proposal review、WG／SEP化を中心としていました。新しいcharterは「Security IGが最終ownerではない」ことを明確にし、担当groupへのhandoffを主要責務に置きます。運用では、報告時に受付ID、担当group、関連issue／SEP、次回確認日を一組で記録すると、相談がforum内で停滞するのを防げます。</p><h3>動かないtutorialとSDK世代差を修正</h3><p><strong>確認済み事実：</strong>Java／Kotlin tutorialではclone後のdirectory、Spring AI API、memory class、Kotlin SDK version、repository宣言、JAR名など、記載どおりでは動かない箇所が修正されました。同時に、最新stable Java／Kotlin SDKがMCP protocol 2025-11-25を使用し、2026-07-28だけを受理する相手とは接続できないことが注記されました。Rust client tutorialはrmcp 3系へ更新され、protocol negotiation、複数回tool loop、structured outputのJSON Schema検証、signed thinking blockを欠落させないraw block replayを組み込みました。</p><p><strong>なぜ重要か：</strong>「最新documentation」と「各SDKが実装する最新protocol revision」は同義ではありません。PoCでtutorialが起動しても、client、server、gatewayのrevision matrixが一致しなければproduction相互運用性は保証されません。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>Security IGをrouting groupへ再編。Java／Kotlin／Rustのbuild tutorialとInspector 2.13.0文書を更新しました。Inspector CLIではload test閾値違反とHTTP 429に専用exit codeが追加され、automationがstderr文面を解析せずfailure class、<code>Retry-After</code>、methodを判定できる説明になりました。</li><li><strong>goose：</strong>GDKを公式siteで紹介するdocumentation更新のみ。正式最新版はv1.57.0で、前回以降の重要なruntime commit／releaseは確認できませんでした。</li><li><strong>agentgateway：</strong>正式最新版はv1.7.0。前回以降の重要な新規commit／releaseは確認できませんでした。</li><li><strong>Agent Router：</strong>stableはv1.2.0、pre-releaseはv1.2.1-rc2。前回以降の重要差分はありません。</li><li><strong>A2A：</strong>protocol／SDK releaseの差分なし。stableはv1.0.1です。</li><li><strong>OpenEnv／OpenSandbox：</strong>それぞれv0.11.0／1.2.0が最新。前回記事以降の新規重要commitは確認できませんでした。</li><li><strong>AGENTS.md／Agent Skills／Open Responses：</strong>前回以降の仕様・release・重要commitは確認できませんでした。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>AAIF Technical Committee、Security & Privacy WG、project proposals、Working Group proposalsに、新規加入、卒業、lifecycle変更、proposal採択は確認できませんでした。Observability & Traceability WGでは月次report templateをTCのtitle／label規則へ合わせる手続き修正が入りましたが、telemetry semantics自体の変更ではありません。</p><p>MCP Security IGの再編はsecurity標準そのものではなく、標準化作業の入口とhandoffを定めるgovernance変更です。disclosureを受け付ける場所、所有group、SEP化の経路を分離することで、security requirementを適切な仕様・SDK・registry実装へ反映しやすくします。</p><p><strong>運用での使い方：</strong>組織内でもsecurity intake teamと修正ownerを分け、intake ticketに<code>affected_layer</code>、<code>owner_group</code>、<code>normative_artifact</code>、<code>disclosure_status</code>、<code>next_review</code>を持たせる構成が有効です。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<h3>Security forumからrouting control planeへ</h3><p>agentic systemの攻撃面はauthorization、transport、tool metadata、registry、SDKにまたがります。横断groupが全修正を持つより、共通threat modelを維持しつつ、各control planeのownerへ責任を渡す方が変更をnormative artifactへ落とし込みやすくなります。</p><h3>Protocol versionをdeployment metadataとして扱う</h3><p>MCP documentationは、SDKが新protocol revisionを同時には採用しないことを明記しました。product versionだけでなく、clientが提示するrevision、serverが受理するrevision、gatewayの変換範囲をinventoryとtraceへ記録する必要があります。</p><h3>実行可能なdocumentationをconformance入口に</h3><p>今回のtutorial修正は単なる誤字修正ではありません。dependency version、build command、tool loop上限、structured output検証、signed block保持といった、本番障害に直結する前提をsampleへ組み込みました。documentation exampleをCIでbuild／executeすることが、SDK更新時の初期conformance testになります。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p><strong>推奨PoC確認項目：</strong></p><ol><li><strong>revision matrix：</strong>2025-11-25 clientと2026-07-28-only serverを組み合わせ、initializationが期待どおり失敗するか確認する。silent downgradeを許さない。</li><li><strong>routing SLA：</strong>security reportをAuth、Transport、Registry、SDKの各categoryへ振り分け、owner未設定時間、handoff回数、SEP／修正issue到達時間を測る。</li><li><strong>tutorial CI：</strong>Java、Kotlin、Rust sampleをclean environmentで定期buildし、dependency更新、JAR名、directory、API破壊を検出する。</li><li><strong>tool loop safety：</strong>Rust sampleと同様にtool turn上限、request timeout、structured output schema検証を必須化し、signed reasoning blockをprovider往復で保持する。</li><li><strong>Inspector自動化：</strong>exit code 10／11を別々に処理し、load threshold違反はrelease gate、429は<code>Retry-After</code>を尊重したbackoffへ分岐する。</li></ol><p><strong>分析：</strong>security incidentを「受付済み」にするだけでは閉じません。担当artifactへ修正が入り、対応SDK／releaseが配布され、revision matrixで再検証されるまでを一つの追跡単位にする必要があります。</p>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>MCP Security IGの最初の月次agenda／digestと、実際にroutingされたtopic。</li><li>Security IGからAuth IG、Transports WG、Registry WG、SDK maintainerへ渡されたissue／SEPの追跡方法。</li><li>Java／Kotlin SDKが2026-07-28 revisionへ対応する時期と互換性試験。</li><li>Inspector 2.13.0のload-test／429 exit codeをCIが採用するか。</li><li>2027年3月MCP releaseへ入るsecurity、filesystem、Tasks関連SEP。</li><li>AAIF TC／WGの新規proposal、project lifecycle変更、Attestation & Evidence WG pilot。</li><li>goose、agentgateway、A2A、Agent Router、OpenEnv、OpenSandbox、AGENTS.md、Agent Skills、Open Responsesの次期正式artifact。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP — Restructure Security IG as a routing group",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/d0e246ea3c69eafaa2806bc4cd28025703ba2c2b"
+      ],
+      [
+        "MCP — Fix Java and Kotlin tutorials that fail as printed",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/6a6c3d42a162d1927c0d36d03838d1f626db5ade"
+      ],
+      [
+        "MCP — Update Rust client tutorial to rmcp 3",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/0aab7058fe6471f3d7b0301e13965f10ad9cb198"
+      ],
+      [
+        "MCP — Update Inspector documentation to 2.13.0",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/c1c81072057ed9a3eb40a1213eb7577651c1937b"
+      ],
+      [
+        "MCP — Document SDK protocol-revision adoption differences",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/891534049ae842de72190fe4af7ce9a0f7c045e6"
+      ],
+      [
+        "AAIF Observability & Traceability WG — Align monthly report template with TC rules",
+        "https://github.com/aaif/wg-observability-and-traceability/commit/81dc934a316e97895677257cdc0977f5c3498ea2"
+      ],
+      [
+        "goose — v1.57.0 release",
+        "https://github.com/aaif-goose/goose/releases/tag/v1.57.0"
+      ],
+      [
+        "agentgateway — v1.7.0 release",
+        "https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0"
+      ],
+      [
+        "Agent Router — v1.2.1-rc2 release",
+        "https://github.com/theagentrouter/agent-router/releases/tag/v1.2.1-rc2"
+      ],
+      [
+        "A2A — v1.0.1 release",
+        "https://github.com/a2aproject/A2A/releases/tag/v1.0.1"
+      ],
+      [
+        "OpenEnv — v0.11.0 release",
+        "https://github.com/openenv/OpenEnv/releases/tag/v0.11.0"
+      ],
+      [
+        "OpenSandbox — 1.2.0 release",
+        "https://github.com/opensandbox-group/OpenSandbox/releases/tag/release-1.2.0"
+      ]
+    ]
+  },
+  {
     "date": "2026-10-31",
     "level": "HIGH",
     "tags": [
