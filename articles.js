@@ -1,6 +1,114 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-02",
+    "level": "MEDIUM",
+    "tags": [
+      "Security",
+      "Operations",
+      "MCP",
+      "A2A"
+    ],
+    "title": "動的credentialを外出しし、tool選択をfail closedへ",
+    "summary": "OpenSandboxのcredential exchange基盤、MCP tool annotationの信頼境界、URACE新規提案を確認。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>前回レポート以降の実装差分はOpenSandboxに集中しました。OSEP-0025「Credential Vault Exchange and Delegated Header Resolution」がmergeされ、credentialをsandbox内へ静的配布する代わりに、egressがrequestごとにUDSまたはHTTPSのresolverへ問い合わせ、freshなheaderとredaction情報を得るためのvault model、resolver client、fail-closed validationがmainへ入りました。MCPでは、clientが見せるtoolを絞る／tool callを強制する場合に、untrusted serverの<code>readOnlyHint</code>などをどう扱うかという仕様上の空白がissue #3492として提示されました。AAIFにはURACEの新規project proposalが提出されています。</p><p><strong>分析：</strong>共通する論点は「実行時に受け取った自己申告を、そのまま権限拡大へ使わない」です。credentialはresolverへ隔離し、tool annotationは信頼済みのout-of-band根拠なしに許可集合を広げず、project proposalも提出者の成熟度主張とAAIFの審査結果を分離して扱う必要があります。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>OpenSandbox、per-request credential exchangeの基盤をmerge</h3><p><strong>何が変わったか：</strong>OSEP-0025は、<code>exchange</code> credential sourceにresolver endpointを宣言し、typeless auth bindingで対象requestを結び付けるmodelを追加しました。resolverはrequest contextとegress由来のsubjectを受け、complete header setとredactionを返します。materialはvault readへ露出せず、永続化・cacheも行わず、resolver停止、timeout、version skewではuncredentialed pass-throughへdowngradeせず拒否します。</p><p><strong>実装状況：</strong>PR #2501はexchange source、typeless auth、cross-lock、snapshot markerとcapability gateを実装しましたが、resolve network call自体は含みません。PR #2500はUDS／HTTPS resolver client、origin単位のBearer token、redirect禁止、2秒default timeout、in-flight上限、strict JSON envelope、header／body size上限、error taxonomy、redaction統合を実装しました。したがって、提案と基礎部品はmainへ入りましたが、全経路の統合完了や正式releaseを意味しません。live revision runtimeは現時点でexchange credentialを拒否します。</p><h3>MCP、強制tool選択とuntrusted annotationの空白を議論</h3><p><strong>確認済み事実：</strong>issue #3492は、clientがtoolの可視集合を絞る、またはmodel API側でtool callを強制する場合、untrusted serverのannotationを使って安全なtool集合を広げるべきではないと問題提起しました。報告者の試験では、強制選択で816回中460回のwriteが発生し、requestが許可したclassへ限定すると0回になったとされています。これはissue提出者の計測であり、MCPの正式なconformance結果ではありません。</p><p><strong>運用上の含意：</strong>現行specはtool annotationをtrusted server由来でない限りuntrustedとする一方、「trusted」の判定方法や、許可toolが0件になった場合の挙動を定義していません。現時点ではspec変更ではなくopen issueです。client側でserver trust、tool class、human approvalを別controlとして持ち、wire metadataだけで強制集合を拡張しない設計が安全です。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>OpenSandbox：</strong>OSEP-0025 proposal、vault core、resolver clientが11月1日にmergeされました。加えて、MCP serverがSDK由来の予期されたerrorをgeneric messageへ潰さずclientへ返す修正、Python SSE command streamの無限待ちをidle timeoutで止める修正、download body読取中のtransport errorをSDK exceptionへ統一する修正、未接続terminalのPTY sessionを削除する修正が入りました。stableは1.2.0のままで、これらmain差分の正式releaseは未確認です。</li><li><strong>MCP：</strong>新規commit／releaseはありません。tool annotationと強制選択のtrust boundaryがissue #3492で議論中です。stable specは2026-07-28のままです。</li><li><strong>goose：</strong>v1.57.0が最新。前回以降の新規重要commit／releaseは確認できませんでした。</li><li><strong>agentgateway：</strong>v1.7.0が最新。前回以降の重要差分はありません。</li><li><strong>A2A：</strong>v1.0.1がstableで、protocol／release差分はありません。</li><li><strong>Agent Router：</strong>stable v1.2.0、pre-release v1.2.1-rc2のままです。</li><li><strong>OpenEnv：</strong>v0.11.0が最新。前回以降の重要差分はありません。</li><li><strong>AGENTS.md／Agent Skills／Open Responses：</strong>仕様・release・重要commitの新規差分は確認できませんでした。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<h3>URACEがAAIF project proposalを提出</h3><p><strong>確認済み事実：</strong>11月1日、URACE（Unified Runtime for Autonomous Collaborative Evolution）がAAIF project-proposals issue #67を提出しました。P2P-firstのlifecycle control planeとして、AI executorの提案、qualification gate、accepted operation、audit trail、feature exchangeを扱う構想です。Apache-2.0、Growth stageを希望し、proposalは現在<code>New</code> label、open状態です。</p><p><strong>未確定事項：</strong>これはAAIFへの加入決定ではありません。proposal自身が、TC sponsor未定、founder-ledかつ単独maintainer、CIはmanual、GOVERNANCE.md／CONTRIBUTING.md／SECURITY.mdは加入後に整備予定と記載しています。2,677 tests、1,343 capabilities、post-quantum cryptoなどの数値も提出者の自己申告であり、TC review、独立maintainer、adoption evidence、security processの確認が必要です。</p><p>AAIF Technical Committee、Working Group proposals、既存project lifecycleには前回以降の新規decisionを確認できませんでした。新規加入・卒業・正式標準化変更はありません。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<h3>Secret配布からrequest-time exchangeへ</h3><p>静的tokenをsandboxやagentへ渡す方式は、漏えい面積、rotation遅延、tenant間共有の危険を増やします。resolverがsubject、destination、binding、request contextを受けて短命headerを返す方式なら、credential materialをworkloadから分離し、request単位のpolicyとredactionを適用できます。ただしresolver自体が新しいtier-0 dependencyになるため、origin pinning、timeout、concurrency limit、fail-closed、auditが不可欠です。</p><h3>Metadataはpermissionではなくhint</h3><p>MCPの<code>readOnlyHint</code>や<code>destructiveHint</code>は、信頼済みserverから得た場合でもauthorizationの代替ではありません。retrievalでtool集合を絞るsystemほど、modelへ渡す前にrequest-scoped allow-listとhuman approvalを適用し、hintは表示やrisk scoringへ限定する設計が重要です。</p><h3>Sandbox APIもfailure semanticsを揃える</h3><p>OpenSandboxの同日修正は、MCP clientへactionable SDK errorを返す、SSEを無期限に待たない、stream中のtransport errorをSDK exceptionへ統一する、接続前に失敗したPTYを回収するという内容です。agentic runtimeでは「失敗の種類」と「残存resource」を機械判定できることがretry safetyに直結します。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p><strong>推奨PoC確認項目：</strong></p><ol><li><strong>resolver outage：</strong>UDS拒否、TLS失敗、timeout、malformed JSON、redirect、oversized headerを注入し、credentialなしでoriginへ流れないことを確認する。</li><li><strong>origin scope：</strong>resolver endpointを別host／portへ差し替え、Bearer tokenが未登録originやproxyへ送信されないことをpacket／traceで検証する。</li><li><strong>secret lifetime：</strong>resolved header valueがvault read、log、trace、snapshot、core dumpへ残らず、redactionがheader valueの変形にも効くか確認する。</li><li><strong>tool gate：</strong>untrusted MCP serverが<code>readOnlyHint: true</code>を返してもrequest-scoped allow-listが広がらないこと、許可toolが0件ならforced callを行わないことをtestする。</li><li><strong>failure taxonomy：</strong>MCP tool error、SSE idle timeout、download read failure、terminal connect failureを異なるretry policyへmappingし、orphan session／connection leakがないことを測る。</li><li><strong>proposal due diligence：</strong>URACEは加入済みprojectとして扱わず、CI再現性、maintainer bus factor、crypto review、token economyのgovernanceとregulatory riskを審査項目にする。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>OpenSandbox OSEP-0025のT2b／T3b統合、sidecarとfast-sandboxの同等性、正式releaseへの収録。</li><li>resolver latency、cache禁止、concurrency上限がhigh-throughput egressへ与える影響。</li><li>MCP issue #3492がspec note、SEP、Tool Annotations IGのartifactへ進むか。</li><li>MCPで「trusted server」とout-of-band trustを定義する動き。</li><li>URACE proposal #67のTC sponsor、review結果、lifecycle stage、CI／governance／security文書の整備。</li><li>11月5日のVoice Agents Forumと、AAIF TC／WGでの新規proposal・project lifecycle決定。</li><li>goose、agentgateway、A2A、Agent Router、OpenEnv、AGENTS.md、Agent Skills、Open Responsesの次期正式artifact。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "OpenSandbox — OSEP-0025 proposal",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2457"
+      ],
+      [
+        "OpenSandbox — OSEP-0025 resolver client transport",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2500"
+      ],
+      [
+        "OpenSandbox — Exchange credential vault core",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2501"
+      ],
+      [
+        "OpenSandbox — Report SDK errors to MCP clients",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2524"
+      ],
+      [
+        "OpenSandbox — Bound Python SSE streams with read timeout",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2527"
+      ],
+      [
+        "OpenSandbox — Delete PTY when terminal WebSocket never opens",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/a6c0cfc509af6253f59a4d7b97b6ede21a5d797d"
+      ],
+      [
+        "MCP — Tool annotations and forced tool selection issue #3492",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/issues/3492"
+      ],
+      [
+        "AAIF — URACE project proposal #67",
+        "https://github.com/aaif/project-proposals/issues/67"
+      ],
+      [
+        "AAIF — Upcoming events",
+        "https://aaif.io/events"
+      ],
+      [
+        "MCP — 2026-07-28 release",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases/tag/2026-07-28"
+      ],
+      [
+        "goose — v1.57.0 release",
+        "https://github.com/aaif-goose/goose/releases/tag/v1.57.0"
+      ],
+      [
+        "agentgateway — v1.7.0 release",
+        "https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0"
+      ],
+      [
+        "A2A — v1.0.1 release",
+        "https://github.com/a2aproject/A2A/releases/tag/v1.0.1"
+      ],
+      [
+        "Agent Router — v1.2.1-rc2 release",
+        "https://github.com/theagentrouter/agent-router/releases/tag/v1.2.1-rc2"
+      ],
+      [
+        "OpenEnv — v0.11.0 release",
+        "https://github.com/openenv/OpenEnv/releases/tag/v0.11.0"
+      ],
+      [
+        "OpenSandbox — 1.2.0 release",
+        "https://github.com/opensandbox-group/OpenSandbox/releases/tag/release-1.2.0"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-01",
     "level": "MEDIUM",
     "tags": [
