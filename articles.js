@@ -1,6 +1,122 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-03",
+    "level": "MEDIUM",
+    "tags": [
+      "Operations",
+      "Security",
+      "MCP",
+      "A2A"
+    ],
+    "title": "Credential交換をE2E検証、routing pathを正規化",
+    "summary": "OpenSandboxがcredential exchangeをE2E検証。agentgatewayは多段model routingとpath normalizationを追加。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>前回レポート以降、OpenSandboxのOSEP-0025は基礎実装からFast Sandboxを通すE2E検証へ進みました。agentgatewayはvirtual modelを多段に合成するroutingと、HTTP route／policy／upstream間のpath解釈を揃えるnormalizationをmainへ追加しました。AAIF Security & Privacy WGではkill switch資料が改訂され、gooseでは存在しないscreenshot toolをmodelへ案内していたpromptが修正されました。</p><p><strong>分析：</strong>今日の共通項は「失敗時も境界を曖昧にしない」ことです。credential resolver停止時のfail closed、path解釈差の除去、実在しないtoolの明示、revocation伝播時間の測定は、agentic runtimeを推論任せにせず検証可能なcontrolへ移す動きです。いずれもmainまたはWG資料の更新であり、新しい正式release／標準採択ではありません。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>OpenSandbox、credential exchangeをFast Sandboxで横断検証</h3><p><strong>何が変わったか：</strong>OSEP-0025のE2E testは、relay経由のexchange source、offline rehydrate、fence restart、VAULT export／import、sealed vault、IP takeover、shared process、TLS／SNI、origin-scoped Bearer、resolver障害と復旧を一連で検証します。credential headerやredaction materialをsnapshotへ保存せず、resolver停止時は407で拒否し、復旧後はfreshな署名を得ることも確認対象です。これは機能形式を変えるPRではなく、既存設計が隔離・再起動・障害をまたいでも成立することを証明するtest／harness追加です。</p><p><strong>運用上の注意：</strong>E2E fixtureは<code>SSL_CERT_FILE</code>がprocess全体のtrust poolを置き換える点を警告しています。本番ではhost trust storeへのCA導入、またはresolver専用CA poolを用意し、業務trafficのtrust rootを誤って狭めない設計が必要です。</p><h3>agentgateway、nested virtual modelとHTTP path normalizationを追加</h3><p>weighted／conditional／failoverのtargetに別のvirtual modelを指定でき、例えば「条件分岐→重み付け→failover→具体model」を一つのrouting graphとして表現できるようになりました。併せてHTTP frontendでpercent decode、slash merge、dot-segment除去などをroutingとpolicy評価の前へ統一し、元pathはaccess logへ保持します。malformed encodingやNULは400で拒否され、escaped slashの拒否とunescapeは同時指定できません。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>OpenSandbox：</strong>credential exchangeのFast Sandbox E2Eを追加。Go SDKでは異常な<code>Retry-After</code>による長時間停止を避けるためserver指定待機を60秒で上限化しました。未出現container log streamのretention後prune、data-plane-ready hook再送の冪等化も入りました。stableは1.2.0で、新規releaseはありません。</li><li><strong>agentgateway：</strong>nested virtual model、HTTP path normalization、stream chunkにmodel fieldがない場合の許容などをmainへ追加。stableはv1.7.0です。</li><li><strong>goose：</strong>Computer Controllerのsystem promptを修正し、独立screenshot toolは存在せず、scriptで画像へ保存後<code>read_image</code>する手順へ変更しました。desktopではthinkingをdefaultで折り畳む設定も追加。releaseはv1.57.0のままです。</li><li><strong>A2A：</strong>protocol／release差分はありません。open issue #2421で「公開はしないが本人からの依頼時に提供する情報」をskillへ表すoptional extensionが提案されました。未採択です。</li><li><strong>MCP：</strong>新規commit／releaseなし。stable specは2026-07-28です。</li><li><strong>Agent Router：</strong>stable v1.2.0、pre-release v1.2.1-rc2から変更なし。</li><li><strong>OpenEnv：</strong>Authlib依存更新のみ。v0.11.0が最新です。</li><li><strong>AGENTS.md／Agent Skills／Open Responses：</strong>前回以降の重要な仕様・release差分は確認できませんでした。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<h3>Security & Privacy WG、kill switchの測定値と適用範囲を明確化</h3><p><strong>確認済み事実：</strong>改訂資料はMintIDをApache-2.0のprotocol、ZadQを最初のvalidator／issuer実装として区別し、10秒有効のrequest-bound ZK proof、本人credential配下のcascade revocation、issuer emergency status rootを説明しました。chainへkillを記録してから全verifierが拒否する上限を245秒とし、外部試験の一測定では27.5秒時点で受理、33.8秒以降に拒否したと訂正しています。対象は責任主体となるpersonを伴うopen internetで、SPIFFEやservice accountを使うenterprise domainとは分けています。</p><p><strong>標準化状況：</strong>OpenID CAEP、Shared Signals Framework、RFC 7009、back-channel logout、transaction tokenとの整合が議論され、MCP serverがauth時にagentをblockするeventへの応用も示されました。ただし、これはWGのdiscussion note／presentation改訂で、AAIF標準の採択ではありません。</p><p>A2A issue #2421はoptional extension URIと<code>personEntry</code>、<code>assistantAccess</code>、reply statusを提案しますが、本人依頼の証明やdelegation chainが未解決です。AAIF Technical Committeeの新規decision、新規project加入・卒業、新規proposal採択は確認できませんでした。kdeps #65とURACE #67はopenのままです。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<h3>Controlの意味を経路全体で一致させる</h3><p>path normalizationは単なるURL整形ではありません。gatewayのroute matcher、authorization policy、upstreamが同じrequestを別pathとして解釈すると、policy bypassやcache poisoningの余地が生まれます。固定順で正規化し、original pathを監査用に残す設計は、実行値と証跡の両立を狙っています。</p><h3>Routing graphの表現力と検証責任が同時に増える</h3><p>nested virtual modelにより障害時のfallbackやtenant別model選択を再利用できます。一方、循環、到達不能target、policy継承、cost／latency上限、各branchのobservabilityを静的・動的に検証する必要があります。</p><h3>Revocationをprotocol横断eventとして扱う</h3><p>identityのkill signalをMCP、A2A、gateway、sandboxが別々にpollするだけでは、停止時間とauditがばらつきます。subject、credential chain、effective time、reason、proofを共通eventとして配布し、各層で拒否開始時刻を測る設計が重要です。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p><strong>PoCで確認する項目：</strong></p><ol><li><strong>Credential隔離：</strong>resolver停止、TLS／SNI不一致、VAULT export／import、process restart、IP takeoverを注入し、materialがsnapshot・logへ残らず、未署名requestへdowngradeしないことを確認する。</li><li><strong>Trust store：</strong>test用CA設定がprocess全体の外向きTLSを壊さないかを検証し、resolver専用CA poolを優先する。</li><li><strong>Path差分：</strong><code>//</code>、<code>../</code>、unreserved percent encoding、escaped slash、NUL、不正encodingをroute／policy／upstreamへ通し、判定が一致することを確認する。</li><li><strong>Routing graph：</strong>nested weighted／conditional／failoverの各branchでmodel、policy、cost、latency、fallback理由をtraceへ記録し、循環と空targetをdeploy前に拒否する。</li><li><strong>Retry budget：</strong>巨大な<code>Retry-After</code>を注入し、SDKの60秒上限だけでなくworkflow全体のdeadline、jitter、circuit breakerが守られるか測る。</li><li><strong>Revocation SLO：</strong>kill event記録からgateway、MCP server、A2A agent、sandboxの拒否開始までを個別に計測し、最遅componentを可視化する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>OpenSandbox OSEP-0025のproduction統合、専用resolver CA pool、正式releaseへの収録。</li><li>agentgateway nested routingのcycle detection、policy inheritance、config validation、次期release。</li><li>HTTP normalizationが既存route、signed URL、upstream frameworkへ与える互換性影響。</li><li>AAIF Security & Privacy WGのkill switchがCAEP／SSFやMCP auth eventへ具体化するか。</li><li>A2A extension proposal #2421の本人性、delegation、privacy、採否。</li><li>kdeps #65、URACE #67のTC reviewとproject lifecycle判断。</li><li>11月5日のVoice Agents ForumおよびObservability & Traceability WGのstate／context／reasoning議論。</li><li>MCP、goose、Agent Router、OpenEnv、AGENTS.md、Agent Skills、Open Responsesの次期正式artifact。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "OpenSandbox — Fast Sandbox credential exchange E2E",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2547"
+      ],
+      [
+        "OpenSandbox — Cap Retry-After on generic retry path",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2508"
+      ],
+      [
+        "OpenSandbox — Prune never-observed container log streams",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2471"
+      ],
+      [
+        "OpenSandbox — Idempotent data-plane-ready replay",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2510"
+      ],
+      [
+        "agentgateway — Support nested virtual models",
+        "https://github.com/agentgateway/agentgateway/commit/5f6d0870236ba19497e371fd7d92708198e4906c"
+      ],
+      [
+        "agentgateway — HTTP path normalization",
+        "https://github.com/agentgateway/agentgateway/commit/d7e9f0d1f14d6e0b59bca4f0a46a96a856ad03e6"
+      ],
+      [
+        "goose — Correct Computer Controller screenshot guidance",
+        "https://github.com/aaif-goose/goose/commit/16829596e90232c0eb6b498abe950755c6d880d5"
+      ],
+      [
+        "AAIF Security & Privacy WG — Kill switch revisions",
+        "https://github.com/aaif/wg-security-and-privacy/commit/dae0a06fe4da39524d05fdc6cd7a63acf60f3c64"
+      ],
+      [
+        "A2A — On Request extension proposal #2421",
+        "https://github.com/a2aproject/A2A/issues/2421"
+      ],
+      [
+        "AAIF — Upcoming events",
+        "https://aaif.io/events"
+      ],
+      [
+        "AAIF Observability & Traceability WG",
+        "https://github.com/aaif/wg-observability"
+      ],
+      [
+        "MCP — 2026-07-28 release",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases/tag/2026-07-28"
+      ],
+      [
+        "goose — v1.57.0 release",
+        "https://github.com/aaif-goose/goose/releases/tag/v1.57.0"
+      ],
+      [
+        "agentgateway — v1.7.0 release",
+        "https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0"
+      ],
+      [
+        "A2A — v1.0.1 release",
+        "https://github.com/a2aproject/A2A/releases/tag/v1.0.1"
+      ],
+      [
+        "Agent Router — v1.2.1-rc2 release",
+        "https://github.com/theagentrouter/agent-router/releases/tag/v1.2.1-rc2"
+      ],
+      [
+        "OpenEnv — v0.11.0 release",
+        "https://github.com/openenv/OpenEnv/releases/tag/v0.11.0"
+      ],
+      [
+        "OpenSandbox — 1.2.0 release",
+        "https://github.com/opensandbox-group/OpenSandbox/releases/tag/release-1.2.0"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-02",
     "level": "MEDIUM",
     "tags": [
