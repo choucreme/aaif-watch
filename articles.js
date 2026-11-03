@@ -1,6 +1,138 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-04",
+    "level": "MEDIUM",
+    "tags": [
+      "Operations",
+      "Security",
+      "MCP",
+      "A2A"
+    ],
+    "title": "途中失敗を成功扱いせず、context価値を測る",
+    "summary": "agentgatewayがstream途中errorをclientへ伝播。gooseは古いtool出力の関連度をshadow観測する。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>前回レポート以降、agentgatewayはLLM streamの途中でprovider errorが発生した場合に、短い正常応答として終了せずChat Completions clientへerrorを伝える修正をmainへ追加しました。gooseは古いtool outputの関連度をDecision APIで評価するopt-inのshadow operationを追加しましたが、会話やmain inference requestは変更しません。OpenSandboxではOSEP-0025 credential exchangeがKotlin／C# SDKと利用ガイドへ広がりました。</p><p><strong>分析：</strong>今日の共通テーマは、欠落や途中失敗を「成功らしい結果」に変換しないことと、最適化を実行前に観測することです。stream error、context pruning、credential形状、wake timeoutを明示的な状態として扱えば、retry、課金、監査、ユーザー表示を同じ事実に基づいて判断できます。いずれもmain差分で、MCP／A2Aの新しい正式仕様やAAIF標準採択ではありません。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>agentgateway、stream途中errorをChat Completions clientへ伝播</h3><p><strong>従来との違い：</strong>Anthropic streamが途中で<code>overloaded_error</code>などを返すと、Messages→Chat Completions変換がeventを捨て、<code>[DONE]</code>で閉じていました。clientにはfinish reasonのない短い成功応答に見え、誤った再利用や課金判定につながります。修正後はOpenAI互換のerror chunkへ変換し、overload、rate limit、billing errorなどをSDKが例外として扱えます。error前のtext／tool callはrequest logへ残ります。Bedrock／Gemini変換とResponses clientは未対応範囲です。</p><h3>goose、context relevanceをshadow観測</h3><p><strong>何が変わったか：</strong><code>GOOSE_CONTEXT_RELEVANCE_SHADOW=true</code>の明示的opt-in時だけ、古いtool outputを最大12候補までDecisionProviderへ送り、関連度と「削除候補だったか」を記録します。判定timeoutは6秒、履歴は20 turnに制限され、入力もboundedです。現在はobservation-onlyで、conversationを削除・圧縮せずmain inferenceにも影響しません。</p><p><strong>なぜ重要か：</strong>context削減はtoken costを下げる一方、障害調査の過去証拠を消す危険があります。まずshadowで「削除しても回答品質を損なわなかったか」を測る設計なら、production pruningのthresholdを実データで決められます。source versionは1.58.0へbumpされましたが、公式release一覧の最新はv1.57.0であり、v1.58.0正式公開は未確認です。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>agentgateway：</strong>mid-stream error伝播に加え、HTTP/2 peerが想定より小さい同時stream上限を通知した場合に新connectionへ分散する修正、downstream cancel時にext_proc calloutをcancelする修正、Azure OpenAI Decisions API対応が入りました。stableはv1.7.0です。</li><li><strong>goose：</strong>context relevance shadow operationを追加し、source versionを1.58.0へ更新。正式releaseはv1.57.0が最新です。</li><li><strong>OpenSandbox：</strong>Kotlin／C# SDKがexchange sourceとtypeless exchange authを扱い、inlineとexchangeの混在をclient側でもfail fastに拒否します。controller informer cacheをnamespaceへ限定するoption、wake park budgetがflight lifetime以上の設定拒否、Go retry backoff overflow防止も追加。stable releaseは1.2.0で、credential exchange guideは1.2.1予定と記載しています。</li><li><strong>MCP：</strong>Ruby SDK Tier 1記事を更新し、mcp gem 1.8.2、Tier 1要件、残るgap、次回spec releaseが2027年3月であることを整理。Gleanをextension support matrixへ追加しました。core spec／release差分はありません。</li><li><strong>OpenEnv：</strong>Wordle training testで<code>--env-url</code>を明示する修正のみ。v0.11.0が最新です。</li><li><strong>A2A：</strong>link checker issueのみ。protocol／release差分なし。stableはv1.0.1です。</li><li><strong>Agent Router／AGENTS.md／Agent Skills／Open Responses：</strong>前回以降の重要な仕様・正式release差分は確認できませんでした。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>AAIF Technical Committee、Security & Privacy WG、Observability & Traceability WG、project proposals、Working Group proposalsに、前回レポート以降の新規decision、project加入・卒業、proposal採択は確認できませんでした。kdeps #65、URACE #67、Attestation & Evidence WGなど既存proposalは未採択のままです。</p><p>MCPのRuby SDK Tier 1更新はSDK品質とsupport expectationの整理であり、protocol revisionの変更ではありません。A2Aにも新規extension採択やTSC decisionはありません。</p><p>AAIF公式blogは11月3日、agent運用コストをtoken代だけで測らず、infrastructure、people、governance、quality、riskを含むTotal Cost of AIとして扱う論考を公開しました。紹介された一企業監査ではmodel consumptionが総AI支出のおよそ4分の1でしたが、一般化されたbenchmarkではありません。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<h3>部分応答と成功を分離する</h3><p>streamがtextを返した後にerrorになった場合、部分出力を証跡へ残しつつ処理結果はfailureとする必要があります。HTTP 200や<code>[DONE]</code>だけで成功を判定せず、protocol-nativeなerror、finish reason、usage、retryabilityを一組で記録する方向です。</p><h3>Context pruningを品質実験として扱う</h3><p>古いtool outputを「古いから不要」と一律削除せず、turn goalと最近の証拠に対する関連度をshadowで測ります。削減量だけでなく、後続turnで再取得が増えたか、誤回答やtool再実行が増えたかまで評価する必要があります。</p><h3>Costをrequest単価からrun全体へ拡張する</h3><p>model token、gateway／sandbox、Decision API、retry、human review、security control、失敗後の復旧を同じrunへ紐付けることで、安価なmodel呼び出しが全体として高コストになるケースを捉えられます。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p><strong>PoC確認項目：</strong></p><ol><li><strong>Stream failure：</strong>text／tool callの後にoverload、rate limit、billing errorを注入し、clientが成功扱いせず、部分出力とerror分類をtraceへ残すことを確認する。</li><li><strong>Protocol coverage：</strong>Anthropic→Chat CompletionsだけでなくBedrock、Gemini、Responses経路でも同じfailure semanticsになるかを別々に試験する。</li><li><strong>Shadow pruning：</strong>候補数、Decision timeout、追加token、判定cost、would-drop率、後続の再取得率を計測し、実際に削除する前に品質差をA/B評価する。</li><li><strong>HTTP/2 capacity：</strong>peerのSETTINGSで同時stream数を小さく変更し、requestが満杯connectionで待たず新connectionへ逃げるか測る。</li><li><strong>Cancellation：</strong>downstream切断時にext_proc／EPP queue slot、provider request、sandbox処理が残存しないことを確認する。</li><li><strong>Credential shape：</strong>inline sourceへendpoint、exchange sourceへvalue、typeless authへheadersを混ぜ、全SDKでwire送信前に拒否されるか確認する。</li><li><strong>TCA：</strong>run単位でmodel、Decision API、gateway、sandbox、retry、human approval、incident対応のcostを集計する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>goose v1.58.0の正式releaseとcontext relevance shadowのtelemetry schema、pruning本適用条件。</li><li>agentgatewayのmid-stream error対応がBedrock／Gemini／Responses経路へ拡張されるか。</li><li>HTTP/2 capacity修正とext_proc cancellationを収録する次期release。</li><li>OpenSandbox 1.2.1正式公開、exchange credentialの全SDK parity、resolver運用guide。</li><li>namespace限定cacheで監視対象外resourceが生じるconfiguration risk。</li><li>MCP Ruby SDK Tier 1の残るgapと2027年3月releaseへのSDK追随。</li><li>AAIF TC／WGのproposal判断、新規project lifecycle変更。</li><li>11月5日のVoice Agents Forum、11月19〜20日のMCP Dev Summit Nairobi。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "agentgateway — Propagate mid-stream errors to Chat Completions clients",
+        "https://github.com/agentgateway/agentgateway/commit/b9431ce0b8b8dbc21a2b9b82248e6ff5db97be56"
+      ],
+      [
+        "agentgateway — Respect peer HTTP/2 stream limits",
+        "https://github.com/agentgateway/agentgateway/commit/833f871d797d2a0dcee0540616d2f38493824908"
+      ],
+      [
+        "agentgateway — Cancel ext_proc callouts on downstream cancellation",
+        "https://github.com/agentgateway/agentgateway/commit/9efd0cf162e18a1b4496ce09147af7f752e3e05c"
+      ],
+      [
+        "agentgateway — Azure OpenAI Decisions API",
+        "https://github.com/agentgateway/agentgateway/commit/566db9aa92af2f66e0bc6309eb9dd986561561fe"
+      ],
+      [
+        "goose — Opt-in context relevance shadow operation",
+        "https://github.com/aaif-goose/goose/commit/0aa212e61d43e35ee2875ca5aa23c28ebac882c7"
+      ],
+      [
+        "goose — Source version bump to 1.58.0",
+        "https://github.com/aaif-goose/goose/commit/461285bbf03f7a55233b84dfd8847bbd892516a2"
+      ],
+      [
+        "goose — Official releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "OpenSandbox — Kotlin and C# exchange credential sources",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/9f0b1eda730abc08fd2d1684c25ca13709209b9b"
+      ],
+      [
+        "OpenSandbox — Exchange credential user guide",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/7468190b8a16eb84b0933e4a4f697560215f828e"
+      ],
+      [
+        "OpenSandbox — Scope controller informer cache by namespace",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/cf0d035a68c7b6f89720a6c5203d400b1e03ffd2"
+      ],
+      [
+        "OpenSandbox — Enforce wake timeout budget ordering",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/7a9fd49a2ab5f634eefe7872865439363fa236c3"
+      ],
+      [
+        "OpenSandbox — Saturate Go retry backoff",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/0cd177da88401db1713c5864df4c4c6530a3f081"
+      ],
+      [
+        "MCP — Update Ruby SDK Tier 1 post",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/dfb142a648eb9fde42e74334c89fb1a0405d0056"
+      ],
+      [
+        "MCP — Add Glean to extension support matrix",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/66c6a64582db1cffb744f03cf5273304a5931959"
+      ],
+      [
+        "AAIF — Total cost of AI over value realized",
+        "https://aaif.io/blog/total-cost-of-ai-over-value-realized"
+      ],
+      [
+        "AAIF — Events",
+        "https://aaif.io/events"
+      ],
+      [
+        "MCP — 2026-07-28 release",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases/tag/2026-07-28"
+      ],
+      [
+        "agentgateway — v1.7.0 release",
+        "https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0"
+      ],
+      [
+        "A2A — v1.0.1 release",
+        "https://github.com/a2aproject/A2A/releases/tag/v1.0.1"
+      ],
+      [
+        "Agent Router — v1.2.1-rc2 release",
+        "https://github.com/theagentrouter/agent-router/releases/tag/v1.2.1-rc2"
+      ],
+      [
+        "OpenEnv — v0.11.0 release",
+        "https://github.com/openenv/OpenEnv/releases/tag/v0.11.0"
+      ],
+      [
+        "OpenSandbox — 1.2.0 release",
+        "https://github.com/opensandbox-group/OpenSandbox/releases/tag/release-1.2.0"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-03",
     "level": "MEDIUM",
     "tags": [
