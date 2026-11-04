@@ -1,6 +1,138 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-05",
+    "level": "MEDIUM",
+    "tags": [
+      "Operations",
+      "Security",
+      "MCP",
+      "A2A"
+    ],
+    "title": "承認hookとCredential交換、証拠保持を運用化",
+    "summary": "OpenSandbox 1.2.1-rc.1、gooseの承認hook、Agent Skills governance、Zeko提案を確認。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>OpenSandboxは1.2.1-rc.1を公開し、Credential Vault Exchangeをegress、server、5 SDK、E2E試験、利用ガイドまで通しました。gooseはGDKにtool承認、実行前後hook、停止判定を追加しました。Agent SkillsはLinux Foundation配下のgovernanceとmaintainer構成を採択し、AAIF project proposalには検証可能な共有状態と条件付き支払いを扱うZekoが提出されました。</p><p><strong>分析：</strong>今日の共通項は、agentの制御点を暗黙のpromptから明示的な実行境界へ移すことです。tool実行前の承認、credential解決時のfail-closed、実行後の観測、証拠の保持・削除を別のpolicy pointとして扱うことで、権限、監査、privacy、復旧を一つのrunへ結び付けられます。ただしOpenSandboxはRC、gooseとagentgatewayはmain差分、Zekoは未採択提案であり、stable仕様として扱ってはいけません。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>OpenSandbox 1.2.1-rc.1、Credential Vault Exchangeをend-to-end化</h3><p><strong>何が変わったか：</strong>requestごとに外部resolverからheader値を取得し、egress先へ注入するOSEP-0025がserver、Python／Java／TypeScript／Go／Kotlin／C# SDK、fast-sandbox E2Eへ広がりました。解決失敗はfail-closedで、解決済みsecretを永続化・cache・APIでread backしません。atomic upload、rootfs snapshot digest検証、Kubernetes起動timeout診断、namespace限定informer cacheも含まれます。</p><p><strong>重要な留保：</strong>今回のartifactはRCです。container imageは公開済みですがSDK／CLI packageは1.2.1 stableまで保留されています。またresolver caller認証は次段階へ延期され、現時点ではHTTPS resolverをegressからのみ到達可能にするか、UDS permission／network scopeで防御する必要があります。Kotlin／C#はsource互換でも1.2.0とのABI互換性がなく再compileが必要です。</p><h3>goose GDK、承認とhookの順序をAPI化</h3><p><code>ToolApprovalOperation</code>が各callをAllow／Deny／Askで判定し、operationを実装しない場合はtool callを実行しません。承認後に<code>PreToolCallHook</code>、実行後に結果を観測する<code>PostToolCallHook</code>が走ります。StopHookは停止を拒否してmodelへ作業を戻せますが、1 user turnあたり既定8回で上限です。未処理tool callはerrorとして返し、user入力待ちへ移ります。これはmain上の変更で、公式releaseはまだv1.57.0です。</p><h3>Agent Skills、仕様変更の責任線を確定</h3><p>Lead Maintainers、Core Maintainers、Maintainers、Contributorsの階層と、Lead＋Coreで構成するTSCを定義しました。実質的な仕様変更にはCore承認が必要で、将来の番号付きproposalは提案、sponsor、review、decision、finalと少なくとも1つの動作実装を要求します。TSC Representativeは未指定です。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>OpenSandbox：</strong>1.2.1-rc.1を公開。Credential Vault Exchange、atomic upload、snapshot整合性、起動診断を収録。stableは1.2.0です。</li><li><strong>goose：</strong>GDKへstop／approval／pre・post tool hook／未処理call操作を追加。完了済みdelegateを必須follow-up message付きで再開する変更も入りました。正式releaseはv1.57.0です。</li><li><strong>agentgateway：</strong>response圧縮policyがgzip、brotli、deflate、zstdをclient negotiationし、stream／SSE、既圧縮、range、<code>no-transform</code>は除外します。request解凍は認証・認可後、body-aware route policy前です。model discoveryはprovider-nativeなpreferred endpointを返し、Bedrockは必要時にConverseへfallback、invoke metricsからtoken usageを取得します。いずれもmain差分で、stableはv1.7.0です。</li><li><strong>A2A：</strong><code>params</code>省略JSON-RPC requestをPython SDKは受理しGo SDKはparse errorにする相互運用issue #2424がopenです。仕様・release変更はなくstableはv1.0.1です。</li><li><strong>MCP：</strong>前回以降のcore spec／release差分なし。stable specは2026-07-28です。</li><li><strong>Agent Router：</strong>重要なmain／release差分なし。stableはv1.2.0、pre-releaseはv1.2.1-rc2です。</li><li><strong>AGENTS.md／Open Responses：</strong>重要なcommit、release差分なし。</li><li><strong>OpenEnv：</strong>GitHub Actions依存更新のみで機能差分なし。v0.11.0が最新です。</li><li><strong>Agent Skills：</strong>governanceとmaintainer rosterを採択。仕様本文の新versionではありません。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確定事項：</strong>Agent SkillsはLF Projects配下で、code／specをApache-2.0、文書をCC BY 4.0とし、個人単位のmaintainer責任とTSCを定義しました。Core Maintainersは複数組織にまたがる構成です。</p><p><strong>未採択事項：</strong>AAIF project-proposals #68としてZekoがSandbox lifecycleを提案しました。ZK proof、共有状態、budget、work commitment、条件付き支払いをagent協調へ持ち込み、MCP／A2A／goose／agentgateway等との関係を説明していますが、現時点ではZeko Labsによる提案で、独立したproduction adoptionやTC sponsor、AAIF加入決定は確認できません。</p><p><strong>WG作業文書：</strong>Observability &amp; Traceability WGは承認証拠の保持表現を「永久保存」から、保持根拠を宣言するtamper-evident storageとtyped tombstoneへ修正しました。外部timestampとchain linkingで削除後も整合性を検証する案です。Agent Session Recordとの議論では、callごとに複数承認が適用され得ること、外部観測receiptの発行者scope、「未観測」と「発生しなかった」を分けることが論点です。いずれもWG成果物で、正式標準ではありません。</p><p>AAIF Technical Committeeによる新規project採択・卒業、MCP／A2Aの新spec revisionは前回以降確認できませんでした。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<h3>一つのtool callを複数のpolicy stageで扱う</h3><p>approvalは実行可否、pre-hookは実行直前の副作用を伴う検査、post-hookは結果観測、stop-hookはturn終了判定です。これらを一つのcallbackに押し込まず、同じcall IDとdecision recordで連結する設計が進んでいます。</p><h3>Credentialをsandboxに保存せず、出口で解決する</h3><p>agentへsecret値を渡さずegress境界で動的にheaderへ変換すれば、prompt injectionやfilesystem流出のblast radiusを小さくできます。一方でresolver自体が高権限になり、caller認証、到達範囲、障害時fail-closedが新しい運用課題になります。</p><h3>証拠の完全性と削除権を両立する</h3><p>改ざん不能を「個人識別子を永久保存すること」と同一視せず、retention basis、typed tombstone、外部timestamp、hash chainで監査可能性を残す方向です。</p><h3>変換を減らし、native protocolを選ぶ</h3><p>agentgatewayのpreferred endpoint metadataとBedrock fallbackは、clientが利用可能ならprovider-native経路を選び、必要な場合だけprotocol変換する考え方です。変換層を減らすほど、tool、usage、error semanticsの欠落を抑えやすくなります。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p><strong>PoC確認項目：</strong></p><ol><li><strong>Approval chain：</strong>1つのtool callへAsk→user承認→pre-hook→実行→post-hookを通し、各decision、actor、時刻、input digest、result digestを同じoperation IDへ記録する。Deny、hook error、cancel、stop拒否の分岐も試す。</li><li><strong>Credential境界：</strong>resolver停止、timeout、偽endpoint、DNS変更、複数header、再試行を注入し、secretがsandbox log、snapshot、cache、API responseへ残らずfail-closedになることを確認する。RC imageと未公開SDK packageを混同しない。</li><li><strong>Compression policy：</strong>認証はencoded body、body-aware policyはdecoded bodyを見る順序を確認する。多重Content-Encoding、unsupported encoding、zip bomb、SSE、range、<code>no-transform</code>をnegative testに含める。</li><li><strong>Evidence lifecycle：</strong>approval recordのretention根拠、削除主体、typed tombstone schema、外部timestamp、chain再検証、backupからの消去期限を定める。「未観測」を「未実行」と表示しない。</li><li><strong>Protocol selection：</strong>model metadataからnative endpointを選んだ場合とtranslation経路で、tool schema、stream error、usage、cost、trace属性が一致するか比較する。</li><li><strong>ABI／rollout：</strong>OpenSandbox Kotlin／C# clientを再compileし、1.2.0 stableと1.2.1-rc.1をcanary分離する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>OpenSandbox 1.2.1 stableとSDK／CLI package公開、resolver caller認証の実装、RC後の互換性変更。</li><li>goose GDK control hookを収録する正式release、default approval policy、hook telemetry schema。</li><li>agentgatewayの圧縮、preferred endpoint、Bedrock fallback／usage取得を収録する次期release。</li><li>Agent SkillsのTSC Representative選任と番号付きproposal processの運用開始。</li><li>Zeko proposal #68へのTC sponsor、審査、独立実装／production adoptionの提示。採択前はAAIF projectとして扱わない。</li><li>Observability WGのapproval applicability、external receipt、tombstone表現とOpenTelemetry GenAI SIGへのmapping。</li><li>A2A #2424で<code>params</code>省略を空objectとみなすか、SDK間で合意されるか。</li><li>Voice Agents Forum後に公開されるlatency、handoff、evaluation、observabilityの一次資料。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "OpenSandbox — 1.2.1-rc.1 release",
+        "https://github.com/opensandbox-group/OpenSandbox/releases/tag/release-1.2.1-rc.1"
+      ],
+      [
+        "goose — Add stop, approval, and tool hook operations",
+        "https://github.com/aaif-goose/goose/commit/bfe8ccd23de1d2c47a4cb2970d522f093ae7f2ba"
+      ],
+      [
+        "goose — Resume completed delegates with a follow-up message",
+        "https://github.com/aaif-goose/goose/commit/71dd9a9aa2344247a51bc349f4d0b97c2dbff4bd"
+      ],
+      [
+        "goose — Official releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "Agent Skills — Adopt governance and maintainer roster",
+        "https://github.com/agentskills/agentskills/commit/83021e2be457a9b6679148719c1f6074f0ad975e"
+      ],
+      [
+        "AAIF project proposal — Zeko #68",
+        "https://github.com/aaif/project-proposals/issues/68"
+      ],
+      [
+        "AAIF Observability WG — Retention and typed tombstones",
+        "https://github.com/aaif/wg-observability-and-traceability/commit/bbcac36693002be677c403bff7e400c15b23f39d"
+      ],
+      [
+        "AAIF Observability WG — Liaison roster",
+        "https://github.com/aaif/wg-observability-and-traceability/commit/724dbfed713f99b90313d5477ca5ace28d4ed232"
+      ],
+      [
+        "AAIF Observability WG — Agent Session Record discussion #41",
+        "https://github.com/aaif/wg-observability-and-traceability/issues/41"
+      ],
+      [
+        "agentgateway — Compression policy",
+        "https://github.com/agentgateway/agentgateway/commit/5e999c3999a861277b1a98b0256065358347bfe8"
+      ],
+      [
+        "agentgateway — Preferred native model endpoints",
+        "https://github.com/agentgateway/agentgateway/commit/134897e1975fa26fa5c5b8ba45d720d05d3f7fb8"
+      ],
+      [
+        "agentgateway — Bedrock Converse fallback",
+        "https://github.com/agentgateway/agentgateway/commit/778a822ce48a28fdf589e68b4b515d0399cdeb7f"
+      ],
+      [
+        "agentgateway — Bedrock invocation metrics",
+        "https://github.com/agentgateway/agentgateway/commit/451f3674906d91af9e5f3c5672f79c7f7e906500"
+      ],
+      [
+        "A2A — Missing params interoperability issue #2424",
+        "https://github.com/a2aproject/A2A/issues/2424"
+      ],
+      [
+        "MCP — 2026-07-28 release",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases/tag/2026-07-28"
+      ],
+      [
+        "A2A — v1.0.1 release",
+        "https://github.com/a2aproject/A2A/releases/tag/v1.0.1"
+      ],
+      [
+        "agentgateway — v1.7.0 release",
+        "https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0"
+      ],
+      [
+        "Agent Router — v1.2.1-rc2 release",
+        "https://github.com/theagentrouter/agent-router/releases/tag/v1.2.1-rc2"
+      ],
+      [
+        "OpenEnv — v0.11.0 release",
+        "https://github.com/openenv/OpenEnv/releases/tag/v0.11.0"
+      ],
+      [
+        "AGENTS.md — Official repository",
+        "https://github.com/agentsmd/agents.md"
+      ],
+      [
+        "Open Responses — Official repository",
+        "https://github.com/openresponses/openresponses"
+      ],
+      [
+        "AAIF — Voice Agents Forum",
+        "https://aaif.live/events/voiceagentssf"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-04",
     "level": "MEDIUM",
     "tags": [
