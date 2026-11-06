@@ -1,6 +1,126 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-07",
+    "level": "HIGH",
+    "tags": [
+      "MCP",
+      "Security",
+      "Operations",
+      "A2A"
+    ],
+    "title": "MCPの型検証とsession境界を締める",
+    "summary": "Agent Router 1.2.1を正式確認。MCPはoneOfの型検証を迂回できる例を修正した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>Agent Routerの公式release noteにv1.2.1が掲載され、MCP proxyのloopback限定、sessionとMCPRouteの紐付け、promptSelectorの実行時強制、secretとlogの保護、異常な2xx応答への耐性をまとめました。MCP本体は、<code>oneOf</code>のbranch内へ型制約を置くと不正な値が「branch不成立」として見逃され得るTool入力schema例を修正し、SEP-2106のcomposition例を現行仕様へ反映しました。</p><p><strong>分析：</strong>今日の共通点は、agentの入口で「形式上valid」なrequestを通すだけでなく、route、型、資源shape、selector、secretの境界を実行時にも保持することです。Agent Router v1.2.1は正式release、MCPは仕様文書・生成schemaの修正です。一方、agentgatewayとOpenSandboxの差分はmainへ入った段階で、次の正式release待ちです。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>Agent Router v1.2.1：MCPのsession、secret、logを同時に強化</h3><p><strong>何が変わったか：</strong>MCP proxyは<code>127.0.0.1:9856</code>へbindし、session IDを作成元のMCPRouteへ固定しました。別routeでの再利用は400になります。<code>promptSelector</code>は一覧表示だけでなく<code>prompts/get</code>と補完にも適用され、非表示promptを名前で直接取得する抜け道を閉じます。session暗号化seedはcommand lineやPod specから外れ、filter設定のSecret経由へ移動しました。debug logは<code>api-key</code>、<code>x-amz-security-token</code>、<code>authorization</code>、<code>x-api-key</code>をredactし、OAuth metadataの読取は1 MiBで制限されます。</p><p>さらにAnthropic usage欠落、null image、Gemini/Bedrockのnull blockなど、upstreamが2xxを返しながらbodyが欠損する場合にexternal processorを落とさない修正を含みます。API変更や新たなbreaking changeはなく、MCPRouteを提供するGateway Podだけがupgrade時に一度rollします。seedを変えなければ既存sessionを維持できます。</p><h3>MCP：<code>oneOf</code>の型検証を迂回できる公式例を修正</h3><p>従来例は<code>id</code>と<code>name</code>の型定義を各<code>oneOf</code> branch内へ置いていました。この形では、例えば<code>{id:&quot;r1&quot;, name:123}</code>が、型違反したbranchを単に不成立扱いにして別branchだけで通る可能性があります。修正後は<code>properties</code>をrootへ上げ、branchには「どのfieldが必須か」だけを残しました。これにより片方だけを受理しつつ、その値の型は常に検証されます。生成UIがrootの<code>properties</code>から引数一覧を作る場合に、引数が空表示になる問題も避けられます。</p><p>これはJSON Schemaそのものの変更ではなく、公式例とguidanceの安全修正です。2026-07-28版とdraftの双方へ反映され、新しいMCP仕様versionは出ていません。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>Agent Router：</strong>v1.2.1に加え、公式Python SDKの紹介記事を追加しました。LiteLLM互換importからGatewayを必ず経由させ、provider key、retry、limit、OpenTelemetryをprocessごとのlibrary設定から共有control planeへ移す設計です。alpha段階なのでAPI安定性は要確認です。</li><li><strong>agentgateway：</strong>main上で、OpenAPIから生成したMCP serverのinitialize時にclientが要求した対応済み旧versionをechoし、initializeを持たない新version要求には対応可能なversionへfallbackする修正が入りました。A2A Agent Cardがすでに公開pathをadvertiseする場合にpathを二重付与しない修正、DBへのlog永続化を無効化する選択肢も追加されています。正式releaseはv1.7.0のままです。</li><li><strong>OpenSandbox：</strong>snapshotへ記録したCPU・memory limitをresource-aware poolでrestore時に再適用し、caller指定とsnapshot記録が不一致、または記録外のresource keyが追加された場合は拒否するOSEP-0026実装をmainへ統合しました。まだ正式releaseではありません。</li><li><strong>A2A：</strong>v1.0.x向けMACP experimental extension提案が新規open issueとして提出されました。固定participant、TTL、append-only履歴を持つbounded coordination sessionを既存A2A messageで運ぶ案ですが、server、gateway、public demoは未実装です。別issueではgRPC error detailがheader size上限を受け、6 SDKで扱いが異なる点が提起されました。いずれも採択仕様ではありません。</li><li><strong>goose：</strong>監視窓内に新しいformal releaseや主要runtime変更は確認できませんでした。正式最新版は前日までに確認したv1.57.0です。</li><li><strong>AGENTS.md／Agent Skills／Open Responses／OpenEnv：</strong>監視窓内に新しいformal releaseや重大な仕様変更は確認できませんでした。OpenEnvはv0.12.0、Open Responsesはv0.6.0のままです。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>新規project proposal：</strong>RunkiteがSandbox候補として申請されました。model loopそのものではなく、認証、run admission、dispatch、human approval、spend accounting、audit、connectorを担うself-hosted control planeを提案し、agentをMCP toolとして公開します。ただし現時点は単独maintainer、独立production adopterの提示なし、A2A互換も未主張です。</p><p><strong>更新されたproposal：</strong>Zekoは、agent間のreservation、budget、commitmentをzero-knowledge proofで検証できる共有state layerとしてSandbox申請を更新しました。両issueともラベルは<code>New</code>で、Technical Committeeの採択、AAIF傘下入り、asset移管を意味しません。Technical Committee、Observability WG、Security WGには監視窓内の新規決定を確認できませんでした。</p><p><strong>A2A標準化：</strong>MACP提案は既存fieldとTaskStateを増やさないprofile extensionを志向します。interop vectorがある点は前進ですが、proposal phaseであり、運用境界やserver実装がないため、production設計へ組み込む段階ではありません。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>1. Schema compositionは「存在」と「型」を分離する。</strong> <code>oneOf</code>/<code>anyOf</code> branchはpresence条件に絞り、fieldの型や共通制約はrootへ上げる形が安全です。生成client、form、policy engineがrootの<code>properties</code>を読むことも想定できます。</p><p><strong>2. Gatewayがagent runtimeの共有control planeになる。</strong> Agent RouterのPython SDKは、client libraryがproviderごとのkeyやretryを抱える構成から、thin client＋gatewayへ寄せます。agentgatewayのprotocol negotiationやA2A path修正も、同じgatewayが複数protocolを吸収する際の互換性境界を整える動きです。</p><p><strong>3. 再現性はimageだけでなく資源shapeまで含む。</strong> OpenSandboxのsnapshot replayはfilesystem状態に加え、CPU・memoryのshapeをrestore contractとして扱います。再現実験やincident replayでは、image digest、input、secret version、network policy、resource limitを一組で記録する設計が有効です。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p><strong>Agent Router 1.2.1のcanary確認項目：</strong></p><ul><li>MCPRouteを持つGatewayだけが一度rollし、同じseedで既存sessionが継続すること。</li><li>別routeへのsession ID再利用が400、selector外promptの<code>get</code>と補完が拒否されること。</li><li>seedがPod specとprocess argsに出ず、4種のcredential headerがdebug logへ残らないこと。</li><li>欠損fieldやnull blockを含む2xx upstream responseでprocessorがcrashしないこと。</li></ul><p><strong>MCP schema監査：</strong>repository内の<code>oneOf</code>/<code>anyOf</code>を検索し、root <code>properties</code>、branch内<code>required</code>、型違反を混ぜたnegative testを追加します。<code>{id:&quot;r1&quot;, name:123}</code>のような「一方は正しいが他方が壊れている」入力を必ず含めます。</p><p><strong>Snapshot restore試験：</strong>記録と同一limit、limit省略、不一致limit、記録外key、resource-awareでないpoolを分けて検証し、拒否理由をaudit logへ残します。Python SDKはlocal gatewayとshared gatewayの双方でprovider key境界、fallback、rate limit、trace correlationを比較してから採用判断します。</p>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Agent Router v1.2.1 upgrade後のMCP session継続性、Gateway roll範囲、log redaction。</li><li>MCP composition guidanceが各SDKのschema generator、client form、conformance testへ反映されるか。</li><li>agentgatewayのMCP version negotiation、A2A Agent Card path、log DB無効化が次releaseへ入るか。</li><li>OpenSandbox OSEP-0026が正式releaseされ、snapshot format互換性と旧snapshotの扱いが明文化されるか。</li><li>RunkiteとZekoのsponsor、legal/IP review、independent adoption evidence、TC審議。現時点では監視対象への暫定追加に留める。</li><li>A2A MACP extensionとgRPC error detail issueがbinding guidanceまたはconformance suiteへ進むか。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "Agent Router — v1.2 release notes",
+        "https://theagentrouter.ai/release-notes/v1.2/"
+      ],
+      [
+        "Agent Router — v1.2.1 release note commit",
+        "https://github.com/theagentrouter/agent-router/commit/d41f08217b8d8c362f85f0d5094b2fd072fbb4c4"
+      ],
+      [
+        "Agent Router — Python SDK announcement commit",
+        "https://github.com/theagentrouter/agent-router/commit/0f2d6bbddf03f17f28b3c40047753a5f747973f3"
+      ],
+      [
+        "MCP — fix oneOf type-check bypass and render SEP-2106 examples",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/38353251fab3bdeead03dd8283b9e66076ce1a7f"
+      ],
+      [
+        "agentgateway — negotiate OpenAPI initialize protocol version",
+        "https://github.com/agentgateway/agentgateway/commit/d327d10bc92bb5459482a19a79d0b3b6f83c3636"
+      ],
+      [
+        "agentgateway — keep already-public A2A Agent Card interface paths",
+        "https://github.com/agentgateway/agentgateway/commit/465533da7f667d284c563d8e46e4af665d1a3c91"
+      ],
+      [
+        "agentgateway — releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "OpenSandbox — OSEP-0026 snapshot replay merge",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/0da12cf7ca9c07a178992a3665bf8833fb1984bd"
+      ],
+      [
+        "AAIF Project Proposal — Runkite",
+        "https://github.com/aaif/project-proposals/issues/69"
+      ],
+      [
+        "AAIF Project Proposal — Zeko",
+        "https://github.com/aaif/project-proposals/issues/68"
+      ],
+      [
+        "A2A — MACP experimental extension proposal",
+        "https://github.com/a2aproject/A2A/issues/2432"
+      ],
+      [
+        "A2A — gRPC error detail interoperability issue",
+        "https://github.com/a2aproject/A2A/issues/2433"
+      ],
+      [
+        "AAIF Technical Committee — repository history",
+        "https://github.com/aaif/technical-committee/commits/main/"
+      ],
+      [
+        "AAIF Observability WG — repository history",
+        "https://github.com/aaif/wg-observability/commits/main/"
+      ],
+      [
+        "AAIF Security WG — repository history",
+        "https://github.com/aaif/wg-security/commits/main/"
+      ],
+      [
+        "goose — releases",
+        "https://github.com/block/goose/releases"
+      ],
+      [
+        "AGENTS.md — repository history",
+        "https://github.com/agentsmd/agents.md/commits/main/"
+      ],
+      [
+        "Open Responses — releases",
+        "https://github.com/openresponses/openresponses/releases"
+      ],
+      [
+        "OpenEnv — releases",
+        "https://github.com/openenv/OpenEnv/releases"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-06",
     "level": "HIGH",
     "tags": [
