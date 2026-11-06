@@ -1,6 +1,138 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-06",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "Operations",
+      "MCP",
+      "A2A"
+    ],
+    "title": "実行環境を再現し、補助APIの秘密を漏らさない",
+    "summary": "OpenEnv 0.12.0を正式公開。Agent Routerはtoken-count系のrequest body redactionを補完した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>OpenEnv 0.12.0がPython packageとして公開され、v0.11.0から70 commit分の実行環境、session継続性、学習・評価例をまとめました。Agent Routerは生成本体だけでなく、input token計数やtokenizeといった補助endpointのrequest bodyをredaction対象へ広げました。agentgatewayはMCP stdio backendへtimeoutとpending requestの確実な回収を追加し、gooseはOAuth token更新とsession DB初期化の競合を抑えました。</p><p><strong>分析：</strong>信頼性の評価軸が、正常な推論だけでなく、補助API、credential更新、切断、timeout、再起動を含む全経路で秘密と状態を一貫して扱えるかへ広がっています。正式artifactはOpenEnv 0.12.0だけで、Agent Router、agentgateway、goose、OpenSandboxの差分はmain上です。A2Aのextension応答は未解決issueで、確定仕様ではありません。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>OpenEnv 0.12.0、実行環境と学習例を正式artifact化</h3><p><strong>何が変わったか：</strong>v0.11.0から70 commitを収録し、明示的な<code>SessionLostError</code>、transportとenvironmentの接続継続性、SudokuのSFT→GRPO、Kubernetes echo、Agent World Model／FinQA／QED／Reasoning Gym／TextArenaの更新をまとめました。PyPIのsdistとwheelはGitHub Actionsのtrusted publishingに由来するprovenanceを持ち、release commitへ結び付いています。</p><p><strong>Security上の差分：</strong>Hugging Face sandbox向けlocal auth proxyはHTTP／WebSocket redirectを拒否し、注入したAuthorization headerが別originへ再送されたりHTTPSからHTTPへdowngradeされたりする経路を閉じました。credentialを含み得るtarget URLの例外表示も抑制し、proxy threadが停止しない場合はsilentに残さずerrorにします。</p><h3>Agent Router、token-count系requestもredaction</h3><p><code>/v1/responses/input_tokens</code>、Anthropicの<code>/v1/messages/count_tokens</code>、tokenizeの<code>chat_template_kwargs</code>でinstructions、user、input、system、message contentを秘匿対象へ加えました。OpenAI Files APIのsingle-backend対応ではopaque IDを暗号化し、seedをprocess引数ではなくconfig bundleで渡します。いずれもmain差分で、正式releaseはまだです。</p><h3>agentgateway、stdio toolの待ち続けを止める</h3><p>MCP stdio requestがbackend timeoutを尊重し、既定10秒で<code>UpstreamCallTimeout</code>になります。callerがdropされた場合もpending entryを除去し、不要になったqueued requestはprocessへ送らず捨てます。OTLP access logにはrecord bodyとtimestampが加わり、trace／span相関を保ったままcollectorで読める形になりました。これもmain差分です。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>OpenEnv：</strong>0.12.0を正式公開。PyPI artifact provenance、session継続性、auth proxy hardening、学習・評価例を収録。mainは0.12.1.dev0へ進みました。</li><li><strong>Agent Router：</strong>token-count／tokenize系redaction、OpenAI Files APIの暗号化ID、Claude Sonnet 5.5の<code>thinking.type=between_tools</code>変換をmainへ追加。新しい正式releaseはありません。</li><li><strong>agentgateway：</strong>MCP stdio timeout、OTLP access log body／timestamp、HTTP/2 pool deadlock修正、GCP access／ID token credential、DNS <code>maxTTL</code>をmainへ追加。stableはv1.7.0です。</li><li><strong>goose：</strong>Databricks OAuthを期限5分前にrefreshし、server拒否後は強制更新します。mutexで同時更新を直列化し、早期refresh失敗時はまだ有効なtokenをfallback利用します。SQLite migrationをsingle-connection poolで完了後にapplication poolを開く変更と、ACP session/listのclient-owned tagもmainへ入りました。正式releaseはv1.57.0です。</li><li><strong>A2A：</strong>A2A CLI用OAuth Client ID Metadata Documentを安定URLへ公開。応答で有効化済みextensionを<code>A2A-Extensions</code>へechoする挙動がSDK間で異なるissue #2428がopenです。spec／release変更はありません。</li><li><strong>OpenSandbox：</strong>Kubernetes informerのwrite trackingをobject／resourceVersion単位にし、更新対象以外のcache hitを維持するmain修正が入りました。1.2.1-rc.1より後の差分です。</li><li><strong>MCP／AGENTS.md：</strong>前回以降、core spec、正式release、重要commitの差分なし。</li><li><strong>Agent Skills／Open Responses：</strong>前回以降の重要差分なし。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>AAIF：</strong>Technical Committeeの新決定、Working Group成果物、project proposalの新規提出・採択、project加入・卒業は前回以降確認できませんでした。Voice Agents Forum開催後のslides、録画、決定事項も一次情報としてはまだ公開を確認できません。</p><p><strong>A2A相互運用：</strong>issue #2428では、要求extensionのうちserverが有効化したものをresponse headerへ返す実装がJavaScript／.NETとPython／Java／Rustで異なり、GoではgRPC trailerに限られると報告されています。streamingではheaderを確定する時点も曖昧です。重要課題ですが、現時点ではopen issueで、仕様変更として扱うべきではありません。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<h3>補助endpointも同じdata boundaryで守る</h3><p>token count、tokenize、file ID、model discoveryは主推論経路ではありませんが、prompt、schema、credential、tenant情報を通します。route名ではなくdata classでredactionとretentionを適用する必要があります。</p><h3>credentialの時間軸を運用する</h3><p>OAuthは期限だけでなくserver拒否をsignalにし、concurrent refreshを一つに束ねます。暗号化IDはseedを隠すだけでなく、rollout間で永続化し、rotationと旧key fallbackを設計しなければ既存IDを失います。</p><h3>timeout後の状態回収までをfailure semanticsに含める</h3><p>timeoutを返すだけではpending map、queue、process、connection poolが残ります。callerへ明示的に失敗を返しつつ内部状態を再利用可能に戻す設計が重要です。</p><h3>artifact provenanceを運用入力へ</h3><p>package artifact、build workflow、source commit、hashをdeployment記録へ結び付けることで、再現性とincident時の追跡性が上がります。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p><strong>PoC確認項目：</strong></p><ol><li><strong>Artifact固定：</strong>OpenEnv 0.12.0のPyPI provenance、source commit、wheel／sdist SHA256を検証しlockfileへ固定する。session切断時のretry／再作成／fail分類を決める。</li><li><strong>Redirect防御：</strong>same-origin、cross-origin、HTTPS→HTTP、WebSocket redirectを注入し、Authorizationが転送されずURLもerror logへ残らないことを確認する。</li><li><strong>Redaction matrix：</strong>generation、input_tokens、count_tokens、tokenize、file uploadを同じsecret corpusで流し、application log、trace、OTLP、error、debug dumpの全sinkを検査する。</li><li><strong>Opaque ID key lifecycle：</strong>encryption seedをreplica／rollout間で固定し、canary混在、backup復元、rotation、旧key fallback、誤seed起動を試す。</li><li><strong>stdio failure injection：</strong>応答なし、遅延、caller cancel、process crashを起こし、timeout、pending消去、queued request廃棄、次requestでの再利用を観測する。</li><li><strong>Token refresh：</strong>期限前refresh失敗、401拒否、並行request、clock skewを注入し、上書き競合やrefresh stormを防ぐ。</li><li><strong>A2A extension：</strong>主要SDKのHTTP、streaming、gRPCで要求extensionと応答header／trailerをmatrix化し、未合意挙動へ依存しない。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>OpenEnv 0.12.0のGitHub release note／documentation同期と0.12.1のpost-release差分。</li><li>Agent Routerのredaction、Files API暗号化ID、between-tools thinkingを収録する正式releaseとkey rotation手順。</li><li>agentgatewayのstdio timeout、OTLP access log、HTTP/2 pool修正、GCP token credentialを収録する次期release。</li><li>gooseのOAuth refresh、session DB初期化、ACP tagを収録する正式release。</li><li>A2A issue #2428の仕様判断、SDK実装統一、TCK追加。</li><li>OpenSandbox 1.2.1 stableとpost-RCのinformer cache修正取り込み。</li><li>AAIF Technical Committee／Working Groups／project proposalsの新決定と、Voice Agents Forumの一次資料公開。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "OpenEnv — Release 0.12.0 commit",
+        "https://github.com/openenv/OpenEnv/commit/c22aa5f4eb5bb9eab7ad40c2baaefce0397464e4"
+      ],
+      [
+        "OpenEnv — v0.11.0...v0.12.0 compare",
+        "https://github.com/openenv/OpenEnv/compare/v0.11.0...v0.12.0"
+      ],
+      [
+        "PyPI — openenv 0.12.0",
+        "https://pypi.org/project/openenv/0.12.0/"
+      ],
+      [
+        "OpenEnv — Harden local auth proxy",
+        "https://github.com/openenv/OpenEnv/commit/94e607e3b5d48b76da2681c8c2914547a2e718a9"
+      ],
+      [
+        "Agent Router — Request body redaction",
+        "https://github.com/theagentrouter/agent-router/commit/a0b874dcfb876e9044842bc281d9eee758b0401a"
+      ],
+      [
+        "Agent Router — OpenAI Files API",
+        "https://github.com/theagentrouter/agent-router/commit/d52faad433d93737e0944061d67b5271c9004cb3"
+      ],
+      [
+        "Agent Router — Between-tools thinking",
+        "https://github.com/theagentrouter/agent-router/commit/dc5a3047c98c31abd7558bb62525175a1d222ef8"
+      ],
+      [
+        "agentgateway — MCP stdio timeout",
+        "https://github.com/agentgateway/agentgateway/commit/42acba4d4cefee655b0db62b52ca5dfa033eda59"
+      ],
+      [
+        "agentgateway — OTLP access log record",
+        "https://github.com/agentgateway/agentgateway/commit/969a8cf6f38269efbfab00482aa2fa437447e1ae"
+      ],
+      [
+        "agentgateway — HTTP/2 pool deadlock fix",
+        "https://github.com/agentgateway/agentgateway/commit/c5ce21bc8ff0066110e9d324f60a6840d56ff20a"
+      ],
+      [
+        "agentgateway — GCP dynamic token credentials",
+        "https://github.com/agentgateway/agentgateway/commit/006f9619e65eaabe6115951e7f1307f80694f788"
+      ],
+      [
+        "agentgateway — DNS maxTTL",
+        "https://github.com/agentgateway/agentgateway/commit/2faf7b45a594a198614e0a5bc8897cdd47da728e"
+      ],
+      [
+        "goose — OAuth token refresh",
+        "https://github.com/aaif-goose/goose/commit/ec4c7134416e0f1c68402980e5bc87578643a5fd"
+      ],
+      [
+        "goose — Session DB initialization",
+        "https://github.com/aaif-goose/goose/commit/0d66b6efdbb9aa5912c55bb45f1daff24b249ba3"
+      ],
+      [
+        "goose — ACP session tags",
+        "https://github.com/aaif-goose/goose/commit/609d3432d397e0a35b4c6b95afbd3d99fe694811"
+      ],
+      [
+        "A2A — CLI OAuth client metadata",
+        "https://github.com/a2aproject/A2A/commit/9fff3e08ab33bb7674e7d98fc7c08ae8592bb4bd"
+      ],
+      [
+        "A2A — Extension response interoperability #2428",
+        "https://github.com/a2aproject/A2A/issues/2428"
+      ],
+      [
+        "OpenSandbox — Per-object informer tracking",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/8071f2c79f4f8d63a77b39d686bba9f0c7fee7e"
+      ],
+      [
+        "OpenSandbox — Reuse Kubernetes config",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/702a97c7113d89fa8e1bde08c9110e8da82c7cea"
+      ],
+      [
+        "AAIF Technical Committee",
+        "https://github.com/aaif/technical-committee"
+      ],
+      [
+        "AAIF Project Proposals",
+        "https://github.com/aaif/project-proposals"
+      ],
+      [
+        "AAIF — Voice Agents Forum",
+        "https://aaif.live/events/voiceagentssf"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-05",
     "level": "MEDIUM",
     "tags": [
