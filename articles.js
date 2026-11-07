@@ -1,6 +1,102 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-08",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "Operations",
+      "A2A",
+      "MCP"
+    ],
+    "title": "機密計算でもCredential寿命は短くならない",
+    "summary": "AAIF Security WGが信頼境界を訂正。OpenSandboxはresolver caller認証を設計した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>AAIF Security & Privacy WGは、confidential computingのcredential保護に関する表現を修正しました。hardware isolationはhostからguestを守りますが、guest内softwareがcredentialを外へ出した場合、その有効期間とblast radiusはcredential自体の期限・権限・失効能力で決まります。OpenSandboxはOSEP-0025で、egressから外部credential resolverを呼ぶ際にsandbox subjectを短命Ed25519 JWTで証明する設計を追加しました。A2Aにはpublic URLを持たないagentをmessaging meshで接続するcustom protocol binding案が提出されました。</p><p><strong>分析：</strong>今日の共通項は、「隔離された場所で動く」ことと「正しい主体が正しい相手を呼ぶ」ことを別々に証明する必要がある点です。Security WGの文書修正は正式なbest-practice差分、OpenSandboxは設計とmain実装、A2Aは未採択proposalです。監視窓内に新しいformal releaseは確認できませんでした。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>AAIF Security WG：confidential computingの過大評価を訂正</h3><p>従来表は、confidential computingならcredentialの露出期間は「該当なし」、blast radiusはenclave内に限定されるように読めました。修正後は、露出期間はcredentialの有効期限と失効に従い、guest softwareがcredentialを公開すればblast radiusはその権限全体へ及ぶ、と明記しました。hardware isolationが守るのはplatform threat model内のhost accessです。guest application、sidecar、debug endpoint、prompt-driven toolがbearer tokenを読み出せるなら、それらはtrusted computing baseです。</p><p>運用上はconfidential VM／enclaveだけで完結せず、workload identity、短命token、最小権限、audience制限、guest内のcredential読取制御を組み合わせる必要があります。</p><h3>OpenSandbox：resolver callerをsubjectとoriginへbind</h3><p>OSEP-0025は、egressがresolverへ接続するたびに<code>OpenSandbox-Egress-Credential</code>へself-contained JWTを付ける設計です。resolverはlifecycle serverのJWKSを使ってoffline検証し、<code>aud</code>をresolver originへ、<code>sub</code>をresolve documentのsubjectへ一致させます。algはEdDSAへ固定し、<code>none</code>やHMAC confusionを拒否します。<code>exp-iat</code>は最大1時間、30秒leeway、未知の<code>kid</code>や署名不正、subject不一致は401です。</p><p>署名keyはMITM CA seedと分離し、通常sandboxは1 sandbox 1 keypair、Fast Sandboxはpool単位とします。これは直接resolverを叩いて別sandboxのcredentialを得る経路を閉じる設計ですが、statusは<code>implementing</code>で、production実装済みとは扱えません。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>OpenSandbox：</strong>OSEP-0025のcaller authentication設計を追加。別commitではFast Sandboxのbinding時に確定したsubject decision snapshotを保存し、egress child再起動時へ再適用する実装をmainへ統合しました。fence変更・unload時にはsnapshotを破棄します。PTY終了前の出力flush、切断したshellの通知も改善されています。stableは1.2.0、1.2.1-rc.1より後のmain差分です。</li><li><strong>A2A：</strong>issue #2438で、public inbound endpointを持たないagent向けmessaging bindingが提案されました。A2A v1.0のoperationとdata modelを署名frameへ載せ、outbound connection、offline queue、ordered delivery、sender verificationを提供する案です。Ed25519 per-message署名は現行A2A security schemeの外にある明示的deviationで、採択仕様ではありません。</li><li><strong>MCP：</strong>documentation build toolをpinするCI変更のみ。protocol、stable specification、releaseに実質差分はありません。</li><li><strong>AGENTS.md／goose／agentgateway／Agent Router：</strong>監視窓内に新しい重要commitやformal releaseは確認できませんでした。gooseはv1.57.0、agentgatewayはv1.7.0、Agent Routerはv1.2.1のままです。</li><li><strong>OpenEnv／Agent Skills／Open Responses：</strong>監視窓内の重要差分なし。OpenEnv stableはv0.12.0です。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>Security guidance：</strong>confidential computingの表修正は、hardware boundaryとcredential boundaryを分離するAAIF WGの正式文書差分です。Security WG以外のWorking Group、Technical Committeeでは、監視窓内に新しい決定を確認できませんでした。</p><p><strong>Project proposal：</strong>proposal #59は名称をObservalから<strong>Agentic Resource Registry（ARR）</strong>へ更新しました。Agent Skills、MCP server、hook、prompt、sandbox、bundled agentをversion付きで審査・公開し、複数harness向けnative configとlockfileを生成するself-hosted registry案です。traceを正確なresource versionへ結び付け、bundled MCP server経由のA2A delegationにdepth／fanout／loop上限を持たせます。ただしlabelは<code>New</code>／<code>Sandbox</code>で、TC採択やAAIF加入を意味しません。</p><p>新規project加入・卒業、仕様version、認定制度の新発表は確認できませんでした。AAIF MumbaiのAgentic AI Dayは11月7日に開催されましたが、成果物や標準決定の公開はまだ確認できません。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>1. Isolationとidentityの分離：</strong>TEEやconfidential VMはhost脅威を減らしますが、guest内で使えるbearer tokenの権限は変えません。隔離、短命identity、audience、subject、revocationを別controlとして設計する流れです。</p><p><strong>2. 呼出単位のattestation：</strong>OpenSandbox案は、network到達性だけでresolverを信頼せず、各TCP resolveをoriginとsandbox subjectへbindします。key rotation、JWKS cache、pool lifecycleまで含む点が実装上の焦点です。</p><p><strong>3. inbound不要のagent interop：</strong>A2Aのmessaging案は、firewall内・laptop・断続接続agentをoutbound-onlyで結ぶ方向を示します。ただしpresence、admission、重複・replay、bridge越しの意味同等性はtransport側の課題として残ります。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p><strong>Credential境界のPoC：</strong>confidential VM内のapplication、sidecar、debug toolからtokenを読み出せる前提で脅威試験を行い、TTL、audience、scope、revocation、auditが漏えい後の影響を制限するか確認します。hardware isolationをtoken lifetimeの代替にしません。</p><p><strong>OSEP-0025の実装前テスト：</strong></p><ul><li>署名不正、<code>alg=none</code>、audience／subject不一致、expired／future token、未知<code>kid</code>を拒否する。</li><li>JWKS rotationとstale cache、resolver停止、clock skewでfail-openしない。</li><li>署名keyとMITM CA seedのrotation・read権限・障害domainが分離される。</li><li>egress再起動後は最新の確定snapshotだけを再適用し、fence変更後の古いpolicyを使わない。</li></ul><p><strong>A2A messaging評価：</strong>offline queue、順序、重複、再送、sender key rotationを試験し、同じAgent Card／Task操作がHTTP bindingとbridge越しで同じ意味になるかをconformance項目にします。</p>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>OpenSandbox OSEP-0025の実装commit、JWKS endpoint、key rotation、1.2.1 stableへの収録。</li><li>subject decision snapshot replayが正式releaseされ、pool fenceとstale decisionの試験が追加されるか。</li><li>A2A issue #2438がmaintainer sponsorを得て、experimental binding名・security scheme・conformance fixtureが標準化へ進むか。</li><li>ARR proposal #59のTC sponsor、legal/IP review、独立adopter、AAIF Sandbox採択判断。</li><li>Security WGの訂正がreference architectureやcredential guidanceへ展開されるか。</li><li>MCP、AGENTS.md、goose、agentgateway、Agent Routerの次のformal releaseとsecurity artifact。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "AAIF Security & Privacy WG — confidential-computing credential exposure correction",
+        "https://github.com/aaif/wg-security-and-privacy/commit/f9fc39165fb5d8eb088f9efec10912f30a5672c9"
+      ],
+      [
+        "OpenSandbox — OSEP-0025 credential resolver caller authentication",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/1f3ec4f27432ea2386cb8b357d70d2036c11f81c"
+      ],
+      [
+        "OpenSandbox — Fast Sandbox subject decision snapshot replay",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/2c6b3389e927376828c7434a5fd20b5815b02ef9"
+      ],
+      [
+        "A2A — Agent Messaging custom protocol binding proposal",
+        "https://github.com/a2aproject/A2A/issues/2438"
+      ],
+      [
+        "AAIF Project Proposal — Agentic Resource Registry",
+        "https://github.com/aaif/project-proposals/issues/59"
+      ],
+      [
+        "MCP — documentation build tooling pin",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/cf59bb0d8b43e711420f5f7313aa6cca3f1e1898"
+      ],
+      [
+        "AAIF — Agentic AI Day Mumbai event",
+        "https://aaif.io/events?tab=community"
+      ],
+      [
+        "AAIF Technical Committee — repository history",
+        "https://github.com/aaif/technical-committee/commits/main/"
+      ],
+      [
+        "goose — releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "agentgateway — releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "Agent Router — releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ],
+      [
+        "AGENTS.md — repository history",
+        "https://github.com/agentsmd/agents.md/commits/main/"
+      ],
+      [
+        "OpenEnv — releases",
+        "https://github.com/openenv/OpenEnv/releases"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-07",
     "level": "HIGH",
     "tags": [
