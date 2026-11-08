@@ -1,6 +1,122 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-09",
+    "level": "HIGH",
+    "tags": [
+      "MCP",
+      "Security",
+      "Operations",
+      "A2A"
+    ],
+    "title": "MCP認可を現行化、deny消失のfail-openを閉じる",
+    "summary": "MCPのOAuthガイドを再構成。OpenSandboxはpolicy更新でdenyが消える不具合を修正した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>MCPは2026-07-28版とdraftのauthorization guideを再構成し、Client ID Metadata Documentsを主要なclient登録経路、Dynamic Client Registration（DCR）をdeprecatedとして整理しました。JWTのaudience、issuer、scope、Origin、key取得上限など、実装時に外せない検証もsampleへ反映しています。OpenSandboxは、無関係な<code>PATCH /policy</code>が既存deny ruleを落としてblocked trafficを許可し得るfail-open不具合を修正しました。</p><p><strong>分析：</strong>今日の共通点は、認可を「tokenを持っているか」や「policy objectが存在するか」ではなく、discovery、audience、scope、更新前後のdeny保持まで含むstate transitionとして検証することです。MCPはguideとcontribution policyの更新、OpenSandboxはmain上の実装修正です。新しいMCP仕様versionや対象OSSのformal releaseは確認できませんでした。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>MCP：OAuth guideを現行仕様へ合わせ、安全なdefaultを明示</h3><p>新guideはMCP serverをOAuth resource server、MCP clientをuserの代理となるOAuth clientとして整理しました。Protected Resource Metadataとauthorization server metadataを発見し、metadataの<code>issuer</code>完全一致とPKCE対応を確認します。authorization requestとtoken exchangeにはMCP serverを示す<code>resource</code>を含め、callbackでは<code>iss</code>、resource serverではtokenの<code>aud</code>、<code>iss</code>、scopeを検証します。</p><p>Client ID Metadata Documentsを第一の動的登録経路とし、DCRはlegacy compatibility向けのdeprecated経路になりました。OriginはMCP pathだけでなくserverの全pathで検証し、JWKS等のkey downloadにはsize制限を設けます。MCP session ID headerはauthorization identityとして使わず、無視するよう記載されました。これはnormative specificationの新releaseではなく、現行2026-07-28版とdraftの実装guide更新です。</p><h3>OpenSandbox：unrelated PATCHでdenyが消えるfail-openを修正</h3><p>従来のegress policy mergeは、patch ruleと既存ruleで同じ<code>seen</code> setを共有していました。既存policyに同一scopeのallowとdenyがあると、別scopeへの無関係なPATCHでも後続denyが重複扱いで消える場合がありました。nft layerはIP／CIDR／port ruleでdeny-winsのため、更新前に遮断されていた宛先が更新後に到達可能になります。</p><p>修正後はpatchが触れたscopeだけを置換し、触れていないscopeの既存ruleは重複を含め保持します。issue #2663はsecurity bugとしてclosedになりました。同時にFast Sandboxはsubject単位のport-scoped ruleを実装し、allowよりdenyを優先します。いずれもmain差分で、正式release待ちです。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>authorization guide更新に加え、Skills extensionの参照先を<code>specification/stable</code>から<code>specification/beta</code>へ訂正しました。SEP-2640がFinalでも、extension artifact自体のmaturityはBetaです。</li><li><strong>OpenSandbox：</strong>Fast Sandboxのport-scoped egress、deny保持修正、vault／policy mutation時のsubject snapshot再installをmainへ統合。API requestのclosed objectで未知fieldを422拒否する修正も入り、<code>readonly</code>の綴り違いが黙って落ちてread-write mountになる例を防ぎます。</li><li><strong>goose：</strong>GPT-Live互換のendpoint、model、keyを設定可能にしました。custom endpointはHTTP(S)のみとし、credential・query・fragmentを含むURLを拒否、WebRTC negotiationはredirectを追わない設計です。正式releaseはv1.57.0のままです。</li><li><strong>agentgateway：</strong>code差分はありません。issue #4351でMCP incremental authorizationの実装gapが提起され、STS失敗の403 challenge伝播、ExtMCP、複数virtual MCPのoptional backendをどう再認可するかが未解決です。</li><li><strong>Agent Router：</strong>AIServiceBackendのfinalizer除去が409 Conflictになるとrequeueされず、resourceがTerminatingに残り得るissue #2995がopenです。修正commitや新releaseはまだありません。</li><li><strong>A2A：</strong>physical system向け出力をdeterministic ruleで検証する能力をAgent Card extensionとしてadvertiseする提案 #2439がopenになりました。登録extensionでも採択仕様でもありません。</li><li><strong>AGENTS.md／OpenEnv／Agent Skills／Open Responses：</strong>監視窓内に重要commitやformal releaseの差分は確認できませんでした。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>MCP contribution policy：</strong>specification変更は該当Working Groupへ提出・議論し、明示的承認を得てからSEP／PRを開く手順になりました。PRを開けるのは<code>modelcontextprotocol</code> organization memberに限定され、非memberはissueまたはWorking Groupから参加します。proposalの入口をWGへ集約し、Core Maintainer review前の問題設定とprototype検証を強める変更です。</p><p><strong>Maturity表示：</strong>Skills over MCPはSEPがFinalでも、配布仕様の参照先はBetaです。「proposalの意思決定状態」と「利用artifactの安定性」を別軸で扱う必要があります。</p><p><strong>AAIF全体：</strong>Technical Committee、Security／Observability WGで新しい採択決定はなく、新規加入・卒業projectも確認できませんでした。Runkite proposalは外部integration evidenceを追記しましたが、labelは<code>New</code>で、TC sponsor、独立production adopter、foundation加入は未確定です。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>1. Authorization discoveryを運用契約として扱う：</strong>PRM、issuer、PKCE、Client ID Metadata、resource／audienceを一連のchainとして検証します。agentgatewayのincremental authorization issueは、spec上の403 scope challengeをgatewayのfilter、aggregation、fail-open構成まで運ぶ難しさを示します。</p><p><strong>2. Policy mutationもsecurity境界になる：</strong>POST時にdenyが正しくても、PATCH mergeで消えればpolicy engineはfail-openになります。更新APIには「触れていないdenyが不変」というinvariantとbefore／after差分監査が必要です。</p><p><strong>3. Statusを一語で表さない：</strong>SEP Final、extension Beta、main実装、release artifactを分けてinventory化する動きが強まっています。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p><strong>MCP OAuthのPoC確認項目：</strong></p><ul><li>PRMのresource不一致、metadata issuer不一致、PKCE非対応を接続前に拒否する。</li><li>tokenの<code>aud</code>、<code>iss</code>、scope、期限をresource server自身で検証し、session IDで代替しない。</li><li>OriginをMCP endpoint以外でも検証し、JWKS／metadata取得へtimeout・size上限・redirect policyを設ける。</li><li>追加scopeが必要なtool callで403と<code>WWW-Authenticate</code>がgateway越しにclientへ届き、単なる500やtool消失にならない。</li></ul><p><strong>Egress policy回帰試験：</strong>同一target／portにallowとdenyを置き、無関係scopeのPATCH後もdenyが残ることをclassic／Fast Sandbox双方で確認します。port-only rule、snapshot、relay、restart後のsubject isolationも試験し、policy hashと差分をaudit logへ残します。</p><p><strong>Kubernetes運用：</strong>Agent RouterではSecret、BackendSecurityPolicy、AIServiceBackendの同時削除をstress testし、finalizer 409後にresourceが残留しないかを監視します。issue解決まではTerminating durationとfinalizer errorをalert対象にします。</p>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>MCP authorization guideの検証要件が各v2 SDK、conformance、server templateへ反映されるか。</li><li>MCP WG承認・organization membership中心のcontribution flowがSEP throughputと公開性へ与える影響。</li><li>Skills extensionがBetaからStableへ進む条件と、host側consent／origin／cache test。</li><li>OpenSandboxのdeny保持、port-scoped Fast Sandbox、unknown-field拒否が次のstable releaseへ収録されるか。</li><li>agentgateway incremental authorizationの403 challenge伝播設計と、optional MCP backendの再認可UX。</li><li>Agent Router finalizer issue #2995のmerge-patch／requeue修正。</li><li>A2A physical-validity extension proposalのsponsor、schema、audit evidence、conformance。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP — authorization guide rework for 2026-07-28",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/fd502785f2732ae0028de7e9fa34d6ebcd950c65"
+      ],
+      [
+        "MCP — Working Group-based contribution policy",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/e5a28a6841fd85b4624399c77d1d7ce764dc5420"
+      ],
+      [
+        "MCP — point Skills specification links to Beta",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/94f4ebc8ecb3764584bc30d5139d57c03692b734"
+      ],
+      [
+        "OpenSandbox — keep untouched same-scope rules on PATCH merge",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/1e1ba54cb0e91fa67b05e1cd2071a0676784adcd"
+      ],
+      [
+        "OpenSandbox — deny-removal fail-open issue #2663",
+        "https://github.com/opensandbox-group/OpenSandbox/issues/2663"
+      ],
+      [
+        "OpenSandbox — Fast Sandbox port-scoped rules per subject",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/888f711fbe9cd0a14d291055536becda6318fa24"
+      ],
+      [
+        "OpenSandbox — install subject snapshots on vault and policy mutations",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/f67aecaa9ae8f8613ec3a8e1eada5a5828a20d6e"
+      ],
+      [
+        "OpenSandbox — reject unknown request fields",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/de378fbd6742f32e7bb5389230dabf8b18e5dd4e"
+      ],
+      [
+        "goose — configurable GPT-Live endpoint, model and key",
+        "https://github.com/aaif-goose/goose/commit/5bad61a87c27c313aec5187bfb72e69b594086b5"
+      ],
+      [
+        "agentgateway — MCP Incremental Authorization issue #4351",
+        "https://github.com/agentgateway/agentgateway/issues/4351"
+      ],
+      [
+        "Agent Router — finalizer 409 can leave AIServiceBackend Terminating",
+        "https://github.com/theagentrouter/agent-router/issues/2995"
+      ],
+      [
+        "A2A — physical-validity verification extension proposal",
+        "https://github.com/a2aproject/A2A/issues/2439"
+      ],
+      [
+        "AAIF Project Proposal — Runkite",
+        "https://github.com/aaif/project-proposals/issues/69"
+      ],
+      [
+        "AAIF Technical Committee — repository history",
+        "https://github.com/aaif/technical-committee/commits/main/"
+      ],
+      [
+        "AAIF News",
+        "https://aaif.io/news"
+      ],
+      [
+        "MCP — releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "goose — releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "agentgateway — releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-08",
     "level": "HIGH",
     "tags": [
