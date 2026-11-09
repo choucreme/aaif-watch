@@ -1,6 +1,126 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-10",
+    "level": "HIGH",
+    "tags": [
+      "MCP",
+      "Security",
+      "Operations",
+      "A2A"
+    ],
+    "title": "Toolを遅延公開し、認可とsandbox起動をrequestへ束縛",
+    "summary": "gooseがMCP toolを必要時に公開。Agent RouterとOpenSandboxは認可・起動境界をfail closedへ寄せた。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>gooseはMCP tool schemaを最初から全件modelへ渡さず、必要なtool名を<code>enable_tools</code>で有効化して次のresponseから利用する最小実装をmainへ統合しました。Agent RouterはOAuth Protected Resource Metadataの<code>resource</code>を固定設定ではなくrequestのscheme・authority・MCP pathから生成できるようにしました。OpenSandboxはFast Sandboxで、subjectに対応する最新policy snapshotがdata planeからACKされるまでactivationを503で止めるreadiness gateを導入しています。</p><p><strong>分析：</strong>共通点は、agentへ渡す能力、OAuthのresource identity、sandboxの通信policyを起動時の静的設定だけで確定せず、実際のrequestとcurrent stateへ束縛することです。いずれもmain上の変更であり、新しいformal releaseではありません。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>goose：MCP tool schemaを必要時にだけmodelへ公開</h3><p><code>GOOSE_TOOL_DEFERRAL: lookup</code>を有効にすると、gooseはMCP tool名をsystem instructionsへ載せますが、schemaはmodelへ即時advertiseしません。modelが<code>enable_tools</code>へ正確なmodel-visible tool名を渡すと、成功したtool responseに記録されたtoolだけが次のresponseで利用可能になります。platform toolは従来どおり即時利用でき、<code>GOOSE_TOOL_DEFERRAL_ALWAYS_LOAD</code>で常時公開するtoolも指定できます。</p><p>この変更は、多数のMCP serverを接続した際のcontext消費を抑え、Progressive Disclosureを実行経路へ入れるものです。一方、誤ったtool選択、二段階呼び出しによるlatency、権限の異なる同名tool、compactionやclear後の再有効化を検証する必要があります。</p><h3>Agent Router：OAuth resource identityをrequestから導出</h3><p>従来はMCPRouteへ外部URLを手動設定する必要があり、別hostname、非標準port、TLS終端構成ではmetadataの<code>resource</code>が実際の接続先とずれる可能性がありました。変更後は設定を省略でき、metadata documentと403 challengeはrequestのscheme、Host、MCP pathからresourceを生成します。401 challengeはEnvoy側で<code>X-Forwarded-Proto</code>とauthorityから生成します。固定値は引き続き優先されます。</p><p>hostごとのmetadata混同を避けるため、動的生成時は<code>Cache-Control: no-store</code>を付けます。host allow-listはproxyではなくHTTPRouteのhostname matchへ委ねるため、forwarded headerとGateway設定を含むE2E試験が重要です。</p><h3>OpenSandbox：policy ACK前のsandbox activationを拒否</h3><p>Fast Sandboxはcurrent control epoch、registration、fence、snapshot digestが一致したACKを確認するまで<code>data-plane-ready</code>を503にします。policy apply後にACK状態が変わった場合はdeny-firstへrollbackし、rollback失敗もpendingとして再試行します。古いchildや別registrationのACKで新しいsubjectをactiveにしないためのfail-closed化です。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>community documentationを再構成。SEP、Working／Interest Group、charter、communication、decision recordの入口を整理し、proposal discussionからsponsor、PR、番号付与までの経路を明文化しました。protocol schemaやstable specificationの新versionではありません。</li><li><strong>goose：</strong>deferred MCP toolsをmainへ統合。HTTP(S)の<code>GOOSE_DOCS_ROOT</code>を正しく扱う修正、voice instructionsの起動単位設定も入りました。native A2A serverとremote A2A delegationはissue #13388の提案段階です。</li><li><strong>Agent Router：</strong>request由来のProtected Resource Metadataに加え、Bedrockの<code>guardrail_intervened</code>をOpenAI互換の<code>finish_reason: content_filter</code>へ変換。正式releaseは1.2.1のままです。</li><li><strong>OpenSandbox：</strong>Fast Sandboxのsubject readiness gateとrollback再試行を統合。node-agent componentのmaintainer nominationも反映されました。正式release待ちです。</li><li><strong>agentgateway：</strong>model catalogとbrotli dependency更新が中心。standalone認証のdefaultがKubernetesのStrictと異なりOptionalになるissue #4355、MCP guardrailがerror／server-initiated messageを通すissue #4245、delegated routeが壊れていても<code>ResolvedRefs=True</code>を返すissue #4352はopenで、修正済みとは扱いません。</li><li><strong>A2A：</strong>前回報告したphysical-validity extension proposal以外に新しい実装commit・releaseはありません。</li><li><strong>AGENTS.md／OpenEnv／Agent Skills／Open Responses：</strong>監視窓内に重要な新規差分は確認できませんでした。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>MCP community process：</strong>仕様変更は関連WGで議論・承認し、discussionへのlinkをPRへ残す流れが再整理されました。GitHub organization memberでない提案者はdraft SEPとprototypeをgroup channelへ提示し、Maintainer sponsorがauthor名を保持してPRを開く経路を使います。meetingの自動記録は公式Google Meet transcriptionに限定し、第三者AI notetakerを許可しない規則も文書化されています。</p><p><strong>AAIF project proposal：</strong><code>nono</code> proposal #61は<code>TC Vote</code>へ進みました。kernel-enforced sandbox、credential保護、instruction／skill provenance、audit・recoveryを組み合わせ、goose、MCP、AGENTS.md、gateway群をhost側で補完するSandbox-stage提案です。ただしcontribution agreementはunsigned、paperworkはreview中で、加入決定ではありません。AGNTCY proposal #57はDirectory、OASF、SLIM、Identity、Observe、SHADI等をGrowth-stageでAAIFへ移す案を更新しましたが、labelは引き続き<code>New</code>です。</p><p>AAIF Technical Committee repository、新規卒業project、認定制度、AAIF／Linux Foundation公式newsには新しい正式決定を確認できませんでした。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>1. Capabilityを段階公開する：</strong>接続可能なtool全体をmodel contextへ常駐させず、候補名、schema有効化、実行の三段階へ分けます。context削減だけでなく、権限・consent・auditをtool activationへ結び付けられます。</p><p><strong>2. Resource identityをrequestへ束縛する：</strong>OAuth metadataのresource、401／403 challenge、実際のroute authorityが一致しなければ、token audienceやincremental authorizationの検証が崩れます。静的URL設定からrequest-derived identityへの移行が進んでいます。</p><p><strong>3. ACKを観測してからactiveにする：</strong>control planeがpolicyを送った事実ではなく、対象data planeが現在のdigestを適用したことをactivation条件にします。Agentic runtimeでもdesired stateとeffective stateの差を明示する設計です。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p><strong>deferred toolのPoC：</strong></p><ul><li>50〜500 tool接続時のprompt token、初回latency、tool selection精度をeager方式と比較する。</li><li><code>enable_tools</code>へ存在しないtool、permission外tool、同名toolを渡した場合に利用可能にならないことを確認する。</li><li>compaction後は有効toolが維持され、session clear後は再有効化が必要になることを監査logと合わせて確認する。</li></ul><p><strong>OAuth metadataのPoC：</strong>複数hostname、TLS終端、非標準port、<code>X-Forwarded-Proto</code>欠落・複数値、Host mismatchを試し、metadataのresourceと401／403のmetadata URLが一致することを確認します。cacheが別hostのdocumentを再利用しないことも検証します。</p><p><strong>sandbox readinessのPoC：</strong>child未接続、古いACK、policy更新中のchild交換、rollback失敗、fence変更を注入し、subjectがdeny-firstのままactiveにならないことを確認します。503回数、ACK待ち時間、rollback retry、Terminating／stuck subjectをSLO化すると運用判断へつながります。</p>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>goose deferred MCP toolsが次の正式releaseへ入るか、token削減とselection精度のbenchmarkが公開されるか。</li><li>goose native A2A proposal #13388が実装へ進み、contextId、confirmation、CancelTaskが相互運用試験されるか。</li><li>Agent Routerのrequest-derived resourceがproxy chain、hostname、cacheを跨ぐconformance testへ発展するか。</li><li>OpenSandbox readiness gateとrollback retryがstable releaseへ収録されるか。</li><li>agentgatewayのauthentication default、MCP guardrail blind spot、delegated route statusのopen issueが修正されるか。</li><li>nono proposalのcontribution agreement、TC vote結果、AAIF Sandbox加入。AGNTCY proposalが<code>New</code>から進むか。</li><li>MCP community process再編後のSEP sponsor待ち時間、decision record、WG throughput。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "goose — minimal deferred MCP tools",
+        "https://github.com/aaif-goose/goose/commit/c94a2abef71b7382a9710b8d7c338b007ddaadf3"
+      ],
+      [
+        "goose — native A2A support proposal #13388",
+        "https://github.com/aaif-goose/goose/issues/13388"
+      ],
+      [
+        "Agent Router — derive Protected Resource Metadata resource from request",
+        "https://github.com/theagentrouter/agent-router/commit/185d62fa71dcfdd934b5c6bb19b6efb8eb02de6f"
+      ],
+      [
+        "Agent Router — map Bedrock guardrail intervention to content_filter",
+        "https://github.com/theagentrouter/agent-router/commit/a67043b74a0aaccaa958c61cb5aeb3e0b5682d99"
+      ],
+      [
+        "OpenSandbox — Fast Sandbox subject readiness gate",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/2b71e9553a004b093f56e1b779cb9e5557d3c55c"
+      ],
+      [
+        "OpenSandbox — retry deny-first restoration",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/b59c2eb2e3e4f29dd084b22581db41881b257358"
+      ],
+      [
+        "MCP — community documentation restructure",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/394567887feccae8b3e27c7c84106edb5fbac116"
+      ],
+      [
+        "agentgateway — standalone authentication default issue #4355",
+        "https://github.com/agentgateway/agentgateway/issues/4355"
+      ],
+      [
+        "agentgateway — MCP guardrail blind spot issue #4245",
+        "https://github.com/agentgateway/agentgateway/issues/4245"
+      ],
+      [
+        "agentgateway — delegated route status issue #4352",
+        "https://github.com/agentgateway/agentgateway/issues/4352"
+      ],
+      [
+        "AAIF Project Proposal — nono #61",
+        "https://github.com/aaif/project-proposals/issues/61"
+      ],
+      [
+        "AAIF Project Proposal — AGNTCY #57",
+        "https://github.com/aaif/project-proposals/issues/57"
+      ],
+      [
+        "AAIF Technical Committee — repository history",
+        "https://github.com/aaif/technical-committee/commits/main/"
+      ],
+      [
+        "AAIF News",
+        "https://aaif.io/news"
+      ],
+      [
+        "Linux Foundation — press releases",
+        "https://www.linuxfoundation.org/press"
+      ],
+      [
+        "MCP — releases",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases"
+      ],
+      [
+        "goose — releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "agentgateway — releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "Agent Router — releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-09",
     "level": "HIGH",
     "tags": [
