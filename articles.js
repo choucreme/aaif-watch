@@ -1,6 +1,134 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-11",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "MCP",
+      "Operations",
+      "A2A"
+    ],
+    "title": "脆弱性を潰し、MCP鍵と高速tier計測を運用可能に",
+    "summary": "Agent Routerは到達可能な脆弱性を解消。MCP鍵ローテーションと高速tier課金も実運用へ寄った。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>Agent Routerは<code>govulncheck</code>で到達可能と判定された11件と、Trivyが検出した高severityの<code>go-jose</code>脆弱性に対応するdependency更新をmainへ統合しました。同時に、MCP session暗号化のfallback seedを既存Kubernetes Secretから読めるようにし、agentgatewayはAnthropic fast modeを<code>usage.speed</code>から識別してfast rateで計上する修正を統合しました。</p><p><strong>分析：</strong>今日の差分は新機能の量より、既存のagent trafficを安全かつ正しく運用するcontrolが中心です。脆弱性、鍵ローテーション、利用量・課金という別々の問題が「実際に適用された状態を観測し、監査可能な値として残す」方向へ収束しています。いずれもmain上の変更で、新しいformal releaseを意味しません。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>Agent Router：到達可能な脆弱性を解消</h3><p><code>x/net</code>、<code>x/crypto</code>、OpenTelemetry log SDK／exporter、<code>moby/go-archive</code>、<code>klauspost/compress</code>にまたがる11件を修正版へ上げ、controllerとgateway imageで検出された<code>go-jose/v4</code>も4.1.6へ更新しました。更新後の<code>govulncheck</code>は到達可能な問題を報告しないとされています。運用側は「mainで修正済み」と「利用中release／imageで修正済み」を分け、次の配布artifactでSBOMとscanを再確認すべきです。</p><h3>MCP session鍵のfallbackも外部Secret化</h3><p>Helmに<code>controller.mcp.sessionEncryption.fallback.existingSecret</code>が加わりました。primary seedだけでなく、rotation中に旧sessionを復号するfallback seedもSecret manager／GitOps管理のSecretから注入できます。旧seedをvaluesへ平文複写せず、sessionを維持したままrotationできる構成です。</p><h3>agentgateway：Anthropic fast modeの2倍過小計上を修正</h3><p>Anthropicはfast modeを<code>service_tier</code>ではなく<code>usage.speed</code>で返すため、従来はstandard rateで計上されていました。buffered、streaming、detect modeで<code>speed=fast</code>を正規化し、catalogにfast tierを追加します。gateway telemetryをquotaやchargebackに使う環境では、過去期間の再集計可否も確認対象です。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>前回のcommunity documentation再構成以降、protocol／governanceの重要な新commitはありません。直近はdevelopment dependency更新で、stable specificationの新versionではありません。</li><li><strong>goose：</strong><code>advertised_tools</code>を未回答tool requestの間だけ保持し、完了済みmessageやcheckpointへ繰り返し永続化しない修正を統合。長いsessionのDB肥大とmetadata重複を抑えます。tool image batch順序、Bedrock非streaming時のtruncation報告、MCP exampleのTokio runtimeも修正され、mainのversionは1.59.0へbumpされました。</li><li><strong>agentgateway：</strong>Anthropic fast tierの計測・catalog対応が中心。新formal releaseは未確認です。</li><li><strong>Agent Router：</strong>脆弱性とMCP fallback Secretに加え、finalizer write競合時にreconcileを再queueする修正を統合。削除処理のstuck回避に効きます。</li><li><strong>OpenSandbox：</strong>不正なfile search globを400で拒否し、空のegress targetをCLI usage errorに変更。network isolation guideのPython例も実APIへ修正しました。</li><li><strong>OpenEnv：</strong>validation benchでstartup fault witness、完全なbundle inventory、想定外のdirect Hugging Face start拒否を強化。環境が「起動した」だけでなく証拠bundleの完全性を判定する方向です。</li><li><strong>A2A／AGENTS.md：</strong>監視窓内に新実装commit／releaseはありません。A2Aの最新mainは11月5日、AGENTS.mdは9月10日のままです。</li><li><strong>Agent Skills／Open Responses：</strong>監視窓内の重要な新規差分は確認できませんでした。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>Attestation &amp; Evidence Working Group案：</strong>AAIF proposal #6は11月10日に更新されましたが、labelは<code>New</code>、issueはopenで、TC承認済みWGではありません。案はagentのaction、decision、authorization、outcomeについて、組織境界を越えてoffline検証できるportable evidence bundle、witness／root-of-trust分類、90日でのEvidence Classes and Gap Analysisを提案します。Observability &amp; Traceabilityが「何を観測したか」を扱うのに対し、AE-WG案は「第三者が後から検証できる証拠として何を残すか」を分離する構想です。</p><p>AAIF Technical Committeeの公式tableは10 projectのままで、監視窓内に新しい加入・卒業・stage変更はありません。OpenEnvとAgent Skillsのproposal issueは更新対象に現れましたが、両者はすでに公式table掲載済みで、新規加入ニュースとしては扱いません。AAIF／Linux Foundationの公式news、認定、eventにも新しい正式発表は確認できませんでした。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>1. Security scanをrelease判定へ結ぶ：</strong>mainのscan cleanだけでなく、配布image、Helm chart、transitive dependency、SBOMの一致までrelease gateにする必要があります。</p><p><strong>2. Secret rotationをsession continuityと同時設計する：</strong>primary／fallbackの二鍵期間、revision、rollout、旧鍵廃棄を明文化すると、MCP sessionを切らずにcredential hygieneを保てます。</p><p><strong>3. Evidenceをtelemetryの次の層として扱う：</strong>OpenEnvのvalidation witnessとAE-WG案は、logの有無から、誰がどの条件で生成し完全性をどう検証するかへ焦点を移しています。</p><p><strong>4. 課金semanticをprovider差分から正規化する：</strong><code>service_tier</code>と<code>speed</code>のfield差はgatewayで共通semanticへ変換しないとbudget controlとSLO判断を誤らせます。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ul><li>Agent Router修正commitを含むimageをstagingでbuildし、<code>govulncheck</code>、Trivy、SBOM diffを保存する。修正release前にmain imageを使うなら例外承認とrollback先を明記する。</li><li>MCP seedをSecret manager管理にし、primary=A／fallback=Bからprimary=C／fallback=Aへrotation。既存session継続、新規暗号化、revision rollout、旧B無効化を確認する。</li><li>Anthropic fast requestをbuffered／streaming／detectで流し、<code>service_tier=fast</code>、token量、catalog rate、請求見積りの一致を検証する。</li><li>controllerへresourceVersion conflictを注入し、finalizer failure後の再queue、deletion latency、retry countを観測する。</li><li>OpenEnvでstartup witness欠落、duplicate key、bundle inventory欠落を負例にし、validationがfail closedになるか確認する。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Agent Routerの脆弱性修正とMCP fallback Secretが次のsigned release／containerへ入る時期。</li><li>agentgateway fast tier補正後のbilling reconciliation、dashboardとCEL policyへの影響。</li><li>goose 1.59.0のformal release artifactと、durable tool metadata修正のDB縮小効果。</li><li>Attestation &amp; Evidence WG案が<code>New</code>からTC reviewへ進むか、Observability、Identity、Security WGとの境界が明文化されるか。</li><li>OpenEnv validation witnessがRFC／releaseへ入り、portable evidence schemaが定義されるか。</li><li>MCP、A2A、AGENTS.mdの次の仕様・governance更新。変更がない状態も継続監視する。</li><li>AAIF project proposal、stage変更、MCPA certification、次回eventの公式発表。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "Agent Router — clear govulncheck and Trivy findings",
+        "https://github.com/theagentrouter/agent-router/commit/f954c0ab19e7708601f86fc2c54c9dfdee4b1383"
+      ],
+      [
+        "Agent Router — existing Secret for MCP fallback seed",
+        "https://github.com/theagentrouter/agent-router/commit/2c11deced19a4a63d8e6c5cbbb938d6b55793934"
+      ],
+      [
+        "Agent Router — requeue finalizer write failures",
+        "https://github.com/theagentrouter/agent-router/commit/165733c58c0edcc18fc315229349e8597aaa2c65"
+      ],
+      [
+        "agentgateway — price Anthropic fast mode at fast rates",
+        "https://github.com/agentgateway/agentgateway/commit/f75ea8c76271c5960bc4da4b00cf0894bd8785e1"
+      ],
+      [
+        "goose — omit repeated advertised_tools from persisted metadata",
+        "https://github.com/aaif-goose/goose/commit/72849d8e9c85a011b30ebac31dce8c0806cfff8c"
+      ],
+      [
+        "goose — preserve tool-image batch ordering",
+        "https://github.com/aaif-goose/goose/commit/72da1bc1d406bf70f8b25a51c0ab9c8c12ba92e8"
+      ],
+      [
+        "goose — Bedrock truncation reporting",
+        "https://github.com/aaif-goose/goose/commit/3cf332836a13e6adb864f4c028309a7e0b0b6d27"
+      ],
+      [
+        "goose — Tokio runtime for MCP example",
+        "https://github.com/aaif-goose/goose/commit/83d2e92e807372dff9dd61f8c9e46f6c4f070036"
+      ],
+      [
+        "OpenSandbox — reject invalid file search pattern",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/383e84faf09de806fc33d2c6020b195fd56cf241"
+      ],
+      [
+        "OpenSandbox — reject empty egress target",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/f12086664126de57a10e7edb6a4d32952fa7cab9"
+      ],
+      [
+        "OpenEnv — validation evidence fixes",
+        "https://github.com/openenv/OpenEnv/commit/029c08f8122c8059e4aa05cd5bfd08092a75db75"
+      ],
+      [
+        "AAIF Working Group Proposal — Attestation & Evidence #6",
+        "https://github.com/aaif/working-group-proposals/issues/6"
+      ],
+      [
+        "AAIF Technical Committee — projects and stages",
+        "https://github.com/aaif/technical-committee/blob/main/README.md"
+      ],
+      [
+        "MCP — repository history",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commits/main/"
+      ],
+      [
+        "A2A — repository history",
+        "https://github.com/a2aproject/A2A/commits/main/"
+      ],
+      [
+        "AGENTS.md — repository history",
+        "https://github.com/agentsmd/agents.md/commits/main/"
+      ],
+      [
+        "AAIF News",
+        "https://aaif.io/news"
+      ],
+      [
+        "Linux Foundation — press releases",
+        "https://www.linuxfoundation.org/press"
+      ],
+      [
+        "goose — releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "agentgateway — releases",
+        "https://github.com/agentgateway/agentgateway/releases"
+      ],
+      [
+        "Agent Router — releases",
+        "https://github.com/theagentrouter/agent-router/releases"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-10",
     "level": "HIGH",
     "tags": [
