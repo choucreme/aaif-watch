@@ -1,6 +1,106 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-12",
+    "level": "MEDIUM",
+    "tags": [
+      "MCP",
+      "Operations",
+      "A2A",
+      "Security"
+    ],
+    "title": "MCPが半年周期を固定、失敗の明示化が前進",
+    "summary": "次期仕様は2027-03-30。gooseとOpenSandboxは途中失敗や入力不備を機械判定しやすくした。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>MCPは仕様releaseを原則3月・9月の最終火曜日とする半年周期へ移し、次回を2027年3月30日、versionを<code>2027-03-30</code>としました。gooseはprovider stream内のerror event、壊れたJSON、正常な終端eventがない早期切断を成功扱いせず、呼び出し元へ返す修正をmainへ統合。OpenSandboxもnetwork policy／Fast Sandbox route／不正なpool specを構造化された4xx errorへ写像しました。</p><p><strong>分析：</strong>今日の共通項は「新しいagent能力」より、release時期と失敗状態を機械判定できるようにすることです。長時間・多段のagent workflowでは、曖昧な成功や500への丸め込みが再実行、課金、監査を壊します。calendarとerror contractを固定する変更は、Agentic Opsの土台として重要です。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>MCP：仕様を年2回のrelease trainへ</h3><p>proposalが間に合わない場合は仕様全体を遅らせず、後続releaseへ送る方針です。Luca ChangがDen Delimarsky、David Soria Parraとともに次cycleのrelease managerへ加わります。SDK betaやproposal deadlineもrelease日から逆算して共有するため、実装者は「specが止まる時点」を前提に互換試験を組めます。これはprocess変更であり、本日時点のstable spec更新ではありません。</p><h3>file transfer extensionは実験段階</h3><p>MCPは<code>io.modelcontextprotocol/files</code> extensionを公開しました。大容量byte列をmodel contextへ通さず、client、tool、外部storage間で直接転送する設計で、<code>2026-07-28</code>以降を対象とします。ただし未承認・reference implementationなしの実験で、任意機能です。年内stable化を目標としていますが、現時点でproduction依存を固定する段階ではありません。</p><h3>goose：途中切断を正常完了に見せない</h3><p>Anthropic系streamのerrorをauthentication、rate limit、billing、context length、server errorへ分類し、decode失敗も無視せず返すようになりました。さらに正常なmessage stopがないstreamをpremature completionとして扱います。途中まで生成されたtool callを実行してしまう事故を抑える、fail-closed寄りの修正です。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>半年release cycleと実験的file transferを公開。新stable specではありません。</li><li><strong>goose：</strong>stream error／早期終了を表面化。durable executionのDapr連携案とMCP app proxyのiframe hardening案はissue段階で未統合です。</li><li><strong>Agent2Agent（A2A）：</strong>spec siteのmain pageを刷新。push notification config不存在時のerrorがPython／Javaの404、JS／Goの500系に分かれる問題はTSC Review中で、canonical errorは未決定です。</li><li><strong>OpenSandbox：</strong>policy validationを<code>SANDBOX::INVALID_PARAMETER</code>、Fast Sandbox不在を構造化404、Kubernetesが拒否したpool specを400へ変換。SDKがretry可否を判定しやすくなりました。一方、失敗したdownloadをOTLP metricがsuccessと記録するissueと、Go SDKがexecution完了後もEOFを待ってtimeoutするissueは未解決です。</li><li><strong>agentgateway：</strong>model catalog更新以外の重要なmain差分と新formal releaseは確認できませんでした。</li><li><strong>Agent Router：</strong>前回のsecurity dependency修正以降、重要な新差分／releaseは確認できませんでした。</li><li><strong>AGENTS.md：</strong>仕様上の新commitなし。Agent Skills、Open Responses、OpenEnvも前回以降の重大な仕様・governance変更は確認できませんでした。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>MCPのrelease guidanceはSEP-3398を事実上の運用指針とし、個別proposalの遅れと仕様releaseを切り離します。AAIF Technical Committee、Working Groups、project proposal群では、前回以降に採択・卒業・stage変更が確定した新案件は確認できませんでした。Linux FoundationのAgent Name Service発表は関連領域の動きですが、AAIFの新hosted projectとしては発表されていません。</p><p><strong>分析：</strong>年2回のrelease trainはenterprise導入のchange windowを作りやすくします。一方、experimental extensionやTSC Review中のerror semanticsをstable仕様と混同しないよう、採択状態をdependency台帳に持つ必要があります。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>file transferは「file本体をLLM contextへ載せる」方式から、modelにはmetadataとticketだけを見せ、data planeはstorageへ直送する方式へ向かっています。token消費、memory、機密data露出を減らせる反面、署名付きURLの寿命、destination制約、content-type／size検証、転送監査が新しいcontrol pointになります。</p><p>もう一つは、provider／sandbox／agent間で失敗をtyped errorへ正規化する流れです。HTTP statusだけでなく、retryable、operator action required、authentication、quota、invalid inputを区別できれば、agentが無限retryするのを防ぎ、SLOとcostを同じeventから追跡できます。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>PoCでは次を確認してください。</p><ul><li>MCP：2027年3月30日から逆算し、proposal freeze、SDK beta、client/server compatibility testをrelease calendarへ登録する。</li><li>file transfer：large fileをmodelへinlineしないこと、upload ticketのscope／TTL、egress allowlist、malware scan、hash照合、監査logを確認する。</li><li>goose：streamをmessage stop前に切断し、toolが実行されず明示的errorになることをfailure injectionで検証する。</li><li>A2A：存在しないpush configを各SDKへ送り、HTTP／gRPC statusとretry policyの差を記録する。</li><li>OpenSandbox：不正policy／pool specが4xx typed errorになることに加え、失敗downloadのmetricがsuccessにならないかnegative testを置く。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>MCP file transfer extensionのapproval、reference implementation、security review、stable化。</li><li>2027-03-30 release向けproposal deadlineとSDK beta／freeze日程。</li><li>gooseのstream修正を含む正式releaseと、durable execution／iframe hardening issueの採否。</li><li>A2A issue #2126のcanonical error決定とSDK横断test。</li><li>OpenSandbox issue #2770（OTLP success誤記録）と#2768（EOF待ちtimeout）の修正統合。</li><li>AAIF Technical Committee／Working Groupsの新規採択、project stage変更、security・observability guidance。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP Blog — A More Predictable Release Cycle for MCP",
+        "https://blog.modelcontextprotocol.io/posts/mcp-release-cycle/"
+      ],
+      [
+        "MCP Blog — Exploring File Uploads and Downloads in MCP",
+        "https://blog.modelcontextprotocol.io/posts/exploring-file-uploads-and-downloads-in-mcp/"
+      ],
+      [
+        "MCP — release cycle commit",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/9a67316897f90f97bcd2ee939ca8e7e1532a27d3"
+      ],
+      [
+        "goose — surface stream errors and premature completion",
+        "https://github.com/aaif-goose/goose/commit/0f8a0b99fda6017fa949e4356a0652f3e2273a26"
+      ],
+      [
+        "goose — Durable Execution proposal #13445",
+        "https://github.com/aaif-goose/goose/issues/13445"
+      ],
+      [
+        "goose — harden MCP app proxy iframe #13444",
+        "https://github.com/aaif-goose/goose/issues/13444"
+      ],
+      [
+        "A2A — canonical missing push-config error #2126",
+        "https://github.com/a2aproject/A2A/issues/2126"
+      ],
+      [
+        "A2A — specification main page update",
+        "https://github.com/a2aproject/A2A/commit/ff00f967ecf48dffccf92c8f98042c72230139ce"
+      ],
+      [
+        "OpenSandbox — structured policy errors",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/c2d7ca41c69638da1dba575fee9f4215fb8683b6"
+      ],
+      [
+        "OpenSandbox — invalid pool spec returns 400",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/4ac3edeab94ab885c63fbc2d4639119a8ec2dd19"
+      ],
+      [
+        "OpenSandbox — failed download telemetry mismatch #2770",
+        "https://github.com/opensandbox-group/OpenSandbox/issues/2770"
+      ],
+      [
+        "OpenSandbox — Go SDK waits for EOF #2768",
+        "https://github.com/opensandbox-group/OpenSandbox/issues/2768"
+      ],
+      [
+        "AAIF Technical Committee",
+        "https://github.com/aaif/technical-committee"
+      ],
+      [
+        "AAIF News",
+        "https://aaif.io/news"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-11",
     "level": "HIGH",
     "tags": [
