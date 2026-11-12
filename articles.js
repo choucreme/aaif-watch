@@ -1,6 +1,102 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-13",
+    "level": "MEDIUM",
+    "tags": [
+      "Operations",
+      "MCP",
+      "Security",
+      "A2A"
+    ],
+    "title": "OpenSandbox RC2、SEPをWGスポンサー制へ",
+    "summary": "Resource-aware復元とfail-closed運用をRCへ収録。MCPはSEPの責任主体を個人からWGへ移した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>OpenSandboxは<code>1.2.1-rc.2</code>をpre-releaseとして公開し、resource-awareなCPU／memory形状の保存・復元、unknown fieldの422拒否、controller再起動時のlive sandbox Pod保護、network policyのfail-open修正を収録しました。stable <code>1.2.1</code>向けversion整合とrelease notesもmainへ統合されましたが、stable tag／releaseはまだ確認できません。MCPはSEPの通常スポンサーを個人MaintainerからWorking Groupへ移し、未スポンサー案を正式SEPではなくdraft PRとして扱う手順へ更新しました。</p><p><strong>分析：</strong>今日の軸は、sandboxの実効状態をartifactへ残して復元することと、標準化提案の責任主体を継続的なgroupへ置くことです。runtimeの再現性と標準化の説明責任を、個人の記憶ではなく検証可能なstateとprocessへ寄せています。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>OpenSandbox 1.2.1-rc.2</h3><p>OSEP-0026により、templateの実効CPU／memory形状をbuild時に記録し、<code>ResourceAware</code> poolでper-sandbox limitとして適用、snapshot restoreでも元のlimitを再生します。従来はshaped sandboxを復元するとpool defaultへ戻る、またはFastPathが拒否する経路がありました。さらに、unknown fieldを黙って無視せず422で拒否し、誤記した<code>readonly</code>やvolume optionが安全でない既定動作へ落ちるのを防ぎます。</p><p>network側では、無関係なscopeのPATCHで既存denyが消えるfail-openを修正し、experimental subject runtimeは現在のfence／generation／digestに対するACKがなければdata plane readyを503で拒否します。RCではimageが公開され、SDK／CLI packageはstable bumpまで保留です。</p><h3>MCP：SEPをWorking Group起点へ</h3><p>proposalはroadmapとの整合を確認し、該当WGでconsensusを得てからWGがsponsorし、Core Maintainersへ送る流れになりました。未スポンサー案は<code>wg-support-needed</code>付きdraft PRで、正式なSEP statusを持ちません。Core Maintainerによる直接sponsorは例外です。proposal数を増やすより、実装・追跡まで担うgroup ownershipを明確にする変更です。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>OpenSandbox：</strong><code>1.2.1-rc.2</code>を公開。stable <code>1.2.1</code>のrelease note、chart、SDK version整合はmainへ統合済みですが、stable release自体は未確認です。</li><li><strong>MCP：</strong>WG-sponsored SEP processに更新。Registry v1.8.9のdocsも取り込み、複数server名で同一remote URLを共有できる説明やaggregatorの差分同期を反映しました。core protocolの新versionではありません。</li><li><strong>goose：</strong>MCP client capabilityを<code>elicitation: {form:{}}</code>として明示し、serverが対応方式を判定できるようにしました。<code>rmcp</code> 3.9.0へ更新する一方、<code>RUSTSEC-2026-0459</code>はapplication-owned session DBを前提に一時ignoreしています。同一userによるDB／WAL書換えまでは防がないと明記されており、正式release未収録です。</li><li><strong>OpenEnv：</strong>digest-pinned imageを使うHarbor taskをHF Jobs上で<code>openenv validate --sandbox hf-sandbox</code>実行可能にしました。flavor capacityを事前検証し、job cancel後の停止確認に失敗するとcleanup incompleteとしてERRORにします。</li><li><strong>agentgateway：</strong>offline OSS scanner imageのbuild修正のみ。LLM backend timeoutでper-request retryが発火しないissue #4388は未解決です。</li><li><strong>A2A／Agent Router／AGENTS.md：</strong>前回以降に重要な仕様・実装commit、新formal releaseは確認できませんでした。</li><li><strong>Agent Skills／Open Responses：</strong>報告対象となる重要差分は確認できませんでした。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>AAIF Observability &amp; Traceability WGの11月11日meeting notesでは、ATIF v2のagent trajectory形式とOpenTelemetry GenAI semanticsの整合、agent behavior trace model、Agentic Observability white paperが議論されました。ただしmeeting summaryであり、採択済みAAIF specificationではありません。Technical Committeeによる新規project加入・卒業・stage変更、認定制度変更は確認できませんでした。Attestation &amp; Evidence WG案とAgentic Resource Registry案も更新されていますが、いずれもproposal段階です。</p><p><strong>分析：</strong>trajectoryを単なるlog exportではなく、長時間workflowを再現・評価できるportable artifactとして扱う方向が見えます。OTelとの変換規則が固まれば、runtime telemetryとevaluation datasetを二重収集せずに済む可能性があります。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p>Sandboxでは「同じimage」だけでなく、CPU／memory limit、VMM version、network policy ACKまで復元対象へ広がっています。artifact digestが同じでもresource shapeやpolicy generationが違えば、性能・安全性・評価結果は再現できません。</p><p>MCPのform elicitation capability明示は、単なるboolean対応から対応方式のnegotiationへ進む例です。一方、gooseが一時受容したSQLite advisoryは、local application DBをtrustedとみなす境界を示します。session directory permissionだけで十分か、desktop sync、backup、shared workspaceを含めて脅威modelを再確認する必要があります。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>PoC／upgrade検証では次を確認してください。</p><ul><li>OpenSandbox RC2でsnapshot前後のCPU／memory limitとcgroup値が一致し、非対応poolではfieldを黙って適用しないこと。</li><li>controller restart直後にlive sandbox Podがevictされず、network policyの部分PATCHでも既存denyが残ること。</li><li>unknown fieldを含むcreate requestが422となり、安全でないdefaultへ落ちないこと。</li><li>gooseがform elicitationだけを宣言し、未対応方式のserver requestを誤受理しないこと。</li><li>session DBとWALを同一userが書換えられる環境を洗い出し、RUSTSEC例外をSBOM／risk registerへ期限付きで記録すること。</li><li>HF Jobs validationでimage digest、flavor、namespace、job IDをevidenceへ残し、cancel後60秒以内の停止を確認すること。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>OpenSandbox stable <code>1.2.1</code> tag、SDK／CLI package、RC2からの差分。</li><li>OpenSandbox issue #2770のOTLP success誤記録と#2768のEOF待ちtimeout。</li><li>MCPの<code>wg-support-needed</code> draftから正式SEPへ進む所要時間とWG負荷。</li><li>gooseのSQLite advisory例外解除、SQLx／libsqlite更新、次期formal release。</li><li>ATIF v2、OTel GenAI semantics、agent behavior trace modelの相互変換仕様。</li><li>agentgateway #4388のtimeout retry semantics。</li><li>AAIF TC、Working Groups、project proposalsの正式な採択・stage変更。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "OpenSandbox 1.2.1-rc.2 release",
+        "https://github.com/opensandbox-group/OpenSandbox/releases/tag/release-1.2.1-rc.2"
+      ],
+      [
+        "OpenSandbox — prepare 1.2.1 umbrella release",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/dc4c26eaf06131c74c1067ec62e309d11f77040d"
+      ],
+      [
+        "OpenSandbox — network security rules hot reload",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/b69b269a5425554ce6c67e28caf579248c1a9d63"
+      ],
+      [
+        "MCP — Working Group sponsored SEP process",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/99a8e4605c4278b6f905c98e585f98b393b15623"
+      ],
+      [
+        "MCP — Registry v1.8.9 documentation",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/06e923405df3df242f1471b9300d9db90ebd10fd"
+      ],
+      [
+        "goose — declare form elicitation capability",
+        "https://github.com/aaif-goose/goose/commit/b52c291687dd07bf9c59353b4dfb619dcc1ab954"
+      ],
+      [
+        "goose — rmcp 3.9.0 and temporary SQLite advisory exception",
+        "https://github.com/aaif-goose/goose/commit/910d084edd7b6eaddae8ca5c2c99a1b14777333d"
+      ],
+      [
+        "OpenEnv — Harbor validation on HF Sandbox",
+        "https://github.com/openenv/OpenEnv/commit/ca6df26a616ccfa38dc7fb8cd7589531e2074c1f"
+      ],
+      [
+        "agentgateway — timeout retry issue #4388",
+        "https://github.com/agentgateway/agentgateway/issues/4388"
+      ],
+      [
+        "AAIF Observability & Traceability WG — 2026-11-11 meeting notes",
+        "https://github.com/aaif/wg-observability-and-traceability/commit/42e2b81f3de6120743bf52ac31de5c63cda920a2"
+      ],
+      [
+        "AAIF Working Group Proposal — Attestation & Evidence #6",
+        "https://github.com/aaif/working-group-proposals/issues/6"
+      ],
+      [
+        "AAIF Project Proposal — Agentic Resource Registry #59",
+        "https://github.com/aaif/project-proposals/issues/59"
+      ],
+      [
+        "AAIF News",
+        "https://aaif.io/news"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-12",
     "level": "MEDIUM",
     "tags": [
