@@ -1,6 +1,90 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-14",
+    "level": "MEDIUM",
+    "tags": [
+      "Operations",
+      "Security",
+      "MCP",
+      "A2A"
+    ],
+    "title": "E2B互換案とGateway実効状態の整合",
+    "summary": "OpenSandboxはE2B互換プロファイルをdraft化。agentgatewayはstatus誤表示と入力欠落を修正した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>前回レポート以降、OpenSandboxはE2B SDKからFast Sandboxを利用するための<strong>任意互換プロファイル</strong>をOSEP-0027として追加した。agentgatewayは、転送不能なdelegated routeを<code>ResolvedRefs=True</code>と表示していた不整合、MessagesからResponsesへ変換する際にdocument blockを黙って捨てる問題、重複Host headerの受理を修正した。gooseはpromptを含むrequest logをUnix上でowner-onlyへ制限し、OpenEnvは同一sessionへ複数WebSocketが接続した際のidle reaper競合を修正した。</p><p><strong>分析：</strong>本日の共通テーマは、API互換そのものよりも「互換層が入力を欠落させない」「control planeのstatusがdata planeの実効状態を表す」「監査・運用artifactが適切な権限で保存される」という運用品質である。新しい正式releaseやAAIF project採択は確認されず、変更はmain統合またはdraft proposal段階である。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>OpenSandboxがE2B互換を任意プロファイルとして提案</h3><p>OSEP-0027は、E2Bの主要SDK workflowをOpenSandbox Fast Sandboxへ接続するcontrol-plane adapterと<code>envd</code> deliveryを定義する。既存OpenSandbox APIを置き換えるのではなく、二つのSDK経路を併存させ、create、connect、commands、filesystem、timeout、manual pause／full-state resumeなどを段階的に検証する設計である。互換profileを明示することで、E2B固有挙動をOpenSandbox core contractへ無制限に持ち込まない点が重要だ。現状のstatusは<code>draft</code>で、実装済み機能や1.2.1収録を意味しない。</p><h3>agentgatewayが「緑だが転送不能」を修正</h3><p>delegated child HTTPRouteのbackendが存在しなくても、statusが常に<code>ResolvedRefs=True</code>になる問題を修正した。data planeは既にrouteをdropしていたため、従来は実際には使えないrouteを監視系がhealthyと判断し得た。修正後はconversion errorをstatusへ伝播し、missing backendなどを<code>ResolvedRefs=False</code>として報告する。GitOpsや自動rollbackでは、この種のstatus fidelityが安全性を左右する。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>OpenSandbox：</strong>OSEP-0027をdraft追加。あわせてFast Sandboxのhardening検証が進む一方、operatorが与えた<code>EXECD_ISOLATION_CONFIG</code>をrequest envで上書きできる可能性を指摘するissueも開いている。互換adapterの利便性と、request境界でのreserved key保護を同時に確認する必要がある。</li><li><strong>agentgateway：</strong>delegated routeの実際の<code>ResolvedRefs</code>をstatusへ反映。MessagesのdocumentをResponsesの<code>input_file</code>／<code>input_text</code>へ変換し、表現不能なsourceはsilent dropではなくerrorにした。さらに重複Host headerを拒否し、request authorityの曖昧性を縮小した。いずれもmainへの統合で、v1.7.0以降の正式release収録待ち。</li><li><strong>goose：</strong>Unixでlog directoryを<code>0700</code>、request logを<code>0600</code>へ制限。symlink、所有者不一致、hard linkを検査し、旧versionが作成した緩いpermissionも縮小する。request logにはfull promptが入り得るため、単なるfile permission調整ではなくlocal information disclosure対策である。最新版は引き続きv1.59.0で、この修正は未収録。</li><li><strong>OpenEnv：</strong>同一sessionに複数WebSocketが接続した場合、処理中operationをsetではなくcountで管理するよう修正。片方のsocketが終了しても別socketのstep実行中はidle reaperがenvironmentを閉じない。</li><li><strong>A2A：</strong>partner list更新が中心。仕様例の一部がrequiredな<code>messageId</code>を欠くissueが新規登録されたが、protocol revisionやformal releaseはない。</li><li><strong>MCP：</strong>前回報告したWG-sponsored SEP process以降、監視窓内の新しいcore protocol変更はない。</li><li><strong>Agent Router／AGENTS.md／Agent Skills／Open Responses：</strong>報告対象となる重要な新commit・formal releaseは確認されなかった。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>AAIF公式project一覧は引き続き10件で、Technical Committeeによる新規加入、卒業、stage変更、認定制度変更は確認できなかった。project proposals／working-group proposalsにも、前回以降に確定した採択はない。</p><p>OSEP-0027はOpenSandbox内のenhancement proposalであり、AAIF全体の標準ではない。E2B互換の初期profileを狭く定義し、delivery gateとcommunity workstreamを分ける構造は、互換性を「全面的に同じ」と宣言せず、検証可能なcapability setとして管理する点で実務的である。</p><p>A2Aの<code>messageId</code>不足は仕様本文ではrequired、exampleでは欠落というdocumentation conformance問題であり、厳格実装がexampleを拒否し得る。修正が入るまではexampleをgolden fixtureとして無条件に信用しない方がよい。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<ul><li><strong>Compatibility profile：</strong>API名の互換だけでなく、lifecycle、timeout、pause／resume、error、cleanupまでをcapability単位で宣言する。</li><li><strong>Effective-state observability：</strong>controllerがdesired stateを受理したかではなく、実際にbackendが解決されtrafficを処理できるかをstatusへ反映する。</li><li><strong>Lossless translation：</strong>provider間format変換で未対応入力を黙って落とさず、型付きerrorで停止する。誤った成功応答より明示的失敗を優先する。</li><li><strong>Local artifact hardening：</strong>prompt、tool input、responseを含むlogは秘密情報として扱い、permission、symlink、ownership、retentionを一体で制御する。</li><li><strong>Session concurrency accounting：</strong>session単位のbooleanではなくoperation数を数え、複数transportや再接続時のresource reclamationと処理中状態を正しく分離する。</li></ul>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>PoCとrelease gateでは次を優先する。</p><ul><li>E2B互換adapterでcreate、connect、command、file transfer、manual pause／resume、timeout、cleanupを同一fixtureで比較し、非対応capabilityを明示する。</li><li>存在しないServiceを参照するdelegated routeを投入し、data plane dropと<code>ResolvedRefs=False</code>が同時に観測できるか確認する。</li><li>PDF／URL／file ID／text documentをMessagesからResponsesへ変換し、modelが実際に内容を参照したかをcanary questionとtraceで検証する。未対応sourceは成功扱いにしない。</li><li>重複Host、Hostと<code>:authority</code>の不一致、proxy chain経由のauthorityをnegative testし、route・OAuth resource・audit logが同じidentityを指すか確認する。</li><li>goose request logの新規fileが<code>0600</code>、directoryが<code>0700</code>であること、既存の緩いpermissionが縮小されること、symlink／hard linkがfail closedになることを試験する。</li><li>OpenEnvで同一sessionへ2本以上のWebSocketを接続し、一方の短いoperation終了後も他方の長時間stepがidle reaperに閉じられないことを確認する。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>OSEP-0027のstatus遷移、reference adapter、compatibility fixture、1.2.x／次期releaseへの収録範囲</li><li><code>EXECD_ISOLATION_CONFIG</code>などoperator-owned env keyの上書き防止</li><li>agentgatewayのstatus、document変換、duplicate Host修正を含む次期正式release</li><li>agentgateway timeout retry issue #4388とMCP discoveryのfail-open semantics</li><li>goose request-log保護の正式release収録とWindows側の同等control</li><li>OpenEnvのmulti-socket session修正を含むreleaseとidle-reaper telemetry</li><li>A2A specification exampleの<code>messageId</code>修正とconformance testへの反映</li><li>AAIF TC／Working Groups／project proposalsの正式採択、MCP Dev Summit Nairobiの公開成果物</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "OpenSandbox OSEP-0027 commit",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/e564cd1896ffa0d53a4ae09a7c610e30c26bb5f5"
+      ],
+      [
+        "OpenSandbox issue #2834 — reserved execd config env keys",
+        "https://github.com/opensandbox-group/OpenSandbox/issues/2834"
+      ],
+      [
+        "agentgateway delegated route ResolvedRefs fix",
+        "https://github.com/agentgateway/agentgateway/commit/a8cf9d718d7dc6b396a9c944027e154c455b5e3a"
+      ],
+      [
+        "agentgateway Messages document conversion fix",
+        "https://github.com/agentgateway/agentgateway/commit/ee377fe7e9ed2a6583507a46de8170f4817a4edd"
+      ],
+      [
+        "agentgateway duplicate Host rejection",
+        "https://github.com/agentgateway/agentgateway/commit/c5119558780499edd1f63493e6a287fc1359032d"
+      ],
+      [
+        "goose request log permission hardening",
+        "https://github.com/aaif-goose/goose/commit/2734890948f73c910b778e04f35f1a1c23a6ecc0"
+      ],
+      [
+        "OpenEnv in-flight operation accounting fix",
+        "https://github.com/openenv/OpenEnv/commit/c477f92b480a713f11fa721a4a733cb0c5c6138a"
+      ],
+      [
+        "A2A issue #2453 — required messageId missing from examples",
+        "https://github.com/a2aproject/A2A/issues/2453"
+      ],
+      [
+        "AAIF official projects",
+        "https://aaif.io/projects"
+      ],
+      [
+        "AAIF official events",
+        "https://aaif.io/events"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-13",
     "level": "MEDIUM",
     "tags": [
