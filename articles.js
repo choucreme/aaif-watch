@@ -1,6 +1,106 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-15",
+    "level": "MEDIUM",
+    "tags": [
+      "Security",
+      "Operations",
+      "MCP",
+      "A2A"
+    ],
+    "title": "MCPがCRA連絡経路を定義、Guardrailの破壊的書換えを修正",
+    "summary": "MCPは重大incidentのCRA escalationを明文化。agentgatewayはmask時のtool・画像消失を防いだ。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>MCPはEU Cyber Resilience Act（CRA）のstewardship guidanceを追加し、actively exploited vulnerabilityやsevere incidentをprivate advisoryで報告し、Core／Lead MaintainerからLinux Foundation CRA stewardへ一本化して連携する経路を明文化した。agentgatewayはwebhook Guardrailがtextをmaskする際、tool call、tool result、画像、<code>cache_control</code>など非text情報まで消していた問題を修正した。OpenSandboxではexecd、SDK streaming、Helm RBACの運用修正がまとまってmainへ入った。</p><p><strong>分析：</strong>本日の重要点は、security controlを追加するだけでなく、incident reportingとrequest mutationの責任境界を明示したことにある。CRA文書は法解釈や新protocol versionではなくproject運営手順、Guardrail修正は正式release未収録のmain変更である。新しいAAIF project採択や正式releaseは確認されなかった。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>MCPがCRA escalationをproject運営へ組み込む</h3><p><code>SECURITY.md</code>は、MCPのsoftwareとofficial SDKが最終的にcommercial activitiesで利用されることを前提に、Linux FoundationのCRA stewardship framework下で支援されると明記した。通常の脆弱性報告に加え、active exploitationまたは進行中incidentはaffected repositoryのprivate GitHub Security Advisoryをemergency channelとして使い、冒頭で緊急性を明示する。Maintainerは修正作業と並行してCore／Lead Maintainerへ即時通知し、その代表者がCRA stewardと調整する。複数SDKやmaintainerからばらばらに外部連絡するのではなく、projectとしてone voiceにする設計である。</p><p>このcommitが直接変更したのはspecification repositoryのpolicyで、各SDK repositoryの<code>SECURITY.md</code>は未変更である。運用時には、どのrepositoryでincidentが発生しても同じ連絡経路・severity判断・証拠保全が実行できるかを別途確認する必要がある。</p><h3>Guardrailのmaskが元requestを壊さないよう修正</h3><p>agentgatewayのwebhook Guardrailは従来、webhookへ渡した<code>{role, content}</code>のtext列からrequest全体を再構築していた。このためmask実行後にtool call ID、tool result、画像、name、cache metadataが消え、provider側で400になるか、modelが必要な入力を失う可能性があった。修正後はmessage数とroleが一致する場合にtextだけをin-placeで書き換え、非text blockを保持する。安全機能がrequest integrityを損なうという逆転を止める変更である。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>CRA stewardship、private advisoryによるemergency reporting、maintainer内部のescalation ruleを文書化。core protocolやstable specificationのversion変更ではない。</li><li><strong>agentgateway：</strong>webhook mask時にtool history、画像、<code>cache_control</code>、name、配列contentを保持するよう修正。ただし1 message内で画像の前後にtextがある場合、textは最後のtext blockへ寄せられ、削除block上のcache markerを完全には復元できないという制約が残る。正式版はv1.7.0のまま。</li><li><strong>OpenSandbox：</strong>execd <code>/proxy</code>でupstream connectionを再利用し、code contextのcwd不正と非kernel languageのcontext一覧を400で早期拒否。消失済みJupyter sessionのcontext削除、非object renew-intent payloadの破棄も追加した。Go SDKのmetrics NDJSONはsnapshot到着ごとに配信し、Kotlin SDKは先頭UTF-8 BOM後の最初のSSE eventを保持する。Helm controllerにはRestart recycle strategy用の<code>pods/exec</code>権限を追加した。</li><li><strong>OpenSandbox E2B互換：</strong>OSEP-0027のGate 0 tracking issueが開かれた。Go製の独立adapter、E2B Python SDK 2.62.1、envd 0.8.0、Linux/amd64 Fast Sandboxなど候補tupleを示すが、maintainer合意前はfork内でのfeasibility workに留め、upstream実装や互換passを主張しない。</li><li><strong>A2A：</strong>v1.0 documentationに、roleが旧<code>user</code>表記のまま、Agent Cardにrequiredなversionがなくtrailing commaもあるという2件のconformance issueが登録された。protocol変更・修正commitはまだない。</li><li><strong>goose／Agent Router／AGENTS.md／OpenEnv／Agent Skills／Open Responses：</strong>監視窓内に報告対象となる新しいformal releaseや重要commitは確認されなかった。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>MCPのCRA guidanceは、脆弱性対応の技術手順だけでなく、外部stewardへの連絡責任をCore／Lead Maintainerへ集約した点がガバナンス変更である。ただし規制適合を保証するcertificationではなく、incident発生時のproject-level coordinationを定義したものと読むべきである。</p><p>AAIFのAttestation &amp; Evidence Working Group proposalは11月14日に更新されたが、引き続き<code>New</code>ラベルのopen proposalである。agentのaction、decision、authorization、outcomeを第三者がoffline検証できるportable evidence bundle、witness／root-of-trust分類を掲げるものの、TC承認済みWGではない。</p><p>AAIF Technical Committeeによる新規project加入、卒業、stage変更、認定制度変更は確認されなかった。公式project一覧は引き続き10件である。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<ul><li><strong>Security response as code：</strong>脆弱性の修正だけでなく、緊急判定、private channel、代表連絡、外部stewardへのescalationをrepository policyへ落とす。</li><li><strong>Structure-preserving Guardrail：</strong>安全制御はtextだけを変え、tool identity、multimodal block、cache semantics、role orderingを保持する。</li><li><strong>Fail explicit：</strong>不正cwd、非対応language、型違反payloadを内部timeoutや曖昧な500へ持ち込まず、早期4xxまたは破棄へ変換する。</li><li><strong>Streaming correctness：</strong>NDJSONやSSEのchunk境界、BOM、connection reuseをSDK間で揃え、観測値や最初のeventを失わない。</li><li><strong>Pinned compatibility evidence：</strong>E2B互換を名称だけで主張せず、SDK、envd、kernel、Firecracker、template、restore recipeの正確なtupleを記録する。</li></ul>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>運用PoCでは次をrelease gateへ加える。</p><ul><li>active exploitationを想定したtabletop exerciseを行い、private advisory作成、内部通知、CRA steward連携、複数SDKへのcoordinated fix、公開advisoryまでのownerと時刻を記録する。</li><li>Guardrail mask対象requestにtool call／result、画像、cache marker、nameを混在させ、mask後もID参照とprovider validationが成立するか確認する。</li><li>画像前後にtextを置くedge caseで順序・cache markerが変わる既知制約を評価し、semantic差が許容できなければrejectへ倒す。</li><li>OpenSandboxのinvalid cwd、非kernel language、非object renew payload、既に消えたJupyter sessionをnegative testし、400／cleanup／dropがrunbook通りか確認する。</li><li>Go metrics streamを低頻度で流して各snapshotが即時届くか、Kotlin SSEへBOMを付けても最初のeventを失わないかをcross-SDK conformance testへ入れる。</li><li>Restart recycle strategyを使うclusterでは追加された<code>pods/exec</code>権限の対象namespace・ServiceAccount・audit logを確認し、不要なdeploymentでは権限を付与しない。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>MCP CRA policyが各official SDKの<code>SECURITY.md</code>とincident runbookへ展開されるか</li><li>agentgateway Guardrail修正を含む次期releaseと、画像前後text／cache markerの残存制約</li><li>OpenSandbox 1.2.1 stableへのexecd・SDK・Helm修正収録</li><li>OSEP-0027 Gate 0のmaintainer合意、envd-only templateのREADY／credential初期化検証</li><li>A2A v1.0 documentationのrole、version、JSON構文修正とconformance CI</li><li>Attestation &amp; Evidence WG proposalのco-chair、liaison、TC review移行</li><li>AAIF TC／project proposalsの正式採択、11月15日Ulaanbaatar community eventと11月19～20日Nairobi Summitの公開成果物</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP EU CRA stewardship guidance",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/122e27e869b71a7947661b60c1cb10dc512346fa"
+      ],
+      [
+        "agentgateway webhook Guardrail structure-preserving mask",
+        "https://github.com/agentgateway/agentgateway/commit/063df1f94edb5c6e1c7d66281776bf02534a62c0"
+      ],
+      [
+        "OpenSandbox execd shared transport",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/f500745f36d6bfb0e9290324a7b125ac29428b98"
+      ],
+      [
+        "OpenSandbox invalid context cwd fail-fast",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/0119815b53d12097477dbb0399ea45bcc8ef4175"
+      ],
+      [
+        "OpenSandbox delete gone Jupyter session context",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/074ae99ecc02e93decdc4470210a509bae3031f4"
+      ],
+      [
+        "OpenSandbox renew-intent payload validation",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/ef1451397ea6c51b1fd9d8eb2b476b46dc886036"
+      ],
+      [
+        "OpenSandbox Kotlin SSE BOM fix",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/3779b093851ba551b6d45c4953eefd9525576a31"
+      ],
+      [
+        "OpenSandbox Go metrics NDJSON streaming fix",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/e3c16a630da1d1683a50f8b098ec61871478e766"
+      ],
+      [
+        "OpenSandbox OSEP-0027 Gate 0 tracking",
+        "https://github.com/opensandbox-group/OpenSandbox/issues/2839"
+      ],
+      [
+        "A2A v1 role example issue",
+        "https://github.com/a2aproject/A2A/issues/2460"
+      ],
+      [
+        "A2A Agent Card example issue",
+        "https://github.com/a2aproject/A2A/issues/2461"
+      ],
+      [
+        "AAIF Attestation & Evidence WG proposal",
+        "https://github.com/aaif/working-group-proposals/issues/6"
+      ],
+      [
+        "AAIF official projects",
+        "https://aaif.io/projects"
+      ],
+      [
+        "AAIF official events",
+        "https://aaif.io/events"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-14",
     "level": "MEDIUM",
     "tags": [
