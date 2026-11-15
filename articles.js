@@ -1,6 +1,106 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-16",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "Operations",
+      "MCP",
+      "A2A"
+    ],
+    "title": "Sandbox境界を閉じ、委譲権限の累積上限を検証へ",
+    "summary": "OpenSandboxがpath・鍵・identity再利用を防御。AAIFではmulti-hop権限の累積上限を検証可能にする議論が進んだ。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>OpenSandboxは、volumeの<code>subPath</code>にバックスラッシュを使うpath traversal、secure access署名鍵がvalidation errorへ出る可能性、Fast Sandboxのsubject identity再利用時に旧transportが残る問題を修正した。あわせて不正なsigned port、矛盾したpool buffer設定、Dockerの<code>publish_host</code>到達先、Python SDKのlegacy SSE処理など、入力境界とlifecycleの修正がまとまってmainへ入った。gooseはDatabricks上のClaudeで、別conversationに束縛されたthinking blockを再送すると400になる問題を修正した。</p><p><strong>分析：</strong>本日の共通点は、Agent実行環境を単なる一時containerではなく、identity・credential・network transportを伴うsecurity principalとして扱い始めたことである。いずれもmain上の変更であり、OpenSandboxの新しいstable releaseやgoose v1.59.0以降の正式releaseを意味しない。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>OpenSandboxがpath、secret、identity reuseの境界を補強</h3><p><code>subPath</code>検証は従来スラッシュ区切りを前提としていたため、<code>foo\\\\..\\\\secret</code>のような入力を正規化せず受理し得た。修正はバックスラッシュをスラッシュへ正規化し、絶対pathと<code>..</code> segmentを400で拒否する。さらにsecure access signing keyはPydanticのvalidation errorから入力値を隠し、不正base64や環境変数のentry全体をerrorへechoしないよう変更した。</p><p>Fast Sandboxのcredential-bound egressでは、同じUIDのrebindや同じIPを別sandboxへ再割当てする前に、旧subjectのroutingをrevocationしtransport closeを確認する。未確認connectionが残る場合は<code>subject_transport_unconfirmed</code>としてdegraded状態を保持し、successor registrationをfail closedで拒否する。これは旧sandboxのconnectionやcredential contextが新しいidentityへ混ざることを防ぐ変更である。</p><h3>gooseがconversation-bound thinkingの再送失敗を局所化</h3><p>Databricks経由のAnthropic Messagesでは、thinking blockのsignatureが別conversation prefixに束縛されているとrequestが拒否される。gooseは該当errorを検出したmodelだけ、beta headerと<code>prefix_mismatch_behavior=drop_block</code>を付けて再試行し、そのmodelを記憶する。古いClaude modelには未対応fieldを送らないため、全modelへ一律適用する修正ではない。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>OpenSandbox：</strong>backslashを使う<code>subPath</code> traversalを拒否し、secure access signing keyをvalidation errorからredact。signed port segmentもdigits-onlyへ制限した。Fast Sandboxは旧subject transportのteardownをidentity再利用より先に行い、未確認connectionが残れば新subjectをfail closedで拒否する。</li><li><strong>OpenSandbox運用品質：</strong><code>bufferMin &gt; bufferMax</code>を422で拒否し、idle podのcreate/delete loopを防止。Docker bridgeではserverのlisten addressではなく<code>docker.publish_host</code>へ接続する。Python SDKのlegacy SSE normalizerはbuffer全体の再scanをやめ、入力サイズに対して線形に処理する。C# SDKはendpoint cache invalidationを対象sandboxのin-flight keyだけへ限定した。</li><li><strong>goose：</strong>Databricksでconversation-bound thinking blockのprefix mismatchを検知し、対応modelだけblockをdropして再試行。repository内の<code>AGENTS.md</code>も、古いAgent entry pointから<code>services.rs</code>とordered state-machine operationsへ更新した。正式最新版はv1.59.0のまま。</li><li><strong>MCP：</strong>blogの検索UIとshare card生成が更新されたが、core protocol、SEP、stable specificationの新変更は確認されなかった。</li><li><strong>AGENTS.md：</strong>公式format repositoryに新しい仕様・charter変更は確認されなかった。goose側の変更はformat標準ではなく、利用repository内の実装案内修正である。</li><li><strong>Agent Router／agentgateway／A2A：</strong>監視窓内に新しいformal releaseまたは重要なruntime commitは確認されなかった。Agent Routerはv1.2.1、agentgatewayはv1.7.0が引き続き最新。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>AAIF Identity &amp; Trust WGのdelegated-authority conformance案に、multi-hopでの累積action上限を扱う2方式が追加された。<strong>fixed allocation</strong>は総量を重複しない持分へ分割し各組織がlocal enforcementする。<strong>shared budget owner</strong>は明示的scopeのbudgetについてreservationを直列化し、reservationのないactionを拒否する。どちらも、複数rootが合意しない範囲には共通上限を主張できないなど、残存リスクを明記する。</p><p>別issueではISO/IEC/IEEE 42010に沿ったoperational viewpointが議論され、authorityとaccountabilityの流れをscenarioとchecked propertyへ変換する構想が示されている。ただし、いずれもopen issue／draftであり、AAIF Technical Committee承認済み標準やconformance programではない。</p><p>新しいproject加入、卒業、stage変更、project proposal／working-group proposalの採択は確認されなかった。公式project一覧は10件のままである。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<ul><li><strong>Identity-before-reuse：</strong>UID、IP、endpointを再利用する前に旧routingとtransportが完全に閉じた証拠を要求する。</li><li><strong>Secret-safe validation：</strong>validation失敗時こそ、input、environment entry、signing keyをlogやAPI responseへ含めない。</li><li><strong>Cross-platform path normalization：</strong>Linux上のAPIでもバックスラッシュをseparatorとして正規化し、異なるpath表現によるpolicy bypassを防ぐ。</li><li><strong>Bounded cumulative authority：</strong>1回ごとのgrant attenuationだけでなく、multi-hop・複数組織を通じたaction総量をallocationまたはreservationで制御する。</li><li><strong>Conversation-bound reasoning state：</strong>thinking blockをportableなtextとして扱わず、生成時のprompt prefixやconversationとのbindingを検証する。</li><li><strong>Linear streaming parsers：</strong>長時間streamでbuffer全体を繰り返しscanせず、chunk境界を維持しながら増分処理する。</li></ul>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>PoCとrelease gateには次を追加する。</p><ul><li>sandbox volumeへ<code>../</code>、<code>..\\\\</code>、混在separator、absolute Windows pathを投入し、mount root外へ到達できず4xxになることを確認する。</li><li>不正なsecure access keyを設定し、API response、controller log、event、traceにkey materialや環境変数entry全体が残らないことを検索する。</li><li>sandboxのUID rebindとIP takeoverを発生させ、旧connectionが残る場合に新identityのregistrationが拒否され、degraded reasonにはUID／IPなどのsecret contextが露出しないことを確認する。</li><li><code>bufferMin &gt; bufferMax</code>をadmission testへ入れ、controllerへ到達する前に422で止まり、pod churnが起きないことを確認する。</li><li>Databricksでsystem prompt変更後にthinking blockを再送し、初回error、blockをdropした再試行、model単位の記憶、旧modelへのfield非送信をtraceで確認する。</li><li>multi-agent runに「全体で最大N回」のaction budgetを設け、固定allocationとcentral reservationの両方式でdouble-spend、partition、budget owner停止時のfail-closedを試す。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>OpenSandbox 1.2.1 stableへのpath、secret redaction、subject teardown、streaming修正の収録</li><li>Fast Sandboxの<code>subject_transport_unconfirmed</code> metrics、alert、runbookの整備</li><li>gooseのDatabricks thinking binding修正を含む次期releaseと他providerへの適用範囲</li><li>Identity &amp; Trust WGのcumulative limit案がReference Architecture appendixと実行可能testへ進むか</li><li>AAIFのproject proposal、WG proposal、TC決定と11月19～20日のIndia event公開成果物</li><li>MCP core／SEP、A2A conformance、Agent Router、agentgateway、AGENTS.mdの次の正式差分</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "OpenSandbox backslash subPath traversal fix",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/0ee14db8da1c895f280fae59bed63549d21b9174"
+      ],
+      [
+        "OpenSandbox secure access signing-key redaction",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/d572c7fd918372ab9f038e926aa525c88cb0baf7"
+      ],
+      [
+        "OpenSandbox subject transport teardown before identity reuse",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/c444498e3851208397077fafccb8fde5c71bbbc4"
+      ],
+      [
+        "OpenSandbox signed port rejection",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/d731a37b2ebd6786a37e8e744b51bbefa41e10ce"
+      ],
+      [
+        "OpenSandbox invalid pool buffer bounds rejection",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/34a8e433cb21596be607b57022b3d917bfcd5b3a"
+      ],
+      [
+        "OpenSandbox Docker publish_host routing fix",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/ff720a69b2c1facce6ae0bb3d0246c42cd5aa09e"
+      ],
+      [
+        "OpenSandbox Python SSE linear-time normalization",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/4ae99691ff0a62594614df90a86ecbee07add966"
+      ],
+      [
+        "OpenSandbox C# endpoint-cache scoped invalidation",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/1783674c32bc959cb83513565c27605d3806faae"
+      ],
+      [
+        "goose Databricks thinking-block prefix binding fix",
+        "https://github.com/aaif-goose/goose/commit/73b6e76c99751d0568730c84d0bc23e087b191b8"
+      ],
+      [
+        "goose AGENTS.md entry-point correction",
+        "https://github.com/aaif-goose/goose/commit/3acc4d43d7e0756d6bbc33b46e210679b404bb07"
+      ],
+      [
+        "AAIF Identity & Trust delegated-authority conformance cases",
+        "https://github.com/aaif/wg-identity-and-trust/issues/22"
+      ],
+      [
+        "AAIF Identity & Trust operational viewpoint",
+        "https://github.com/aaif/wg-identity-and-trust/issues/25"
+      ],
+      [
+        "AAIF official projects",
+        "https://aaif.io/projects"
+      ],
+      [
+        "AAIF official events",
+        "https://aaif.io/events"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-15",
     "level": "MEDIUM",
     "tags": [
