@@ -1,6 +1,126 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-18",
+    "level": "HIGH",
+    "tags": [
+      "Operations",
+      "Security",
+      "MCP",
+      "A2A"
+    ],
+    "title": "goose 1.60.0とAgent Router RC、skills運用を標準化へ",
+    "summary": "gooseがSkillOperationを正式搭載し、Agent Routerは複数InferencePool対応のRCを公開。移植性と運用証拠が焦点になった。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>gooseは<code>v1.60.0</code>を公開し、skillsを外部のSkills extensionではなく実行loop内の<code>SkillOperation</code>として扱う構成へ移した。Agent Routerは<code>v1.3.0-rc1</code>を公開し、mainには複数InferencePoolへの重み付きroutingと、Agent Substrateのactor JWTを使うagent単位token budget例が入った。AAIF公式ブログは、Agent Skillsを別のcoding agentへ移す際、tool名ではなく必要な証拠を指示し、discovery・access・outputを同じtaskで検証する手順を示した。</p><p><strong>分析：</strong>本日の中心は、再利用可能なinstructionsを「読めるformat」から「異なるruntimeで同じ仕事を再現できる運用単位」へ引き上げる動きである。format互換だけでは、tool名、権限、workspace範囲、command衝突、traceの差は吸収できない。releaseとRC、main差分を混同せず、移植後の実行証拠を比較する必要がある。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>goose v1.60.0がskillsをrun loopへ統合</h3><p>従来のgooseはSkills platform extensionとleaseを介して<code>load_skill</code>を提供していた。v1.60.0では<code>SkillOperation</code>と<code>SkillSource</code>を導入し、hostがskill一覧、supporting file、slash commandを供給する。Skills extensionは削除され、skillsをextension設定から無効化できなくなった。built-in commandとrecipeがskill名との衝突時に優先され、Code Modeでは<code>load_skill</code>がdirect toolとして残る。運用上は、upgrade前にextensionの有効・無効設定、lease前提の監査、<code>execute_tool</code> spanへ依存する検知を見直す必要がある。</p><h3>Agent Router v1.3.0-rc1と複数InferencePool</h3><p>11月17日公開のv1.3.0-rc1は正式版ではないが、binaryとHelm artifactを提供する。同日mainへ入った実装は、一つのroute ruleから複数InferencePoolへ重み付きで振り分け、Envoy Gatewayのweighted clusterと各poolのendpoint pickerを組み合わせる。さらにAgent Substrate例は、検証済みactor JWTのsubjectを<code>x-actor-id</code>へ変換し、clientが送った同名headerを除去した上で、actorごとの日次token budgetを一つのrate-limit ruleで分離する。</p><h3>nono proposalがclose、透明性がガバナンス課題に</h3><p>security runtime「nono」の提案者は11月9日、Technical CommitteeとGoverning Boardの透明性への懸念を理由に寄贈提案を撤回した。AAIF担当者は11月17日、feedbackをleadershipへ共有したと回答しissueをcloseした。これはprojectの技術評価や不採択ではなく提案者による撤回である。AAIF Technical Committee repositoryは会議agenda/minutesをなお「coming soon」としており、project reviewの説明可能性が今後の要ウォッチ項目になった。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>extension overviewをSEP-3392のfinal textへ整合。Experimental repositoryの開始主体、Beta省略に必要なCore Maintainer vote、<code>revision</code>互換規則、stage変更の承認を明確化した。新しいstable spec releaseではない。</li><li><strong>AGENTS.md：</strong>公式repositoryに監視期間内のcommit・release変更なし。</li><li><strong>goose：</strong>v1.60.0を正式公開。SkillOperationに加え、thinkingだけを返してanswerを出さないprovider turnを最大3回の回復処理へ回し、無言終了を避ける修正がmainへ入った。compactionではClaudeが拒否する<code>&lt;analysis&gt;</code> scratchpad要求も除去した。</li><li><strong>agentgateway：</strong>新releaseはなく正式版はv1.7.0。mainではPostgreSQLのbudget table migrationを単一transactionとadvisory lockで直列化し、同時起動時のschema競合を抑える変更が入った。</li><li><strong>Agent Router：</strong>v1.3.0-rc1を公開。複数InferencePoolの重み付きroutingとper-agent token budget例は、routingとcost governanceを同じgateway policyへ寄せる差分。</li><li><strong>A2A：</strong>spec mainと正式releaseに監視期間内の変更なし。最新正式版はv1.0.1のまま。</li><li><strong>OpenSandbox：</strong>新releaseなし。mainでは16MiB超かつ改行なしのcommand出力を分割してexecdのmemory増大を防ぎ、egress domain末尾dotの正規化、lifecycle failure conditionの保持を修正した。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>AAIF公式のAgent Skills記事は、skillを<code>SKILL.md</code> directoryとして移すだけでなく、tool固有名を「検索してcallerを開き確認する」のような証拠要件へ置き換えること、<code>compatibility</code>とexperimentalな<code>allowed-tools</code>を確認すること、reference validatorを通すことを推奨した。受け側ではdiscovery、diff・callerへのaccess、期待outputを同一taskで小さく検証する。</p><p>Technical Committee、project lifecycle、stage変更、新規加入・卒業、認定に監視期間内の公式変更は確認されなかった。nono proposalはcloseされたためAAIF projectには追加されない。Identity & Trust WGではdelegated-authority conformance caseに、grant statusを読んだ時刻と最大許容age、decision hashをsigned recordへ残す実装報告が追記されたが、これはWG issue上の実装例でありAAIF標準ではない。</p><p><strong>分析：</strong>skillsのportable formatとproject governanceには共通課題がある。入力と手順だけでなく、何へアクセスでき、誰が判断し、どの証拠を残したかが第三者に追えることが、実運用のinteroperabilityになる。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>Runtime-native skills：</strong>gooseの変更は、skillをMCP風のextension toolとして外置きする構成から、agent state machineのoperationとして扱う構成への移行である。latencyやlease依存は減らせる一方、disable方法、approval、command precedence、telemetryの意味が変わる。skill formatの標準化とruntime semanticsの標準化は別問題としてtest matrixを持つべきである。</p><p><strong>Identity-aware cost control：</strong>Agent RouterのSubstrate例は、認証済みactor identityをrate-limit keyへ変換し、model accessとtoken budgetを結び付けた。単なるAPI key単位ではなく、委譲されたagentごとに予算を分離する構成である。ただしtokenはresponse完了時に課金されるため、同時実行中の超過や途中切断を別途扱う必要がある。</p><p><strong>Failureを証拠化する運用：</strong>gooseのthinking-only recovery、agentgatewayのmigration lock、OpenSandboxの長行分割はいずれも、正常系のfeature追加より「無言終了、同時起動、無限buffer」という曖昧なfailureを明示状態へ変える。Agentic Opsではretry回数、lock待ち、分割eventをtrace可能にする価値が高い。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>upgrade・PoCでは次を確認したい。</p><ul><li>goose v1.60.0で、既存skillの自動discovery、supporting fileのsymlink境界、slash command衝突、approval、Code Modeのdirect toolを回帰試験する。</li><li>Skills extensionのdisableやlease、<code>execute_tool</code> spanを監査条件にしている場合、新しい<code>SkillOperation</code>に合わせてpolicyとdashboardを更新する。</li><li>同じrepository・diff・taskで二つのagentを実行し、skillが読まれたか、既知callerへ到達したか、before/after例がdiffと一致したかを比較する。</li><li>Agent Router RCでは70/30などのweight、poolのscale-to-zero、endpoint picker障害、retry時の二重振り分けを測る。stable採用判定はRC artifactの存在だけで行わない。</li><li>actor JWTのissuer・audience・subject mappingを固定し、client supplied identity headerの除去を確認する。同時requestでbudgetを超え得る境界も負荷試験する。</li><li>agentgatewayを複数replicaで同時起動し、budget migrationが一度だけ適用され、lock待ちがstartup SLOを超えないことを確認する。</li><li>OpenSandboxで改行なしの巨大stdout/stderrを流し、16MiB分割後も順序、UTF-8 rune、最終fragment、memory上限が保たれるかを確認する。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Agent Router v1.3.0 stableのrelease noteと、複数InferencePool・quota failoverの既知issue収束。</li><li>goose v1.60.0移行後のSkillOperation telemetry、skills無効化手段、thinking-only recoveryのprovider別挙動。</li><li>MCP extension overviewに記載されたEvents extensionのBeta specification公開と、ExperimentalからBetaへのstage record。</li><li>nono撤回を受けたAAIFのproject review透明性、TC agenda/minutes公開、投票・判断理由の可視化。</li><li>delegated-authority conformance caseがReference Architecture appendixへ採用されるか、signed recordの時刻・revocation freshness・外部witnessをどう評価するか。</li><li>MCP Dev Summit Nairobi（11月19〜20日）での仕様、SDK、conformance発表。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "AAIF: How to move a skill from one coding agent to another",
+        "https://aaif.io/blog/how-to-move-a-skill-from-one-coding-agent-to-another"
+      ],
+      [
+        "goose v1.60.0 release",
+        "https://github.com/aaif-goose/goose/releases/tag/v1.60.0"
+      ],
+      [
+        "goose SkillOperation and Skills extension removal",
+        "https://github.com/aaif-goose/goose/pull/13574"
+      ],
+      [
+        "goose thinking-only response recovery",
+        "https://github.com/aaif-goose/goose/commit/d8962e321eb00444d0cdfc5c73b242d05a25887c"
+      ],
+      [
+        "goose compaction scratchpad fix",
+        "https://github.com/aaif-goose/goose/commit/7347836a3e82ba29df41b1e53d3dfd5583dd63ba"
+      ],
+      [
+        "Agent Router v1.3.0-rc1 release",
+        "https://github.com/theagentrouter/agent-router/releases/tag/v1.3.0-rc1"
+      ],
+      [
+        "Agent Router weighted routing across InferencePools",
+        "https://github.com/theagentrouter/agent-router/commit/56bd61f8280d967a3001c3b0babb8e4640d93353"
+      ],
+      [
+        "Agent Router per-agent token budget example",
+        "https://github.com/theagentrouter/agent-router/commit/f68ad16c732bcb9e0a28d031bfd8363266c02ff3"
+      ],
+      [
+        "MCP extension lifecycle overview alignment",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/d4b317231161ee96d3eefb2448bda4230c76f4c6"
+      ],
+      [
+        "agentgateway PostgreSQL budget migration locking",
+        "https://github.com/agentgateway/agentgateway/commit/bdb36de0ccdb1d5954486423698f5231a176b157"
+      ],
+      [
+        "OpenSandbox execd overlong-line memory bound",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/b8f6687840f61d80d3b22024acc4132effe80f6c"
+      ],
+      [
+        "OpenSandbox trailing-dot egress domain normalization",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/ed7587a80136e7d05431dc626536870723c962b2"
+      ],
+      [
+        "OpenSandbox lifecycle failure condition preservation",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/446235f88c49b7ceffe9eb8b893bb90d5cab85cb"
+      ],
+      [
+        "AAIF nono project proposal withdrawal and closure",
+        "https://github.com/aaif/project-proposals/issues/61"
+      ],
+      [
+        "AAIF Identity & Trust delegated-authority conformance cases",
+        "https://github.com/aaif/wg-identity-and-trust/issues/22"
+      ],
+      [
+        "AAIF Technical Committee project and governance status",
+        "https://github.com/aaif/technical-committee"
+      ],
+      [
+        "A2A releases",
+        "https://github.com/a2aproject/A2A/releases"
+      ],
+      [
+        "AGENTS.md repository",
+        "https://github.com/agentsmd/agents.md"
+      ],
+      [
+        "MCP Dev Summit Nairobi",
+        "https://events.linuxfoundation.org/mcp-dev-summit-nairobi/"
+      ]
+    ]
+  },
+  {
       "date": "2026-11-17",
       "level": "HIGH",
       "tags": [
