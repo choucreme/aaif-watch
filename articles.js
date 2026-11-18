@@ -1,6 +1,134 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-19",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "MCP",
+      "Operations",
+      "A2A"
+    ],
+    "title": "MCP Inspector 2.16.0、SSEメモリ枯渇を封じる",
+    "summary": "MCP InspectorがSSE上限とsticky session対応を正式化。gooseは1.60.1を公開し、MCP設定移植とApp proxy防御をmainで強化。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>MCP Inspector <code>2.16.0</code>が11月18日に公開され、悪意ある、または壊れたMCP serverが改行や空行を送らずSSEを流し続けた場合のmemory枯渇に対し、lineとeventを16MiBで打ち切る修正を収録した。gooseは<code>v1.60.1</code>を公開し、Claude系modelが拒否する<code>&lt;analysis&gt;</code> scratchpadをcompactionから除去した。さらにmainではMCPの<code>server.json</code>をgoose設定へimportする機能、MCP extension operation、MCP App proxyのguest URL検証と<code>postMessage</code>送信先制限が入った。</p><p><strong>分析：</strong>本日の中心は、MCPを「接続できるprotocol」から「長時間・多tenantで安全に運用できるcontrol surface」へ固める動きである。transportのbuffer上限、origin境界、設定formatの移植、session affinityを個別機能ではなく一つの脅威・運用modelとして試験する必要がある。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>MCP Inspector 2.16.0がSSE無制限bufferを修正</h3><p>従来は、serverが<code>data:</code>の後へ改行を付けずbyteを送り続けると、SDK parserとnetwork watcherがpartial lineを無制限に保持し、V8が停止するまでprocess memoryが増え得た。lineを分割しても空行を送らなければpending event全体が残るため、修正はlineとeventの両方を16MiBで制限する。releaseはこの問題を<code>GHSA-3xgv-mvj6-g78r</code>として明記した。InspectorをuntrustedなMCP serverの検証に使う環境では、単なるUI updateではなくavailability境界のsecurity updateとして扱うべきである。</p><p>同releaseは、server単位でopt-inできるHTTP cookie jarを追加し、load balancerのsticky sessionに対応した。またSEP-2792の<code>acceptLanguage</code> metadataをStreamable HTTPの全sendで<code>Accept-Language</code>へmirrorするため、webだけでなくCLI/TUIでも言語選好を同じsemanticsで運べる。既知issueとして、開発用<code>vite</code>経由のpicomatch ReDoS advisoryは修正版未公開のため残るが、release noteはpublished packageでnetwork由来のglobへ直結しない範囲を説明している。</p><h3>goose 1.60.1とMCP相互運用・App proxy防御</h3><p><code>v1.60.1</code>は、前日の1.60.0で追跡したcompaction互換性修正を正式artifactへ載せたpatch releaseである。より重要な次期差分として、mainはMCP Registryの<code>server.json</code>形式からgoose configへ設定を取り込めるようにし、MCP extension runtimeをagent operationへ統合した。独自の接続定義を手で転記する量を減らし、registry・client・runtime間の設定移植を進める。</p><p>同時にACP経由のMCP App proxyでは、guest URLを許可範囲へ検証し、<code>postMessage</code>を無差別な<code>*</code>ではなく対象originへ限定する修正が入った。これはmain上の変更であり、v1.60.1収録と断定してはいけない。upgrade判定ではrelease tagとmain commitを分離して管理する。</p><h3>Agent Router v1.3は正式版前、release noteが先行</h3><p>公式siteとrepositoryにはv1.3.0のrelease noteが追加されたが、記載日は11月24日で、11月19日時点のGitHub latest releaseはv1.2.1、前日の監視対象はv1.3.0-rc1である。したがって本稿はv1.3.0を正式公開とは扱わない。予告内容は、QuotaPolicyの正確なtoken課金、再起動なしのpolicy反映、request metadata由来のtenant別limit、週・月・年window、cross-namespace target、quota枯渇backendのfailover、OpenAI Files/Decisions API、workload identity federationである。特にquota-aware failoverは、同梱Envoy 1.40.2に必要な<code>host_allowlist</code>が含まれずpreview条件付きと明記されている。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>Inspector 2.16.0を正式公開。SSE line/event上限、per-server cookie jar、SEP-2792言語選好、schema validation修正を含む。core specificationの新revision公開は確認されていない。</li><li><strong>AGENTS.md：</strong>公式repositoryに前回以降のcommit・release変更なし。</li><li><strong>goose：</strong>v1.60.1を公開。mainでは<code>server.json</code> import、MCP extension operation、App proxy origin防御、hosted OTLP設定例を追加。後半は未release差分。</li><li><strong>agentgateway：</strong>新releaseはなく正式版はv1.7.0。mainではMCP guardrailのCEL式をUIからreject/transformとして編集可能にし、PostgreSQL migration connectionの<code>statement_timeout</code>を無効化して長いupgradeがstartup時に落ちるriskを抑えた。catalog v2やDecisions/SystemOne routingも進行中。</li><li><strong>Agent Router：</strong>v1.3 release noteをmainと公式siteへ追加したが、正式日付は11月24日。現時点ではRC検証を継続し、stableとして採用しない。</li><li><strong>A2A：</strong>dead partner link修正のみ。protocol・schema・正式releaseに実質変更なし。</li><li><strong>OpenSandbox：</strong>新releaseなし。mainではegress subject snapshotのackをdata-plane-ready判定で短時間待つ変更、upstream TLS検証失敗をEgress logへ明示する修正、mount別disk使用量とaggregate IO metricsを追加した。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>Linux Foundationの11月18日newsletterは、AAIFが10 hosted projects、設立1年で300 membersを超えたことを公式に再確認した。これは新project追加ではなく、10月22日に加入したAgent Skills、Open Responses、OpenEnv、OpenSandboxとmembership milestoneのまとめである。Technical Committee、Working Group charter、project lifecycle、stage変更、加入・卒業、認定に、前回レポート以降の新しい公式決定は確認されなかった。</p><p>MCP Dev Summit Nairobiは11月19〜20日に開催される。仕様・SDK・conformanceに関する発表は会議資料や録画が一次情報として公開されるまで確定事項とせず、公開後に追跡する。AAIF公式には11月18日付でconference proposalの作り方を扱うcommunity記事も追加されたが、protocolやgovernanceの変更ではない。</p><p><strong>分析：</strong>project数とmember数の成長に対し、運用側が必要とするのはrelease、proposal、WG draft、正式決定を区別できるprovenanceである。今回のAgent Routerのように将来日付のrelease noteが先行する場合、site掲載だけで「released」と判定しない監視規則が重要になる。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>Protocol toolingもzero-trust対象：</strong>Inspectorは未知のserverを調べる道具であるため、入力は仕様準拠とは限らない。SSE frame、cookie、redirect、origin、schema IDをすべてuntrusted inputとして上限とprovenanceを持たせる流れが強まっている。</p><p><strong>設定formatのportability：</strong>gooseの<code>server.json</code> importは、MCP serverのdiscovery情報とclient設定を近付ける。ただしcommand、environment、secret、transport optionの意味がclient間で完全一致するとは限らない。import成功と実行安全性は別に検証する必要がある。</p><p><strong>Identity・quota・routingの一体化：</strong>Agent Router v1.3予告、agentgatewayのCEL guardrail、OpenSandboxのcredential-bound egressは、認証した主体をpolicy keyへ変換し、予算、route、tool、networkを同じrequest contextで制御する方向を示す。control planeの変更がlive反映されるほど、誰が何を変更し、どのdata planeへ到達したかをtraceする必要が増す。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>PoC・upgradeでは次を確認したい。</p><ul><li>MCP Inspector 2.16.0へ上げ、16MiB超の改行なしline、多数の短い<code>data:</code> lineで空行なしのevent、slow streamを流し、memory上限、error分類、upstream cancelを確認する。</li><li>cookie jarはserver単位・opt-inで使い、cross-origin redirect、expired cookie、OAuth retry時の<code>Set-Cookie</code>を試験する。session affinityに依存するserverではreplica failoverも測る。</li><li>gooseの<code>server.json</code> import後、secretが平文化されないか、stdio commandとremote URLのallowlist、環境変数、approval、削除時の残存設定を確認する。</li><li>MCP Appは不正guest URL、別origin iframe、偽装<code>postMessage</code>、navigation後のorigin変化を含むnegative testを行う。</li><li>agentgatewayはupgrade migrationを大規模log tableと複数replicaで実行し、無期限statementがlockを長時間保持する場合の監視・停止手順を用意する。</li><li>OpenSandboxではdata-plane-ready直後の最初のegress request、期限切れ・unbound TLS snapshot、証明書検証失敗、disk逼迫をtraceとalertへ結び付ける。</li><li>Agent Router v1.3は正式tagまで待ち、quota policy live反映、cross-namespace ReferenceGrant、全backend quota枯渇、metric label変更をstagingで確認する。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>MCP InspectorのSSE advisoryに対するdownstream package・container更新と、既知picomatch advisoryの修正版。</li><li>goose mainのMCP App proxy修正と<code>server.json</code> importがどのreleaseへ入るか、import schemaの互換範囲。</li><li>Agent Router v1.3.0の11月24日正式tag、RCからの差分、quota-aware failoverの実際のEnvoy要件。</li><li>agentgatewayのCEL MCP guardrail、catalog v2、migration timeout変更を含む次期release。</li><li>OpenSandboxのegress readiness・TLS diagnostic・disk metricsが次のstable releaseへ収録される時期。</li><li>MCP Dev Summit Nairobiの発表資料、conformance、SDK、security関連の正式公開。</li><li>AAIF TC/WGの議事録、project proposal、stage変更、認定の新規決定。現時点で新規project追加はない。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP Inspector 2.16.0 release",
+        "https://github.com/modelcontextprotocol/inspector/releases/tag/2.16.0"
+      ],
+      [
+        "MCP Inspector SSE line/event size cap",
+        "https://github.com/modelcontextprotocol/inspector/commit/71327c7975d35d877a41b041e26a9eab2dc2e2eb"
+      ],
+      [
+        "MCP Inspector Accept-Language mirroring",
+        "https://github.com/modelcontextprotocol/inspector/commit/4ca5a3b3482b7af25560f949ee90fd432bb9c25c"
+      ],
+      [
+        "goose v1.60.1 release",
+        "https://github.com/aaif-goose/goose/releases/tag/v1.60.1"
+      ],
+      [
+        "goose MCP server.json import",
+        "https://github.com/aaif-goose/goose/commit/024d220354506fd1d5c9f9a539ed13739c04b0fa"
+      ],
+      [
+        "goose MCP extension operation",
+        "https://github.com/aaif-goose/goose/commit/4ac08c7e38b3f8a752ce6e0f2136ac72a3d4064f"
+      ],
+      [
+        "goose MCP App proxy origin hardening",
+        "https://github.com/aaif-goose/goose/commit/024e4cd5a8b878d0b45bb8c7dbd83ddf2801a599"
+      ],
+      [
+        "goose hosted OTLP observability example",
+        "https://github.com/aaif-goose/goose/commit/ae452610fe9657b90c15faa81cbcad480e8ea173"
+      ],
+      [
+        "Agent Router v1.3 release notes",
+        "https://theagentrouter.ai/release-notes/v1.3/"
+      ],
+      [
+        "Agent Router v1.3 release-note commit",
+        "https://github.com/theagentrouter/agent-router/commit/d63bb19f04ff775d251b8a2ad2c1fa7840c4f634"
+      ],
+      [
+        "agentgateway CEL MCP guardrails",
+        "https://github.com/agentgateway/agentgateway/commit/ff1e59a3729f38e35c8951db1d5f62a88ad6d411"
+      ],
+      [
+        "agentgateway migration statement timeout",
+        "https://github.com/agentgateway/agentgateway/commit/7de75394b2c7c4fa3dbafcb1da2ce643cf18954f"
+      ],
+      [
+        "OpenSandbox egress readiness acknowledgement",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/d2f735a82eeb84a9eb6f878a12ac28f8abbfb520"
+      ],
+      [
+        "OpenSandbox upstream TLS diagnostics",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/eb3f5210c57a945649e169a685fe3ac034c66fef"
+      ],
+      [
+        "OpenSandbox disk and IO metrics",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/3e978b6efd57aa8a084721359f7517f8e00a6e5e"
+      ],
+      [
+        "A2A latest change",
+        "https://github.com/a2aproject/A2A/commit/5f931b8a25fe66789f987ec4a55fc16ee9fe41ee"
+      ],
+      [
+        "AGENTS.md repository",
+        "https://github.com/agentsmd/agents.md"
+      ],
+      [
+        "Linux Foundation Newsletter: November 2026",
+        "https://www.linuxfoundation.org/blog/linux-foundation-newsletter-november-2026"
+      ],
+      [
+        "AAIF official site and event listing",
+        "https://aaif.io/"
+      ],
+      [
+        "MCP Dev Summit Nairobi",
+        "https://events.linuxfoundation.org/mcp-dev-summit-nairobi/"
+      ],
+      [
+        "AAIF Technical Committee",
+        "https://github.com/aaif/technical-committee"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-18",
     "level": "HIGH",
     "tags": [
