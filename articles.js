@@ -1,6 +1,114 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-20",
+    "level": "HIGH",
+    "tags": [
+      "MCP",
+      "Security",
+      "Operations",
+      "A2A"
+    ],
+    "title": "MCP EventsがFinal、無人エージェントを標準化へ",
+    "summary": "MCP Events拡張がFinal化。A2A/MCP認可とgateway・sandboxの秘密情報境界も同時に強化された。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>MCP specification repositoryは11月19日、SEP-3415 Events Extensionを<code>Final</code>として取り込み、MCP clientがSlack message、repository push、PagerDuty incidentなどの上流eventを購読し、人がその場にいなくてもagentを起動できる共通interfaceを定義した。AAIF公式ブログは同日、A2AとMCPを一つの処理経路で使う場合のOAuth security gapを整理し、MCP相当の認可baselineをA2Aにも適用するよう提案した。</p><p><strong>分析：</strong>agent基盤の中心が「user requestを受けてtoolを呼ぶ」同期型から、「eventを耐久的に受け、委譲先ごとに正しいcredentialを選び、監査可能に実行する」非同期型へ広がる節目である。Eventsの仕様statusはFinalだが、official SDKのreference implementationは未完で、error codeやreplay semanticsにも未解決項目がある。Finalとproduction-readyを同義にしないことが重要である。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>SEP-3415 Events ExtensionがFinal</h3><p>serverは<code>events/list</code>でevent type、購読引数の<code>inputSchema</code>、payloadの<code>payloadSchema</code>、対応delivery modeを公開する。deliveryは任意の三方式で、短時間接続の<code>events/poll</code>、長時間接続の<code>events/stream</code>、Standard Webhooks署名と更新式TTLを使う<code>events/subscribe</code>が定義された。opaque cursorで切断後に再開できる一方、replayはevent typeごとのoptionalで、取りこぼしは<code>truncated: true</code>として明示する。従来のMCPはrequest/response中心だったため、外部eventを共通schemaで発見・購読・再開する点が大きな差分である。</p><p>運用ではevent sourceの本人性、cursorの保存、duplicate排除、webhook secret rotation、TTL更新失敗、replay不能時の補償処理が新しい責務になる。仕様には5個の暫定error codeと8個のopen questionが残り、official SDK実装も未完であるため、まずpollとidempotency keyを使う限定PoCから始めるのが安全である。</p><h3>AAIFがA2A/MCP横断のOAuth baselineを提示</h3><p>AAIF記事はA2A v1.0.1とMCP 2026-07-28を比較し、A2Aではtoken audience binding、mix-up防止、open redirect、metadata SSRF、confused deputy、token passthrough禁止などが明示要件として不足またはoptionalになり得ると整理した。特にA2Aで受けたtokenをMCP serverへそのまま転送せず、issuer、client_id、resource、scope、user、tenant、conversationへbindingした別tokenを取得する構成を推奨する。これは仕様変更ではなくAAIFによるsecurity guidanceだが、複合protocolを採用する設計reviewの具体的checklistになる。</p><h3>OpenSandbox 1.3.0-rc.2はworkspace lossと終了状態を修正</h3><p>2番目のRCはcontainer imageを公開し、SDK/CLI packageはstableまで保留した。native S3 sandboxでもrootfs-only snapshotを扱い、node条件を満たさない場合はfull snapshotへ黙ってfallbackせず失敗させる。BatchSandboxのexit 0をstickyな<code>Completed</code>へ固定し、Docker renewalとexpirationのrace、Kubernetesのstale informerによるrenew済みsandbox削除を修正した。RC利用者には重要だが、stable採用判定は1.3.0正式版まで待つ。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>SEP-3415 Events ExtensionをFinal化。poll、stream、signed webhook、cursor、truncationを標準化。Inspectorの追加releaseは確認されていない。</li><li><strong>AGENTS.md：</strong>公式repositoryに前回以降のcommit・release変更なし。</li><li><strong>goose：</strong>新releaseはなく最新正式版はv1.60.1。mainではACP経由のMCP server headerをすべてprocess memory上のplaceholderへ置換し、configやsecret fileへ永続化しないようにした。別processでresumeする場合はheaderの再送が必要になる。tool executionからapproval policyをoptionalにするruntime変更も入ったため、hostがapproval operationを省略した場合のsecurity modelを確認する必要がある。</li><li><strong>agentgateway：</strong>新releaseはなく最新正式版はv1.7.0。OAuth token exchange cache keyへoption・parameter listの境界と全request fieldを含め、異なるinitial/chained parameter構成が同じentryを共有するriskを修正。pre-registered <code>clientId</code>はprovider種別に依存せずgateway自身のregistration endpointを広告できるようになった。</li><li><strong>Agent Router：</strong>v1.3 stableはまだ将来日付で、現時点はRC扱い。mainではextproc debug logのend-user ID、location、metadata値、MCP credential、reasoning signatureなどのredactionを拡張。未知のMCP server fieldは安全なkeyだけを残すallowlist方式にした。</li><li><strong>A2A：</strong>spec・正式releaseに前回以降の実質変更なし。AAIFの新しい認可記事はguidanceであり、A2A v1.0.1のnormative text変更ではない。</li><li><strong>OpenSandbox：</strong><code>1.3.0-rc.2</code> imageを公開。rootfs-only snapshot、BatchSandbox Completed、renew/delete race修正に加え、E2B shimのsecretをenvironment/file referenceから解決し、format・JSON・log outputでredactするmain差分も入った。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>SEP indexはFinalを44件から45件へ更新し、Events ExtensionをExtensions TrackのFinalとして掲載した。AAIF Technical Committee、Working Group charter、project lifecycle、project proposal、新規加入・卒業、stage変更、認定について、前回レポート以降の新しい公式決定は確認されなかった。AAIFのhosted projectは10件のままである。</p><p>MCP Dev Summit Nairobiは11月20日に2日目を迎え、国際化を扱う「Translating MCP」などが予定されている。公式event pageにはModel Context Protocol Associate（MCPA）Certificationへの導線もあるが、会議sessionの説明は予定内容であり、仕様変更や実装成果としては扱わない。資料・録画・repository artifactが公開された時点で再評価する。</p><p><strong>分析：</strong>extension lifecycle上のFinal化は採用判断の重要なsignalだが、reference implementation、conformance test、security profileが揃うまでには時差がある。governance監視ではstatus badgeだけでなく、SDK、test vector、error registry、interoperability reportを別々に追う必要がある。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>Reactive agent infrastructure：</strong>MCP Eventsはexternal systemからagentへ継続的にsignalを運ぶ。scheduler中心のpollingからevent source中心へ移ると、delivery semantics、backpressure、dead-letter、replay、consumer ownershipがagent platformの共通課題になる。</p><p><strong>Credential provenance：</strong>AAIFのguidance、gooseのmemory-only header、agentgatewayのcache-key分離、Agent RouterとOpenSandboxのredactionは、credentialを単に隠すだけでなく「誰・どのresource・どのexchange parameter・どのprocessに属するか」を保持する方向で一致する。共有cacheやresumeが便利でも、bindingを失うとcross-user・cross-resource leakageへ直結する。</p><p><strong>Control planeのfail-closed化：</strong>OpenSandboxはsnapshot capability不足を別modeへ黙ってfallbackせず失敗させ、終了・renewal・削除raceを明示状態で扱う。agent executionでは、曖昧な成功やstale stateより、再試行可能な失敗と証拠を返す設計が優先されている。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>PoCとupgradeでは次を確認したい。</p><ul><li>Eventsの三方式を同じevent sourceで比較し、duplicate、順序入替、切断、cursor期限切れ、<code>truncated</code>、TTL更新失敗をfault injectionする。handlerはat-least-onceを前提にidempotent化する。</li><li>webhookはStandard Webhooks署名のkey rotation、timestamp許容幅、replay防止、tenant別endpoint、secret漏えい時の失効時間を測る。</li><li>A2A→MCP経路ではincoming token passthroughを禁止し、resource・audience・scopeを変えたtoken exchange、PKCE S256、issuer binding、PRM/metadata URLのSSRF防御をtestする。</li><li>gooseのACP sessionをprocess再起動・別hostへresumeし、headerがdiskへ残らず、欠落時はsilent fallbackせず再提示を要求することを確認する。approval operationを省略できるruntimeでは、host側policyの有無をstartup時に検査する。</li><li>agentgatewayはextra parameterの並びとinitial/chained境界を変え、token cacheが分離されることをtenant横断testで確認する。pre-registered clientIdではissuer、registration、authorize、token endpointのmetadata整合も検査する。</li><li>Agent Routerはredaction有効時にuser、location、metadata、MCP header、reasoning signatureを含むsynthetic requestを流し、debug logとOpenTelemetry traceの両方を別々に確認する。</li><li>OpenSandbox RC2はrenewalとexpiryを同時発火し、UID/resourceVersion precondition、Completed terminal state、rootfs-only不適格nodeのfail-closedを回帰試験する。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>MCP Eventsのofficial SDK reference implementation、error code確定、8件のopen question、conformance test。</li><li>Events extensionを採用するserver/clientの相互運用結果と、webhook署名・cursor replayのsecurity review。</li><li>AAIFのA2A OAuth baselineがA2A normative specification、security profile、test suiteへ反映されるか。</li><li>gooseのmemory-only MCP headerとoptional approval runtimeがどの正式releaseへ入るか。</li><li>agentgatewayのOAuth cache-key・client registration修正、Agent Router redaction修正を含む次期release。</li><li>OpenSandbox 1.3.0 stableの公開、RC2からの差分、SDK/CLI package、rootfs snapshotのcross-runtime conformance。</li><li>MCP Dev Summit Nairobiの録画・slide・demo repositoryとMCPA認定の公開範囲。</li><li>AAIF TC/WG議事録、project proposal、stage変更、新規project。現時点で追加なし。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP SEP-3415 Events Extension Final",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/8a18b4b3292b9f9b3aee73f6325f9f62f19a89f9"
+      ],
+      [
+        "AAIF: Designing secure authorization across A2A and MCP",
+        "https://aaif.io/blog/designing-secure-authorization-across-a2a-and-mcp"
+      ],
+      [
+        "goose ACP MCP headers kept in process memory",
+        "https://github.com/aaif-goose/goose/commit/71ad49d2c6cc26be05d59a6280bd4b1150d2cbe6"
+      ],
+      [
+        "goose optional tool approval runtime",
+        "https://github.com/aaif-goose/goose/commit/bf074d6d114690de6cbe7edc925cb26efdf6f16a"
+      ],
+      [
+        "agentgateway OAuth exchange cache key separation",
+        "https://github.com/agentgateway/agentgateway/commit/d99fd42702fa7355db25b55ba5ea20bd7962ce22"
+      ],
+      [
+        "agentgateway MCP clientId registration endpoint",
+        "https://github.com/agentgateway/agentgateway/commit/ab8f0c3909bc054b8766ac271a5947f869cb2bc2"
+      ],
+      [
+        "Agent Router extproc debug-log redaction",
+        "https://github.com/theagentrouter/agent-router/commit/9cf85059160fef9afc7a9f5aff75e7ce6cc8f0ce"
+      ],
+      [
+        "OpenSandbox 1.3.0-rc.2 release notes",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/c90a9b01f4a013538266a2b5c5060dcbd878a78a"
+      ],
+      [
+        "OpenSandbox E2B shim secret references and redaction",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/87e6fa54d426be1155634861f8d3cf5625807def"
+      ],
+      [
+        "OpenSandbox server image 1.3.0-rc.2",
+        "https://hub.docker.com/r/opensandbox/server/tags?name=release-1.3.0-rc.2"
+      ],
+      [
+        "OpenSandbox controller image 1.3.0-rc.2",
+        "https://hub.docker.com/r/opensandbox/controller/tags?name=release-1.3.0-rc.2"
+      ],
+      [
+        "A2A specification repository",
+        "https://github.com/a2aproject/A2A"
+      ],
+      [
+        "AGENTS.md repository",
+        "https://github.com/agentsmd/agents.md"
+      ],
+      [
+        "AAIF Technical Committee",
+        "https://github.com/aaif/technical-committee"
+      ],
+      [
+        "AAIF Project Proposals",
+        "https://github.com/aaif/project-proposals"
+      ],
+      [
+        "MCP Dev Summit Nairobi",
+        "https://events.linuxfoundation.org/mcp-dev-summit-nairobi/"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-19",
     "level": "HIGH",
     "tags": [
