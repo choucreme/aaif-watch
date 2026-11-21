@@ -1,6 +1,114 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-22",
+    "level": "MEDIUM",
+    "tags": [
+      "MCP",
+      "Operations",
+      "Security",
+      "A2A"
+    ],
+    "title": "標準化をWGへ戻し、Sandbox失敗を可観測に",
+    "summary": "MCP FSIGが問題発見・WG連携へ役割を再定義。OpenSandboxはfinalizer競合、DNS枠、OOM・CA更新の失敗を明示化。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>MCPはFinancial Services Interest Group（FSIG）のcharterを改訂し、金融業界の課題を独自extensionへ直結させるのではなく、まず既存MCP primitiveと公開可能な実装patternで解けるかを確認し、未解決のprotocol gapを担当Working Groupへ渡す流れをdefaultとした。OpenSandboxはKubernetes finalizer競合、DNS tracking capacity、OOMKilledの診断、MITM CAのtrust store更新失敗をそれぞれ修正した。</p><p><strong>分析：</strong>本日の共通点は、domain固有の要求やruntime障害を独立した“成功”として閉じず、責任主体と失敗理由を下流へ正しく運ぶことである。標準化ではIGからWGへ、実行基盤ではPod・DNS・certificate storeからoperatorへ、判断に必要な証拠を失わない設計が進んだ。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>MCP FSIGをproblem-first、WG-ledへ再定義</h3><p>改訂charterは、auditability、data lineage、data handlingなどの金融要件を収集し、既存仕様と共有可能な実装経験を先に確認する。gapが残れば既存WGへevidenceと参加者をつなぎ、担当WGがなければcross-communityの支持とcontributorを集めて新WGを提案する。FSIG自身はstandards-track変更を独立所有せず、SEPのsponsorはWG、例外的にCore Maintainerが担う。従来の「finance-specific extensionを開発・維持し、SEPへ昇格」という表現より責任分界が明確になった。</p><p>同時にcommunication文書は、GitHub Discussionsをmeeting notesとannouncement中心に限定し、discussion作成はrepositoryへのwrite access保有者のみ、idea・feature request・questionはDiscordから開始すると明記した。contributorは技術提案の入口がIssue/Discussionではない場合をrunbookへ反映する必要がある。</p><h3>OpenSandboxが競合cleanupと診断欠落を修正</h3><p>BatchSandboxのrelease cleanupは、stale objectからfinalizer配列をpatchすると、別controllerが既に除去したfinalizerを復活させ得た。修正はuncached API read、resourceVersionによるoptimistic locking、競合時の再取得・再計算を使い、並行cleanupを保持する。別修正では<code>PodFailed</code> conditionへsample containerのexit code、reason、messageを残し、<code>137 (OOMKilled)</code>をAPI clientから判別可能にした。</p><p>default-denyのClassic DNS policyはtracking枠が満杯でもlive leaseを追い出さず、新ruleをinstallする前にcapacityを確保する。枠がなければ<code>SERVFAIL</code>を返し、expired observationだけを置換する。これは一時的な名前解決失敗を増やし得るが、既に許可済みの通信を新しいDNS回答が壊すより安全側の挙動である。</p><h3>AAIFがOAuthとAPI keyの適用境界を整理</h3><p>11月20日付AAIF公式記事は、remote protected MCP serverをgeneral-purpose clientから利用させる場合、初回接続のdiscovery、client identification、user consent、scope、expiry、renewalを標準化できるOAuthを使うべきと説明する。一方、clientとserverを同一teamが管理するcustom構成では、API key、client credentials、EMA extensionなど事前合意した方式も選べる。これはnormative specification変更ではなく、接続modelに応じた設計判断のguidanceである。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>FSIG charterとcommunication経路を更新。core specification revisionやInspector releaseの追加はなし。</li><li><strong>AGENTS.md：</strong>公式repositoryに前回以降のcommit・release変更なし。</li><li><strong>goose：</strong>最新正式版はv1.60.2。前回以降の新commit・releaseは確認されなかった。</li><li><strong>agentgateway：</strong>正式版はv1.7.0。前回記事で未収録だったmain差分として、MCP Skills extensionの初期対応を追補する。<code>skills/list</code>、<code>skills/get</code>、resource directory readを扱い、skill/resource単位のauthorization filterを適用するが、multiplexingは未対応でdefault targetが必要。gatewayはcache hintをprivate・TTL 0へ上書きする。release収録済みとは扱わない。</li><li><strong>Agent Router：</strong>最新正式版はv1.3.0。前回以降の新commit・releaseなし。</li><li><strong>A2A：</strong>最新正式版はv1.0.1。specification・releaseに新しい実質変更なし。</li><li><strong>OpenSandbox：</strong>最新stableは1.2.1。mainでrelease finalizer競合、PodFailed詳細、DNS tracking枠、MITM CAのNSS/JDK import再試行、nftables original-port matchのTCP限定を修正。いずれも新stable releaseには未収録。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>FSIG charter改訂はMCP group governanceに沿ったgroup-level変更で、MCP全体のgovernanceやAAIF project lifecycleを変更するものではない。AAIF Technical Committee、project proposals、新規加入・卒業project、stage変更、認定について、前回以降の新しい公式決定は確認されなかった。</p><p><strong>分析：</strong>IGはdomain requirementとimplementation evidenceを集め、WGはstandards-track deliverableを所有するという分離が鮮明になった。金融向けPoCの成果を標準化へ持ち込む際は、FSIGでextensionを完成させてから承認を求めるのではなく、problem statement、既存primitiveで不足する再現例、複数実装者を早期に担当WGへ渡す方が整合的である。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>Evidence-preserving failure：</strong>OOMKilled、image pull、CA import、DNS capacity、finalizer conflictを個別の内部logに閉じず、condition、<code>SERVFAIL</code>、再試行、resourceVersion conflictとして外部から判定可能にする動きが続く。</p><p><strong>Skill deliveryのpolicy化：</strong>agentgatewayのSkills対応は、skill manifestを単に中継するだけでなく、listとdirectory resultをresource authorizationでfilterし、gateway構成変更を跨ぐcacheを抑止する。Skill portabilityが進むほど、発見可能性と取得権限を別々に制御する必要がある。</p><p><strong>Authはdeployment modelで選ぶ：</strong>OAuth対API keyの議論はprotocolの優劣ではなく、未知のgeneral-purpose clientとの動的接続か、両端を管理するcustom integrationかで分ける方向へ整理された。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ul><li>FSIG由来のproposalは、既存MCP primitive、該当WG、再現可能なgap、複数組織のuse case、実装候補を一枚のintakeにまとめる。</li><li>OpenSandbox controllerへ同時にfinalizer更新を発生させ、削除済みfinalizerが復活せず、cleanupが競合後に収束することを確認する。</li><li>BatchSandboxへmemory limit超過、image pull失敗、sidecar生存中のmain container終了を注入し、conditionにexit code・reason・sample detailが残るか検査する。</li><li>DNS tracking上限までlive leaseを作り、新domainが<code>SERVFAIL</code>となって既存leaseを追い出さないこと、expiry後は再試行で通ることを確認する。</li><li>MITM CA rotation中にNSS/JDK importを一度失敗させ、古いalias削除後もwatcherが再試行し、新しいCAが全trust storeへ入るまでready扱いしない監視を用意する。</li><li>agentgateway Skills PoCでは、denied skill、manifest内のprivate resource、directory listing、cache hint、default targetなし、multiplexing構成を個別に試験する。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>MCP FSIG改訂後に最初にWGへ移管されるproblem statementと、新WG proposalの有無。</li><li>GitHub Discussions制限後のdecision record、meeting notes、Discord議論の追跡可能性。</li><li>agentgateway Skills extensionのmultiplexing対応、正式release収録、他clientとのinteroperability。</li><li>OpenSandboxのfinalizer・DNS・CA trust・PodFailed修正を含む次期stable release。</li><li>OAuth/API key guidanceがMCP deployment guideやconformance profileへ反映されるか。</li><li>goose、A2A、Agent Router、AGENTS.mdの次期release。現時点で新規差分なし。</li><li>AAIF TC/WG、project proposal、新規project・stage変更・認定。現時点で追加なし。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP Financial Services IG charter amendment",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/2f3a95074916f092cd58dc06ede6a748f681a6ef"
+      ],
+      [
+        "MCP contributor communication channels update",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/b7e13978aa0bd092baa98190d58825e7863d6ee1"
+      ],
+      [
+        "AAIF: Why does MCP use OAuth instead of API keys?",
+        "https://aaif.io/blog/why-does-mcp-use-oauth-instead-of-api-keys"
+      ],
+      [
+        "agentgateway initial MCP Skills extension support",
+        "https://github.com/agentgateway/agentgateway/commit/6dbb06b8bef4866a0fcd89209db90968db712e76"
+      ],
+      [
+        "OpenSandbox optimistic-locking release cleanup",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/984ab3a0ba5a1f0b3b994290f1d8aa1cfa0b70eb"
+      ],
+      [
+        "OpenSandbox PodFailed diagnostic details",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/61bffab04fed748fce2c334537268e00cd5635d9"
+      ],
+      [
+        "OpenSandbox DNS tracking capacity fail-closed",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/b7f312e62a59e09e676f021052f4a7779bb780d2"
+      ],
+      [
+        "OpenSandbox MITM CA NSS/JDK retry",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/9243b08aa67bb6d346cee5f82f35a6288095a15e"
+      ],
+      [
+        "OpenSandbox nftables original-port TCP match",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/24669c9d276b2b8df97c034bd4e7e4e039293353"
+      ],
+      [
+        "goose latest release v1.60.2",
+        "https://github.com/aaif-goose/goose/releases/tag/v1.60.2"
+      ],
+      [
+        "agentgateway latest release v1.7.0",
+        "https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0"
+      ],
+      [
+        "Agent Router latest release v1.3.0",
+        "https://github.com/theagentrouter/agent-router/releases/tag/v1.3.0"
+      ],
+      [
+        "A2A latest release v1.0.1",
+        "https://github.com/a2aproject/A2A/releases/tag/v1.0.1"
+      ],
+      [
+        "AGENTS.md repository",
+        "https://github.com/agentsmd/agents.md"
+      ],
+      [
+        "AAIF Technical Committee",
+        "https://github.com/aaif/technical-committee"
+      ],
+      [
+        "AAIF Project Proposals",
+        "https://github.com/aaif/project-proposals"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-21",
     "level": "HIGH",
     "tags": [
