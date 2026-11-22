@@ -1,6 +1,102 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-23",
+    "level": "MEDIUM",
+    "tags": [
+      "Operations",
+      "Security",
+      "MCP",
+      "A2A"
+    ],
+    "title": "無限待機と欠落成功を止め、Sandbox境界を可観測に",
+    "summary": "gooseはOAuth停止を有限化。OpenSandboxは出力欠落、callback例外、Pool再作成時の旧予約混入を修正した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>gooseはDatabricks OAuthのdiscovery・refresh・authorization-code exchangeへ接続10秒、request 30秒のtimeoutを追加した。OpenSandboxはslow consumerでJupyter出力末尾を失いながら成功終了する問題、Kotlin SDKがexecution handler例外をlogだけにして処理継続する問題、同名Pool再作成後に旧UIDの予約が混入する問題をmainで修正した。</p><p><strong>分析：</strong>本日の共通点は、Agent実行を止めるlock、stream、callback、controller reservationを「内部実装」として隠さず、停止・欠落・所有権不整合をcallerとoperatorが判定できる形へ戻すことにある。正式releaseの更新はないが、長時間稼働するAgentic Ops基盤では重要な信頼性差分である。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>gooseがOAuth停止によるprocess全体のhangを有限化</h3><p>Databricks providerではOAuth処理中に<code>OAUTH_MUTEX</code>を保持し、各model requestもtoken参照のため同じlockを取得する。従来はdiscoveryやtoken endpointが応答しないとlockが永久に解放されず、process内の全model callがerrorなしで停止し得た。修正後は接続10秒・request 30秒で失敗し、lockを解放してcallerへerrorを返す。interactive browser loginの60秒待ちは別経路で残るため、headless環境でexpired tokenからbrowser flowへfallbackする場合は最大待ち時間とerror分類を引き続き確認する必要がある。</p><h3>OpenSandboxが「成功だが出力欠落」を修正</h3><p>Jupyter実行ではresult channelが10件で詰まり、SSE clientや<code>on_stdout</code> hookが遅いと、送信中の出力をactivityとして数える前にreply deadlineが発火した。従来は15行中11行だけを返し、残りを捨ててもsuccess terminalを送る再現例があった。修正はin-flight送信数とdelivery countを追跡し、consumerへの送信が進行中ならdeadline終了を待つ。LLMの回答本文、監査log、command outputの末尾が欠けるのに成功扱いされる事故を防ぐ。</p><h3>実行callbackの例外とPool所有権をcallerへ返す</h3><p>Kotlin SDKはcommand、command-session、code runのhandler例外をSSE loop内で捕捉してlogだけ残し、後続eventを処理して正常returnしていた。修正後は既存のexception converterへ到達し、original causeを保持した<code>SandboxException</code>としてcallを失敗させる。recoverable errorを継続したい場合はhandler内で明示的に処理する必要があり、挙動変更として注意が必要である。</p><p>Kubernetes Pool allocatorはreservationをnamespaceとPool名で保持していたため、Pool削除後に同名で再作成すると、旧controller UIDのPod予約が新Poolのscale・status計算へ混入し得た。修正はcandidate外reservationのPod controller UIDを確認し、foreign reservationをschedule結果とmemoryから除去する。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>extension client matrixへArchestra.AIのSkills対応と、mcp-useのApps・Skills対応を追加。仕様revisionやInspectorの新releaseではなく、相互運用性の実装evidence更新である。</li><li><strong>AGENTS.md：</strong>公式repositoryに前回以降のcommit・release変更なし。</li><li><strong>goose：</strong>Databricks OAuth HTTP timeoutをmainへ追加。最新stableはv1.60.2で、この修正は未収録。</li><li><strong>agentgateway：</strong>最新stableはv1.7.0。前回以降の新commit・releaseなし。</li><li><strong>A2A：</strong>最新stableはv1.0.1。specification・releaseに新しい実質変更なし。</li><li><strong>Agent Router：</strong>最新stableはv1.3.0。前回以降の新commit・releaseなし。</li><li><strong>OpenSandbox：</strong>最新stableは1.2.1。mainでslow consumer時の出力保持、Kotlin handler例外伝播、Pool UID分離、Classic DNS lease所有権、HTTP/2/3 cookie分割のcredential resolver統合、OTLP gRPC metrics exportを追加した。release収録済みとは扱わない。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>AAIF Technical Committee、project proposals、新規加入・卒業project、stage変更、認定に前回以降の公式差分はない。OpenSandboxではOSEP-0034としてFastPath caller authenticationの設計提案がmainへ統合されたが、runtime実装ではない。</p><p>OSEP-0034はKubernetes発行の短期ServiceAccount tokenを使い、in-cluster・external server・ingress gatewayからの全business RPCを常時認証する案である。audienceとcaller identityを分離し、local JWT verification、automatic refresh、namespace/RPC authorization、fail-closedを要求する。一方、external kubeconfigとTLS certificateのlife cycleは別途残り、Helmのreference TLS統合もdesign review中である。</p><p><strong>分析：</strong>MCP client matrixの更新とFastPath認証提案は、標準やAPIの存在だけでなく「どのclientが何を実装し、どのcaller identityで呼べるか」を機械的に確認する方向を示す。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>Bounded blocking：</strong>OAuth lockやstream deadlineのような共有資源は、timeoutを付けるだけでなく、待機中に何をlockし、誰が連鎖停止するかを可視化する必要がある。</p><p><strong>Lossless failure propagation：</strong>callback例外、stream末尾、DNS lease、credential headerを途中層が再解釈して成功へ変換しない設計が進む。OpenSandboxはHTTP/2/3で分割されたCookieだけをwire orderで結合し、その他の重複headerや上限超過は従来どおりfail closedとした。</p><p><strong>Observability transportの選択肢：</strong>execd、egress、ingress、node-agentがOTLP metricsをHTTP/protobufに加えgRPC Collectorへ送れるようになった。既定はHTTPのままで、protocol環境変数とport 4317/4318の整合が必要である。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ul><li>OAuth endpointをaccept後無応答にし、30秒前後でerrorとなり、同processの別model callが永久待機しないことを確認する。expired tokenかつheadlessの場合のbrowser fallbackも別testにする。</li><li>10件を超えるstdoutを出すsandbox jobでconsumerを意図的に遅らせ、全出力とsuccess terminalの順序、disconnect時のcancelを検査する。</li><li>Kotlin handlerから例外を投げ、command・session・codeの全経路でoriginal cause付きfailureとなるか確認する。継続可能なhandlerは内部で例外を処理する。</li><li>Poolを削除・同名再作成し、旧UIDのPod reservationが新Poolのcapacityへ数えられず、旧BatchSandbox削除でも旧Podを誤操作しないことを確認する。</li><li>同一IPを共有する複数DNS名に異なるTTLを与え、短いleaseやpolicy更新が長い有効leaseを切らないことを確認する。</li><li>OTLP gRPCを有効化する場合はCollector TLS、header、resource attribute、shutdown時flushとHTTP fallbackを比較する。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>goose OAuth timeout修正の次期release収録と、headless browser fallbackのerror handling。</li><li>OpenSandboxのstream・Kotlin SDK・Pool UID・DNS lease・OTLP gRPC修正を含む次期stable release。</li><li>OSEP-0034のruntime実装、Helm TLS統合、token audienceとnamespace authorizationのe2e test。</li><li>MCP Apps/Skills client matrixの実装増加と、同一clientでのextension version・capability差。</li><li>agentgateway、A2A、Agent Router、AGENTS.mdの次期差分。現時点で新規変更なし。</li><li>AAIF TC/WG、project proposal、新規project・stage変更・certification。現時点で追加なし。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP extension client matrix: Archestra.AI and mcp-use",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/862397cec702e8f828713071da501cf56158e8fc"
+      ],
+      [
+        "goose Databricks OAuth request timeouts",
+        "https://github.com/aaif-goose/goose/commit/fd3803e2af915079ad7d81f9bf9db9a7ce9e3d84"
+      ],
+      [
+        "OpenSandbox slow-consumer output preservation",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2979"
+      ],
+      [
+        "OpenSandbox Kotlin handler failure propagation",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2994"
+      ],
+      [
+        "OpenSandbox Pool UID allocation isolation",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2973"
+      ],
+      [
+        "OpenSandbox Classic DNS lease ownership",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2998"
+      ],
+      [
+        "OpenSandbox HTTP/2 and HTTP/3 cookie reconstruction",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2980"
+      ],
+      [
+        "OpenSandbox OTLP gRPC metrics export",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2999"
+      ],
+      [
+        "OpenSandbox OSEP-0034 FastPath caller authentication",
+        "https://github.com/opensandbox-group/OpenSandbox/pull/2953"
+      ],
+      [
+        "goose latest release v1.60.2",
+        "https://github.com/aaif-goose/goose/releases/tag/v1.60.2"
+      ],
+      [
+        "OpenSandbox latest release 1.2.1",
+        "https://github.com/opensandbox-group/OpenSandbox/releases/tag/release-1.2.1"
+      ],
+      [
+        "AAIF Technical Committee",
+        "https://github.com/aaif/technical-committee"
+      ],
+      [
+        "AAIF Project Proposals",
+        "https://github.com/aaif/project-proposals"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-22",
     "level": "MEDIUM",
     "tags": [
