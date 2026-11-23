@@ -1,6 +1,102 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-24",
+    "level": "MEDIUM",
+    "tags": [
+      "Operations",
+      "MCP",
+      "Security",
+      "A2A"
+    ],
+    "title": "Exit 0を疑い、MCP境界を分割・検証する",
+    "summary": "MCP Core Primitives WGが始動。agentgatewayは複数endpointとSSE耐障害性を強化し、OpenSandboxは1.3.0-rc.3を公開。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>MCPはCore Primitives Working Groupのcharterを公開し、tool resultのshape・stability・audienceを現在の主要課題として明文化した。agentgatewayはstandalone構成で複数MCP endpointを提供できるようにし、SSE decoderも自前実装へ置換した。OpenSandboxは1.3.0-rc.3を準備し、egress forward mode、FastPath caller authentication、全SDKの不完全stream検出などをrelease候補へまとめた。AAIF公式ブログは、長期Agent運用ではexit code 0と業務成果を分けて記録すべきだと報告した。</p><p><strong>分析：</strong>本日の共通点は、Agentの「正常」をprocess終了、単一endpoint、単一result schemaだけで判断しないことにある。実行結果の意味、通信境界、stream完全性、実際のside effectを別々に観測・検証する設計へ進んでいる。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>MCP Core Primitives WGがtool resultの契約を正式な検討対象へ</h3><p>新charterは、<code>content</code>、<code>structuredContent</code>、<code>outputSchema</code>、annotationの間でformatとaudienceの責務が混在し、仕様・extension・host文書に一貫しない指針があると整理した。現在の作業項目は、result shape、同じtool結果型のidentityとbreaking change判定を含むstability、model・programmatic code・MCP App・userへ何を渡すかというaudienceである。progressive discoveryは別WGの担当とし、Core Primitives WGのscopeから除外した。</p><p>これは新しいprotocol revisionではなく、今後のSEPと仕様変更を作るための責任境界である。運用側は、tool名とinputだけでなく、result type/version、利用対象、schema変更の互換性を契約試験へ入れる準備が必要になる。</p><h3>agentgatewayが一つのlistenerで複数MCP endpointを分離</h3><p>standalone modeへ<code>mcp.endpoints</code>が追加され、<code>/mcp</code>、<code>/sales/mcp</code>のようにpathごとにtarget、stateful mode、CORS、JWT、MCP authorizationを分けられる。共通policyを継承しつつ、endpoint policyは同種policyを置換し、authorization ruleは共通ruleと合成する。endpoint pathはUI、LLM、<code>/.well-known</code>等との重複を拒否する。</p><p>同時にSSE decoderを保守停止した外部crateから置換し、read境界を跨ぐCRLF、bare CR、oversized event後の継続を扱えるようにした。passthroughは大きすぎるeventをskipして後続を転送し、変換経路はfailする。未知のOpenAPI operationId欠落やcookie parameterも、client初回接続時ではなくlocal config load時に拒否する。</p><h3>OpenSandbox 1.3.0-rc.3と「exit 0では足りない」運用モデル</h3><p>rc.3はDocker/Kubernetes非pool runtime向けegress forward mode、RootfsOnly restore時のCPU/Memory override、任意有効化のFastPath caller auth、snapshot recoveryの全件pagination、foreground SSEがterminal eventなしでEOFになった場合の全5 SDK共通failure化を含む。これはrelease candidateで、imageは公開するがSDK/CLI packageは1.3.0 stableまで保留される。</p><p>AAIF公式の運用記事は、exit codeと<code>progress/no_progress</code>を分離し、model、token、cost、success criteria、成果物へ付けるrun IDをrun journalへ記録する方式を説明した。reporter障害はjobを止めずdisk spoolへ退避し、side effect確認後にだけcursorを進める。これは仕様変更ではなく実運用事例だが、Agentic OpsのSLO設計に直接使える一次情報である。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>Core Primitives WG charterを追加。VS Code GitHub CopilotもSkills over MCP対応clientとしてmatrixへ追加された。core specification revisionの更新ではない。</li><li><strong>AGENTS.md：</strong>前回以降のcommit・release変更なし。</li><li><strong>goose：</strong>external backend接続時、client-local pathをremote側が読めない非画像attachmentをUIで拒否し、画像だけを許可する修正をmainへ追加。依存更新を除く重要差分として扱う。stable v1.60.2には未収録。</li><li><strong>agentgateway：</strong>複数MCP endpoint、SSE decoder、local OpenAPI validation、delegated providerとendpointのhealth分離をmainへ追加。provider selection失敗時にbackup priorityへfailoverできるようhealth判定を分離した。stable v1.7.0には未収録。</li><li><strong>A2A：</strong>前回以降の仕様・release差分なし。latest stableはv1.0.1。</li><li><strong>Agent Router：</strong>前回以降の新commit・releaseなし。latest stableはv1.3.0。</li><li><strong>OpenSandbox：</strong>1.3.0-rc.3を準備。rc.2からのupgrade対象だが、production stableとしては扱わない。latest stableは1.2.1。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>MCP Core Primitives WGはGoogleとAnthropicのlead、週次60分のworking session、専用repositoryとDiscord channel、WG consensusからCore Maintainer approvalへ進むdecision rightsをcharterに記載した。active workのうちresult shapeはproblem statement approved、stabilityはfeedback募集、audienceは担当・日程未確定である。</p><p>AAIF Technical Committeeとproject-proposals repositoryには前回以降のcommitがなく、新規加入、卒業、stage変更、certificationの公式決定も確認されなかった。OpenSandboxのFastPath caller authはrc.3へ任意機能として入ったが、既定では無効であり、TLS、ServiceAccount TokenRequest、audience、namespace/RPC authorizationを揃えて初めて有効になる。</p><p><strong>分析：</strong>標準化の焦点はAPI項目の追加だけでなく、結果型のidentity、audience、compatibilityを誰が決めるかへ移っている。MCP toolをgatewayで複数tenantへ公開する場合、WGのresult契約とgatewayのendpoint policyを同じconformance testで追跡するとよい。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>Outcome-aware observability：</strong>process exitと業務成果を分け、<code>progress</code>、criteria、cost、run IDを記録する。greenなexit 0が連続してもproduction entryがno_progressならalert対象にする。</p><p><strong>Policy boundary per endpoint：</strong>一つのMCP gatewayに複数pathを置き、target・state・auth・CORSを分離する。共有policyとendpoint policyのmerge/replace規則がconfiguration contractになる。</p><p><strong>Stream completeness：</strong>SSEのline ending、read split、oversized event、EOF前terminal eventを明示的に扱う。途中まで得たoutputをsuccessへ変換しないことが、Agentの監査性を支える。</p><p><strong>Fail early：</strong>OpenAPI schema、local path attachment、provider/endpoint healthを実行後ではなくconfig load・UI入力・selection段階で検出し、修復可能な場所へerrorを返す。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ul><li>各scheduled Agentにexpected outcomeとrequired criteriaを宣言し、exit codeとは別に<code>progress</code>、<code>no_progress</code>、<code>findings</code>を記録する。非zeroを意図的に使うjobはfailureと区別する。</li><li>side effectが外部systemに受理された後だけcursor/checkpointを進める。重複と欠落のどちらを優先回避するかをrunbookに明記する。</li><li>agentgatewayの複数endpoint PoCでは、path重複、共通と個別authorizationの合成、CORS置換、stateful override、UIからのendpoint選択をtestする。</li><li>SSE test corpusへLF/CR/CRLF、delimiter分割、oversized event後の正常event、terminal eventなしEOF、slow consumerを追加する。</li><li>OpenSandbox rc.3はcanary namespaceで試し、egress forward modeのUDP/IPv6 fail-closed、ServiceAccount token refresh、TLS CA rotation、全SDKのincomplete stream failureを確認する。</li><li>external goose backendではPDF等のlocal file pathをpromptへ埋め込まず、upload可能な共有storageまたは明示的なfile transfer経路を用意する。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Core Primitives WGのresult shape/stability/audience problem statementとSEP番号、March specへの収録可否。</li><li>agentgatewayの複数MCP endpoint・SSE decoder・health分離を含む次期release。</li><li>OpenSandbox 1.3.0 stableの公開、rc.3との差分、SDK/CLI package出荷。</li><li>AAIF Observability & Traceability WGがrun outcome、criteria、cost、expected scheduleを共通語彙へ落とすか。</li><li>goose external backendにおける非画像file transferの正式な代替経路。</li><li>AGENTS.md、A2A、Agent Router、AAIF TC/project proposals。現時点で新しい公式差分なし。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP Core Primitives Working Group charter",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/b0be8f0f2481be8d5ea5294cf3fa57cd03cedc48"
+      ],
+      [
+        "MCP client matrix: VS Code Skills over MCP",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/1c5f400671ba9ac6d558de907b815be4d2c37548"
+      ],
+      [
+        "agentgateway multiple MCP endpoints",
+        "https://github.com/agentgateway/agentgateway/commit/a2d4d388c9dd97563ddea768effdd0112f2e219a"
+      ],
+      [
+        "agentgateway in-tree SSE decoder",
+        "https://github.com/agentgateway/agentgateway/commit/c14430eb32ec08291ac6ae1578e3ae3a15a8e4d7"
+      ],
+      [
+        "agentgateway delegated provider health",
+        "https://github.com/agentgateway/agentgateway/commit/96a967c90e6b8da6f8ce4ede19749d44ba88c735"
+      ],
+      [
+        "agentgateway OpenAPI validation at config load",
+        "https://github.com/agentgateway/agentgateway/commit/72aea7570d4c56c164c7d2e9b3da7a0f6a546e4e"
+      ],
+      [
+        "goose external backend attachment validation",
+        "https://github.com/aaif-goose/goose/commit/059fee25f13fa92be561a7d42cdd04ececef5a98"
+      ],
+      [
+        "OpenSandbox 1.3.0-rc.3 release notes",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/d1d4dc6800d955a33c259dcb0f6ed48a5aa0f5ce"
+      ],
+      [
+        "OpenSandbox Fast Sandbox System Authentication guide",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/c79fd036a5d863fe0048bef2ef97289fa7fc6a39"
+      ],
+      [
+        "AAIF: Exit 0 is not success",
+        "https://aaif.io/blog/exit-0-is-not-success-monitoring-a-fleet-of-long-running-agents"
+      ],
+      [
+        "AAIF Technical Committee",
+        "https://github.com/aaif/technical-committee"
+      ],
+      [
+        "AAIF Project Proposals",
+        "https://github.com/aaif/project-proposals"
+      ],
+      [
+        "Agent Router v1.3.0 release notes",
+        "https://theagentrouter.ai/release-notes/"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-23",
     "level": "MEDIUM",
     "tags": [
@@ -669,132 +765,132 @@ const ARTICLES = [
     ]
   },
   {
-      "date": "2026-11-17",
-      "level": "HIGH",
-      "tags": [
-          "MCP",
-          "Operations",
-          "Security",
-          "A2A"
+    "date": "2026-11-17",
+    "level": "HIGH",
+    "tags": [
+      "MCP",
+      "Operations",
+      "Security",
+      "A2A"
+    ],
+    "title": "MCPの非推奨を明示、quota failoverは未解決境界を残す",
+    "summary": "MCPがsampling・roots・loggingの非推奨を入口文書へ反映。Gateway群はsession継続とquota failoverを前進させた。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>MCPは、2026-07-28版で非推奨になっていたsampling、roots、loggingをarchitectureとbase protocolの概要ページでも明示した。agentgatewayは、initializeを処理していないreplicaでも<code>GET /mcp</code>からsessionを再開できるよう修正した。Agent Routerはbackend・model単位のquota-aware failoverをmainへ統合したが、統合直後にper-backend cluster、EDS、旧load-balancing policy、snapshot skewに関する未解決issueが4件登録された。</p><p><strong>分析：</strong>今日の差分は「文書やschemaが存在する」ことと「分散runtimeが意図どおり動く」ことを分離して検証すべきだと示している。MCPの非推奨表示は新しい仕様変更ではなく、既に確定した2026-07-28版の説明を入口文書まで整合させたもの。Gatewayの変更はmain上であり、既存の正式releaseに自動的に含まれるわけではない。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<h3>MCPがsampling・roots・loggingを新規実装の前提から外す</h3><p>概要ページは従来、sampling coordinationをMCP architectureの中心機能として示し、client featureにsamplingとroot directory lists、utilityにloggingを並べていた。修正後はclient inputの代表例をelicitationへ置き換え、samplingとroots、loggingを2026-07-28版で非推奨と明記した。既存実装の互換機能が直ちに削除されたわけではないが、新規control planeやPoCがこれらを将来の標準経路として設計するのは避けるべきである。</p><h3>agentgatewayがMCP sessionのreplica依存を縮小</h3><p>従来の<code>GET /mcp</code>はlocal memoryのsession mapだけを参照したため、initializeとは別replicaへ到着すると404になった。POSTとDELETEが既に使っていた<code>get_or_resume_session</code>へGETも揃え、任意replicaでstreamを再開できるようにした。sticky sessionへの依存を減らす変更だが、共有session情報、upstream sessionの寿命、切断時のcleanupを含むmulti-replica試験は引き続き必要である。</p><h3>Agent Routerのquota failoverは「統合済み、適用範囲は未確定」</h3><p>mainへ入った実装は、quotaをbackend・model単位で判定し、利用可能なbackendだけをEnvoyの<code>host_allowlist</code>で選択する。しかし公開issueでは、per-backend cluster名を解決できずfailoverが黙って無効になる経路、EDS管理clusterでwrapperが入らない経路、古いLB policyを<code>least_request</code>へ置き換える可能性、異なるsnapshot間でbackendを位置対応して誤ったquota metadataを付ける可能性が指摘された。現時点では設定しただけで有効と判断せず、生成xDSと実trafficで確認する必要がある。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>released revisionとdraftのoverviewを修正。別のopen issueでは、Server Cardが指定する<code>$schema</code> URLが404となり、調査対象54 cardのschemaが解決できないとの報告がある。これはmaintainer確定済み障害ではなく、公開issue上の測定結果として扱う。</li><li><strong>goose：</strong><code>v1.59.1</code> tagを確認。v1.59.0との差分は3 commitで、Databricksのconversation-bound thinking block対策とmodel catalog更新を含む。mainではplatform extensionをMCP runtimeから分離し、tool hookをgoose自身のrun loopから発火するrefactor、空response retryを最大3回へ制限する修正が入った。後者3件はv1.59.1より後のmain差分である。</li><li><strong>agentgateway：</strong>MCP session再開に加え、standalone <code>llm.policies</code>で429/5xx retryを設定可能にした。BedrockからAnthropic形式へ変換するerror discriminatorとcache-duration counter、Vertexへ送るunsupported <code>anthropic-beta</code> headerも修正した。正式版は引き続きv1.7.0で、これらはmain上の変更。</li><li><strong>Agent Router：</strong>quota-aware backend failoverをmainへ統合したが、上記4 issueがopen。正式releaseはv1.2.1のまま。</li><li><strong>A2A：</strong>protocolや正式releaseの変更はない。HTTP/gRPCの<code>traceparent</code>伝播と、SSE・resume・polling・webhookをspan linkで追跡するdistributed tracing guideの提案issueが新規登録された。</li><li><strong>AGENTS.md：</strong>公式format repositoryに監視期間内の変更なし。</li><li><strong>OpenSandbox：</strong>credential-bound isolationのintegration testや内部refactorが中心で、新しいstable releaseは確認されなかった。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>AAIF Security & Privacy WGの11月10日会議録が公開された。agent harnessのhook/control surfaceを共通化し、将来machine-verifiableにするPR #45、harness・MCP gateway・identity・sandboxを横断するPEP/PDP統合、kill switchの責任分界が主要論点である。kill switchとdelegationは既存WG間の未所有境界としてchairs meetingへ持ち込む方針で、WG charterの再調整も提案された。いずれも会議上の議論・draftであり、承認済み標準ではない。</p><p>Agent Context and Memory WG proposalにはIntelから、contextの<strong>reach</strong>（model入力へ届いたか）、<strong>effect</strong>（結果を変えたか）、<strong>novelty</strong>（model既知情報との差）を再現可能に測定するworkstream案が追加された。これはAGENTS.md、skills、memory storeを感覚評価から実験評価へ移す提案として注目できるが、WG自体はまだopen proposalである。</p><p>Taxonomy & Landscapeでは<code>emission-conformant</code>、<code>operationally conformant</code>、<code>self-reported</code>、<code>witness_scope</code>、<code>three-state reconciliation</code>の候補issueが、統一spreadsheetへ移管されたためcloseされた。closeは用語の正式採用を意味せず、KEEP/CULL/DEBATEの判定は今後である。新規project加入、stage変更、卒業、認定の差分は確認されず、AAIFの公式project数は10のまま。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>分析：</strong>Agentic Opsの品質モデルは、schema validationだけでは足りず、少なくとも三層に分かれつつある。第一はprotocol上の正当性、第二はruntime behaviorの正しさ、第三は独立した観測者がそのbehaviorを確認できる証拠である。MCP Server Cardはschema URLが解決できなければ機械検証の入口が止まり、Agent Routerはquota設定が受理されても特定cluster形状ではfailoverが動かない。自己申告telemetryだけで「準拠」と判定せず、gateway・sandbox・network側の観測と照合する設計が重要になる。</p><p>もう一つの流れはcontrol surfaceの標準化である。tool hook、PEP/PDP、kill switch、delegation、trace propagationを個別製品の機能としてではなく、harnessからgateway、sandboxまで連続する運用interfaceとして定義しようとしている。標準化前でも、組織内PoCでは同じ責任分界を先に固定できる。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>本番前PoCでは次を確認したい。</p><ul><li>MCP clientでsampling・roots・loggingを必須依存にしていないか棚卸しし、elicitationや現行extensionへの移行経路を記録する。</li><li>agentgatewayを2 replica以上で起動し、initialize、POST、GET/SSE resume、DELETEを別replicaへ意図的に振り分ける。再開成功だけでなく重複event、upstream session残留、切断cleanupも測る。</li><li>Agent Routerではper-rule cluster、per-backend cluster、EDS、backend追加・削除・並べ替えを含むquota枯渇試験を実施し、xDS上の<code>host_allowlist</code>とendpoint metadataを確認する。</li><li>retryは429/5xxへ限定し、mutating tool callには自動retryを適用しない。attempt数、backoff、request ID、課金・副作用の重複をtraceへ残す。</li><li>telemetryをSELF、PEER、EXTERNALの観測元で分類し、「一致」「矛盾」「独立証拠なし」の三状態でreconcileする。</li><li>kill switchはmodel応答停止、tool権限剥奪、network遮断、sandbox停止を別操作としてrunbook化し、所有teamと復旧条件を明記する。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>MCP Server Card schemaの公開先決定とCDN反映、既存cardの<code>$schema</code>更新。</li><li>Agent Router issue #3038〜#3041の修正と、quota-aware failoverが正式releaseへ収録される時期。</li><li>agentgatewayのmulti-replica GET resume、Bedrock/Vertex conformance修正を含む次期release。</li><li>goose mainのMCP runtime分離・tool hook refactor・empty response上限が次の正式版へ入るか。</li><li>Agent Context and Memory WG、Attestation & Evidence WG proposalのTC review、control surfaces PR #45のownerとdeliverable化。</li><li>A2A distributed tracing guidanceがsemantic conventionsとどのように統合されるか。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "MCP overviewでdeprecated featuresを明示",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/de3550c9fea3c5269e42ac95204eef44a2b2cb92"
       ],
-      "title": "MCPの非推奨を明示、quota failoverは未解決境界を残す",
-      "summary": "MCPがsampling・roots・loggingの非推奨を入口文書へ反映。Gateway群はsession継続とquota failoverを前進させた。",
-      "sections": [
-          {
-              "heading": "今日のシグナル",
-              "html": "<p><strong>確認済み事実：</strong>MCPは、2026-07-28版で非推奨になっていたsampling、roots、loggingをarchitectureとbase protocolの概要ページでも明示した。agentgatewayは、initializeを処理していないreplicaでも<code>GET /mcp</code>からsessionを再開できるよう修正した。Agent Routerはbackend・model単位のquota-aware failoverをmainへ統合したが、統合直後にper-backend cluster、EDS、旧load-balancing policy、snapshot skewに関する未解決issueが4件登録された。</p><p><strong>分析：</strong>今日の差分は「文書やschemaが存在する」ことと「分散runtimeが意図どおり動く」ことを分離して検証すべきだと示している。MCPの非推奨表示は新しい仕様変更ではなく、既に確定した2026-07-28版の説明を入口文書まで整合させたもの。Gatewayの変更はmain上であり、既存の正式releaseに自動的に含まれるわけではない。</p>"
-          },
-          {
-              "heading": "重要ニュース",
-              "html": "<h3>MCPがsampling・roots・loggingを新規実装の前提から外す</h3><p>概要ページは従来、sampling coordinationをMCP architectureの中心機能として示し、client featureにsamplingとroot directory lists、utilityにloggingを並べていた。修正後はclient inputの代表例をelicitationへ置き換え、samplingとroots、loggingを2026-07-28版で非推奨と明記した。既存実装の互換機能が直ちに削除されたわけではないが、新規control planeやPoCがこれらを将来の標準経路として設計するのは避けるべきである。</p><h3>agentgatewayがMCP sessionのreplica依存を縮小</h3><p>従来の<code>GET /mcp</code>はlocal memoryのsession mapだけを参照したため、initializeとは別replicaへ到着すると404になった。POSTとDELETEが既に使っていた<code>get_or_resume_session</code>へGETも揃え、任意replicaでstreamを再開できるようにした。sticky sessionへの依存を減らす変更だが、共有session情報、upstream sessionの寿命、切断時のcleanupを含むmulti-replica試験は引き続き必要である。</p><h3>Agent Routerのquota failoverは「統合済み、適用範囲は未確定」</h3><p>mainへ入った実装は、quotaをbackend・model単位で判定し、利用可能なbackendだけをEnvoyの<code>host_allowlist</code>で選択する。しかし公開issueでは、per-backend cluster名を解決できずfailoverが黙って無効になる経路、EDS管理clusterでwrapperが入らない経路、古いLB policyを<code>least_request</code>へ置き換える可能性、異なるsnapshot間でbackendを位置対応して誤ったquota metadataを付ける可能性が指摘された。現時点では設定しただけで有効と判断せず、生成xDSと実trafficで確認する必要がある。</p>"
-          },
-          {
-              "heading": "OSS別アップデート",
-              "html": "<ul><li><strong>MCP：</strong>released revisionとdraftのoverviewを修正。別のopen issueでは、Server Cardが指定する<code>$schema</code> URLが404となり、調査対象54 cardのschemaが解決できないとの報告がある。これはmaintainer確定済み障害ではなく、公開issue上の測定結果として扱う。</li><li><strong>goose：</strong><code>v1.59.1</code> tagを確認。v1.59.0との差分は3 commitで、Databricksのconversation-bound thinking block対策とmodel catalog更新を含む。mainではplatform extensionをMCP runtimeから分離し、tool hookをgoose自身のrun loopから発火するrefactor、空response retryを最大3回へ制限する修正が入った。後者3件はv1.59.1より後のmain差分である。</li><li><strong>agentgateway：</strong>MCP session再開に加え、standalone <code>llm.policies</code>で429/5xx retryを設定可能にした。BedrockからAnthropic形式へ変換するerror discriminatorとcache-duration counter、Vertexへ送るunsupported <code>anthropic-beta</code> headerも修正した。正式版は引き続きv1.7.0で、これらはmain上の変更。</li><li><strong>Agent Router：</strong>quota-aware backend failoverをmainへ統合したが、上記4 issueがopen。正式releaseはv1.2.1のまま。</li><li><strong>A2A：</strong>protocolや正式releaseの変更はない。HTTP/gRPCの<code>traceparent</code>伝播と、SSE・resume・polling・webhookをspan linkで追跡するdistributed tracing guideの提案issueが新規登録された。</li><li><strong>AGENTS.md：</strong>公式format repositoryに監視期間内の変更なし。</li><li><strong>OpenSandbox：</strong>credential-bound isolationのintegration testや内部refactorが中心で、新しいstable releaseは確認されなかった。</li></ul>"
-          },
-          {
-              "heading": "ガバナンスと標準化",
-              "html": "<p>AAIF Security & Privacy WGの11月10日会議録が公開された。agent harnessのhook/control surfaceを共通化し、将来machine-verifiableにするPR #45、harness・MCP gateway・identity・sandboxを横断するPEP/PDP統合、kill switchの責任分界が主要論点である。kill switchとdelegationは既存WG間の未所有境界としてchairs meetingへ持ち込む方針で、WG charterの再調整も提案された。いずれも会議上の議論・draftであり、承認済み標準ではない。</p><p>Agent Context and Memory WG proposalにはIntelから、contextの<strong>reach</strong>（model入力へ届いたか）、<strong>effect</strong>（結果を変えたか）、<strong>novelty</strong>（model既知情報との差）を再現可能に測定するworkstream案が追加された。これはAGENTS.md、skills、memory storeを感覚評価から実験評価へ移す提案として注目できるが、WG自体はまだopen proposalである。</p><p>Taxonomy & Landscapeでは<code>emission-conformant</code>、<code>operationally conformant</code>、<code>self-reported</code>、<code>witness_scope</code>、<code>three-state reconciliation</code>の候補issueが、統一spreadsheetへ移管されたためcloseされた。closeは用語の正式採用を意味せず、KEEP/CULL/DEBATEの判定は今後である。新規project加入、stage変更、卒業、認定の差分は確認されず、AAIFの公式project数は10のまま。</p>"
-          },
-          {
-              "heading": "技術トレンド",
-              "html": "<p><strong>分析：</strong>Agentic Opsの品質モデルは、schema validationだけでは足りず、少なくとも三層に分かれつつある。第一はprotocol上の正当性、第二はruntime behaviorの正しさ、第三は独立した観測者がそのbehaviorを確認できる証拠である。MCP Server Cardはschema URLが解決できなければ機械検証の入口が止まり、Agent Routerはquota設定が受理されても特定cluster形状ではfailoverが動かない。自己申告telemetryだけで「準拠」と判定せず、gateway・sandbox・network側の観測と照合する設計が重要になる。</p><p>もう一つの流れはcontrol surfaceの標準化である。tool hook、PEP/PDP、kill switch、delegation、trace propagationを個別製品の機能としてではなく、harnessからgateway、sandboxまで連続する運用interfaceとして定義しようとしている。標準化前でも、組織内PoCでは同じ責任分界を先に固定できる。</p>"
-          },
-          {
-              "heading": "Agentic Opsへの示唆",
-              "html": "<p>本番前PoCでは次を確認したい。</p><ul><li>MCP clientでsampling・roots・loggingを必須依存にしていないか棚卸しし、elicitationや現行extensionへの移行経路を記録する。</li><li>agentgatewayを2 replica以上で起動し、initialize、POST、GET/SSE resume、DELETEを別replicaへ意図的に振り分ける。再開成功だけでなく重複event、upstream session残留、切断cleanupも測る。</li><li>Agent Routerではper-rule cluster、per-backend cluster、EDS、backend追加・削除・並べ替えを含むquota枯渇試験を実施し、xDS上の<code>host_allowlist</code>とendpoint metadataを確認する。</li><li>retryは429/5xxへ限定し、mutating tool callには自動retryを適用しない。attempt数、backoff、request ID、課金・副作用の重複をtraceへ残す。</li><li>telemetryをSELF、PEER、EXTERNALの観測元で分類し、「一致」「矛盾」「独立証拠なし」の三状態でreconcileする。</li><li>kill switchはmodel応答停止、tool権限剥奪、network遮断、sandbox停止を別操作としてrunbook化し、所有teamと復旧条件を明記する。</li></ul>"
-          },
-          {
-              "heading": "要ウォッチ項目",
-              "html": "<ul><li>MCP Server Card schemaの公開先決定とCDN反映、既存cardの<code>$schema</code>更新。</li><li>Agent Router issue #3038〜#3041の修正と、quota-aware failoverが正式releaseへ収録される時期。</li><li>agentgatewayのmulti-replica GET resume、Bedrock/Vertex conformance修正を含む次期release。</li><li>goose mainのMCP runtime分離・tool hook refactor・empty response上限が次の正式版へ入るか。</li><li>Agent Context and Memory WG、Attestation & Evidence WG proposalのTC review、control surfaces PR #45のownerとdeliverable化。</li><li>A2A distributed tracing guidanceがsemantic conventionsとどのように統合されるか。</li></ul>"
-          }
+      [
+        "MCP Server Card schema URL 404 report",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/issues/3562"
       ],
-      "sources": [
-          [
-              "MCP overviewでdeprecated featuresを明示",
-              "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/de3550c9fea3c5269e42ac95204eef44a2b2cb92"
-          ],
-          [
-              "MCP Server Card schema URL 404 report",
-              "https://github.com/modelcontextprotocol/modelcontextprotocol/issues/3562"
-          ],
-          [
-              "goose v1.59.0...v1.59.1 comparison",
-              "https://github.com/aaif-goose/goose/compare/v1.59.0...v1.59.1"
-          ],
-          [
-              "goose platform extensions / MCP runtime separation",
-              "https://github.com/aaif-goose/goose/commit/27a0b32ae3dce28f42e134bd33b2d4b9f57939f6"
-          ],
-          [
-              "goose tool hooks from run loop",
-              "https://github.com/aaif-goose/goose/commit/8ba5f35a1214d39e3bb96b066311462eea3ecfc0"
-          ],
-          [
-              "goose empty response retry bound",
-              "https://github.com/aaif-goose/goose/commit/bf6e1df335a3e0ace08afb4a4c913b94356010ee"
-          ],
-          [
-              "agentgateway MCP GET session resume",
-              "https://github.com/agentgateway/agentgateway/commit/d4b3790f407632a2687089715962790ee76b7865"
-          ],
-          [
-              "agentgateway standalone LLM retry policy",
-              "https://github.com/agentgateway/agentgateway/commit/481c17b40e9232f65f411328d0380fd38ef5384f"
-          ],
-          [
-              "agentgateway Anthropic response conformance on Bedrock",
-              "https://github.com/agentgateway/agentgateway/commit/7dc66db00a4fb2e3f6b2c84e441ba28f09cf715a"
-          ],
-          [
-              "agentgateway Vertex beta-header filtering",
-              "https://github.com/agentgateway/agentgateway/commit/848f6dab6e29719acb2fda5d9083c3a7324e48b1"
-          ],
-          [
-              "Agent Router quota-aware backend failover",
-              "https://github.com/theagentrouter/agent-router/commit/88e0fe5370e24e8bce93aefc06f30573b697e8b1"
-          ],
-          [
-              "Agent Router per-backend cluster gap",
-              "https://github.com/theagentrouter/agent-router/issues/3038"
-          ],
-          [
-              "Agent Router EDS quota failover gap",
-              "https://github.com/theagentrouter/agent-router/issues/3040"
-          ],
-          [
-              "Agent Router snapshot-skew mapping risk",
-              "https://github.com/theagentrouter/agent-router/issues/3041"
-          ],
-          [
-              "A2A distributed tracing guide proposal",
-              "https://github.com/a2aproject/A2A/issues/2470"
-          ],
-          [
-              "AAIF Security & Privacy WG 2026-11-10 notes",
-              "https://github.com/aaif/wg-security-and-privacy/blob/main/meeting-notes/2026-11-10.md"
-          ],
-          [
-              "Control Surfaces for Agentic Harnesses draft",
-              "https://github.com/aaif/wg-security-and-privacy/pull/45"
-          ],
-          [
-              "Agent Context and Memory WG proposal",
-              "https://github.com/aaif/working-group-proposals/issues/5"
-          ],
-          [
-              "Taxonomy candidate: emission-conformant",
-              "https://github.com/aaif/ws-taxonomy-landscape/issues/50"
-          ],
-          [
-              "Taxonomy candidate: three-state reconciliation",
-              "https://github.com/aaif/ws-taxonomy-landscape/issues/54"
-          ],
-          [
-              "AAIF Technical Committee project list",
-              "https://github.com/aaif/technical-committee"
-          ]
+      [
+        "goose v1.59.0...v1.59.1 comparison",
+        "https://github.com/aaif-goose/goose/compare/v1.59.0...v1.59.1"
+      ],
+      [
+        "goose platform extensions / MCP runtime separation",
+        "https://github.com/aaif-goose/goose/commit/27a0b32ae3dce28f42e134bd33b2d4b9f57939f6"
+      ],
+      [
+        "goose tool hooks from run loop",
+        "https://github.com/aaif-goose/goose/commit/8ba5f35a1214d39e3bb96b066311462eea3ecfc0"
+      ],
+      [
+        "goose empty response retry bound",
+        "https://github.com/aaif-goose/goose/commit/bf6e1df335a3e0ace08afb4a4c913b94356010ee"
+      ],
+      [
+        "agentgateway MCP GET session resume",
+        "https://github.com/agentgateway/agentgateway/commit/d4b3790f407632a2687089715962790ee76b7865"
+      ],
+      [
+        "agentgateway standalone LLM retry policy",
+        "https://github.com/agentgateway/agentgateway/commit/481c17b40e9232f65f411328d0380fd38ef5384f"
+      ],
+      [
+        "agentgateway Anthropic response conformance on Bedrock",
+        "https://github.com/agentgateway/agentgateway/commit/7dc66db00a4fb2e3f6b2c84e441ba28f09cf715a"
+      ],
+      [
+        "agentgateway Vertex beta-header filtering",
+        "https://github.com/agentgateway/agentgateway/commit/848f6dab6e29719acb2fda5d9083c3a7324e48b1"
+      ],
+      [
+        "Agent Router quota-aware backend failover",
+        "https://github.com/theagentrouter/agent-router/commit/88e0fe5370e24e8bce93aefc06f30573b697e8b1"
+      ],
+      [
+        "Agent Router per-backend cluster gap",
+        "https://github.com/theagentrouter/agent-router/issues/3038"
+      ],
+      [
+        "Agent Router EDS quota failover gap",
+        "https://github.com/theagentrouter/agent-router/issues/3040"
+      ],
+      [
+        "Agent Router snapshot-skew mapping risk",
+        "https://github.com/theagentrouter/agent-router/issues/3041"
+      ],
+      [
+        "A2A distributed tracing guide proposal",
+        "https://github.com/a2aproject/A2A/issues/2470"
+      ],
+      [
+        "AAIF Security & Privacy WG 2026-11-10 notes",
+        "https://github.com/aaif/wg-security-and-privacy/blob/main/meeting-notes/2026-11-10.md"
+      ],
+      [
+        "Control Surfaces for Agentic Harnesses draft",
+        "https://github.com/aaif/wg-security-and-privacy/pull/45"
+      ],
+      [
+        "Agent Context and Memory WG proposal",
+        "https://github.com/aaif/working-group-proposals/issues/5"
+      ],
+      [
+        "Taxonomy candidate: emission-conformant",
+        "https://github.com/aaif/ws-taxonomy-landscape/issues/50"
+      ],
+      [
+        "Taxonomy candidate: three-state reconciliation",
+        "https://github.com/aaif/ws-taxonomy-landscape/issues/54"
+      ],
+      [
+        "AAIF Technical Committee project list",
+        "https://github.com/aaif/technical-committee"
       ]
+    ]
   },
   {
     "date": "2026-11-16",
