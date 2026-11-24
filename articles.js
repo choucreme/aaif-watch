@@ -1,6 +1,114 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-25",
+    "level": "MEDIUM",
+    "tags": [
+      "MCP",
+      "Security",
+      "Operations",
+      "A2A"
+    ],
+    "title": "長寿命MCP sessionへ最新policyを再適用",
+    "summary": "agentgatewayは既存sessionを現行policyで再構築。Agent Routerはstatus世代を明示し、OpenSandboxはOAuth 2.1案を公開。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>agentgatewayは、既存MCP sessionの各requestでtarget・client・policyを現在のrequestから再構築し、stdio process、SSE stream、upstream session ID、pinned endpointだけを接続状態として保持するよう変更した。Agent Routerは6種類のresourceのAccepted／NotAccepted conditionへ<code>observedGeneration</code>を設定した。OpenSandboxはMCP serverをOAuth 2.1 Resource Serverとして動かすOSEP-0035を草案化した。</p><p><strong>分析：</strong>今日の更新は新機能の数よりも、長寿命Agent基盤で「いま適用されているpolicy」と「statusが説明するspec」を監査可能にする方向が明確である。release済み仕様ではなくmain branch上の実装・draftを含むため、評価はMEDIUMとした。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>agentgateway：</strong>従来はsession作成時のtargetやpolicyが長く残り得たが、今回の変更で既存sessionにも最新の認証・routing・policyをrequest単位で適用できる。接続そのものは維持するため、設定追随とstream継続を両立する設計である。さらにrealtime LLM guardrailのbuffer limit遵守、route／policy参照に対するReferenceGrant確認の拡張、過去messageのないxDS NACKへの防御も入った。</p><p><strong>Agent Router：</strong><code>observedGeneration</code>欠落により、利用者はstatusがどのspec世代を評価した結果か判別できなかった。AIGatewayRoute、AIServiceBackend、BackendSecurityPolicy、MCPRoute、GatewayConfig、QuotaPolicyで修正され、GitOps controllerや監視が「最新specはまだ未reconcile」を正しく検知しやすくなった。</p><p><strong>OpenSandbox：</strong>OAuth案は外部Authorization Server、RFC 9728 metadata、JWT／JWKS検証、RFC 8707のresource／audience、scopeを前提とし、部分設定・metadata取得不能・不正tokenではfail closedとする。client tokenをsandbox lifecycle serverへ転送せず、既存API keyと分離する。一方、初期段階ではper-user sandbox ownership、RBAC、opaque token introspection、per-tool scopeを対象外と明記している。まだdraftであり、実装済み機能として扱うべきではない。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>Claude webとClaude Code 2.1.331以降がSkills over MCPのpublic beta対応としてclient matrixへ追加された。別commitの仕様修正はlink、OAuth draft参照、elicitation／sampling説明、互換表の訂正で、requirement変更なしと明記されている。</li><li><strong>goose：</strong>UIのtransitive dependencyであるyaml、brace-expansion、js-yaml、picomatchへoverrideを追加した。TTFTは最初のtextだけでなくthinkingまたはtool call開始でも終了するよう修正され、ACPのprovider inventory refreshは完了を待つようになった。いずれもmain branch上の変更で、release反映は別途確認が必要。</li><li><strong>agentgateway：</strong>上記session再構築に加え、Anthropic token countのBedrock／Vertex分類、Gemini streamGenerateContent、OpenAPI事前parse、health reportingなど運用経路の修正が続いた。</li><li><strong>A2A：</strong>公式documentationへRust SDKページが追加され、a2a-rsのdocumentation、docs.rs、sourceへの導線が整った。protocol変更ではない。</li><li><strong>AGENTS.md：</strong>前回以降に重要な仕様変更は確認できなかった。</li><li><strong>Agent Router：</strong>status conditionの世代整合性修正が中心で、新releaseは確認できなかった。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>MCPのAuthorizationおよびFinancial Services Interest Group charterは、SEP sponsorshipを各IG独自のcore-maintainer前提から、SEP guidelinesのWorking Group優先processへ合わせた。提案の最終acceptance権限はMaintainers／Core Maintainersに残り、protocol requirementの変更ではない。</p><p>AAIF Security &amp; Privacy WGの11月24日会合では、WG間の境界を一覧化しownerを割り当てる案、taxonomyでのagent／model用語、標準間mapping、Agentic Commerce gap document、全WG／project横断calendarが議論された。いずれも議事・提案段階であり、TC決定や正式な組織変更としては扱えない。AAIF Technical Committee、project proposal、新規加入・卒業projectには前回以降の確定更新を確認できなかった。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>事実：</strong>複数projectで、長時間維持されるsession／controller status／credential境界の鮮度と帰属が修正対象になった。</p><p><strong>分析：</strong>Agent基盤の信頼性は単発requestの成功率だけでなく、(1) policy変更が既存sessionへいつ反映されるか、(2) statusがどのdesired stateを説明するか、(3) user tokenがどこまで伝播するか、という時間軸と境界の管理へ移っている。A2A Rust SDK導線やSkills over MCPの拡大はclient多様化を進めるため、この3点をprotocol横断で測る必要性が増す。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li><strong>session freshness：</strong>policy version、route generation、credential subjectをrequest logへ記録し、設定変更後も既存MCP sessionで新policyが効くことをPoCする。</li><li><strong>reconcile freshness：</strong>Kubernetes conditionはstatus値だけでなく<code>metadata.generation == condition.observedGeneration</code>をalert条件に含める。</li><li><strong>OAuth境界：</strong>Authorization Server停止、JWKS rotation、wrong audience、duplicate Authorization header、insufficient scopeをfail-closed testに含める。sandbox API keyとend-user tokenを同じsecret経路へ載せない。</li><li><strong>性能指標：</strong>TTFTはtext-onlyで測らず、thinking／tool call開始を含む共通定義を採用し、agentごとの差をなくす。</li><li><strong>supply chain：</strong>dependency overrideの存在だけで完了とせず、lockfile、SBOM、release artifactへ修正版が入ったことを確認する。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>agentgatewayのsession再構築が次のreleaseへ入る時期と、既存sessionでのpolicy／latency回帰。</li><li>OpenSandbox OSEP-0035のreview結果、per-user ownership／RBACの後続proposal、JWKS cacheとrotationの実装。</li><li>MCP Skills over MCP betaの対応client拡大と、Authorization／Financial Services IGからWGへ上がるSEP。</li><li>Security &amp; Privacy WGのseam ownership、Agentic Commerce gap document、横断calendarが正式deliverableになるか。</li><li>gooseのdependency overrideがrelease artifactへ反映されるか。</li><li>A2A Rust SDKの互換性testおよびAgent RouterのobservedGeneration修正を含むrelease。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "agentgateway: rebuild session upstreams on each request",
+        "https://github.com/agentgateway/agentgateway/commit/5e2e8da4731f0d8ab72406a29cc56fe9340a39f7"
+      ],
+      [
+        "agentgateway: realtime guardrail buffer limits",
+        "https://github.com/agentgateway/agentgateway/commit/7ba4923bb6c11524d908466321a349eebc799944"
+      ],
+      [
+        "agentgateway: ReferenceGrant checks",
+        "https://github.com/agentgateway/agentgateway/commit/971909e32fb08ee22a7bd8be4c1d8e5149c33614"
+      ],
+      [
+        "Agent Router: observedGeneration on status conditions",
+        "https://github.com/theagentrouter/agent-router/commit/8019fa2fe9f14a1e59874c59e557ee82fabffcce"
+      ],
+      [
+        "OpenSandbox OSEP-0035: OAuth 2.1 Resource Server support",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/2f025f9330c5737dfad96c2496d92dd7c68b1aa9"
+      ],
+      [
+        "MCP client matrix: Claude Skills over MCP",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/3c8eb0c4e70b0b3af6471fc0cf3419c7098fdf39"
+      ],
+      [
+        "MCP specification corrections, no requirement changes",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/2bbace557bbf2cb5d03d6f9b48905415cd7607b0"
+      ],
+      [
+        "MCP IG charters: SEP sponsorship alignment",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/b878313e34638206d13ddd9df57501567fac58fc"
+      ],
+      [
+        "goose: vulnerable UI dependency overrides",
+        "https://github.com/aaif-goose/goose/commit/02acced1e332824cba1ce1aa0e4cd0fcc29c0b55"
+      ],
+      [
+        "goose: TTFT for text, thinking or tool call",
+        "https://github.com/aaif-goose/goose/commit/c2e9d41adf3f5f6fd537709eca61f7fb118672c4"
+      ],
+      [
+        "goose: ACP inventory refresh",
+        "https://github.com/aaif-goose/goose/commit/03a343f9fe309a2c2cfe63a5561cbfe9ab38762e"
+      ],
+      [
+        "A2A: Rust SDK documentation page",
+        "https://github.com/a2aproject/A2A/commit/80e4d59e98797fa101cb39506f967cfe4136d528"
+      ],
+      [
+        "AAIF Security & Privacy WG meeting notes, 2026-11-24",
+        "https://github.com/aaif/wg-security-and-privacy/commit/753c03bf04b76f3966c5d723a6a29674a4b202c4"
+      ],
+      [
+        "AAIF Technical Committee",
+        "https://github.com/aaif/technical-committee"
+      ],
+      [
+        "AAIF Project Proposals",
+        "https://github.com/aaif/project-proposals"
+      ],
+      [
+        "AGENTS.md repository",
+        "https://github.com/agentsmd/agents.md"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-24",
     "level": "MEDIUM",
     "tags": [
