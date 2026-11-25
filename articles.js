@@ -1,6 +1,122 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-26",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "MCP",
+      "Operations",
+      "A2A"
+    ],
+    "title": "Modern MCPを全経路へ、redirect時のtoken漏えいを封じる",
+    "summary": "Agent RouterがMCP 2026-07-28の主要APIを接続。OpenSandboxとgooseは資格情報・承認状態の再利用を防いだ。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>Agent RouterはMCP 2026-07-28のclient era判定を共通POST入口へ接続し、modern／legacy経路を分離した。OpenSandboxはJavaScript・Kotlin・Python SDKで、cross-origin redirect時に<code>X-EXECD-ACCESS-TOKEN</code>がredirect先へ再送される問題を修正した。gooseはimportしたsessionからtool approval状態を除去し、sessionを開くだけで過去のtool callが実行可能にならないよう変更した。</p><p><strong>分析：</strong>3件はいずれも、protocol更新・redirect・session importという「境界を越える瞬間」に古い権限や資格情報を持ち越さないための修正である。資格情報漏えいとtool再実行に直結するためHIGHとした。ただし、いずれもmain branch上の変更を含み、利用中versionへの収録確認が必要である。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>Agent Router：</strong><code>Mcp-Protocol-Version</code>、<code>Mcp-Method</code>、<code>_meta</code>からclient eraを判定し、modern-only要件を検証する。modern経路では<code>tools/call</code>、<code>resources/read</code>、<code>prompts/get</code>、<code>completion/complete</code>、<code>subscriptions/listen</code>をsingle-target routingへ接続した。名前／URIのnamespace化、selector・認可確認、response URI書換え、metrics・tracingまでE2E testを追加している。legacyの<code>initialize</code>や<code>ping</code>をmodern経路で拒否し、<code>server/discover</code>をlegacy経路で拒否するため、曖昧なfallbackより明示的な世代分離へ進んだ。</p><p><strong>OpenSandbox：</strong>endpoint resolutionで得たexecd access tokenを3 SDKがdata-plane requestへ付けたまま、別originへのredirectにも再送していた。修正後はscheme・host・portのいずれかが変わるredirectでtokenを除去し、same-originでは維持する。C#とGoは既に除去済みだった。攻撃者がredirect先を制御できる構成では資格情報流出につながるため、SDK versionとredirect許可先の棚卸しが必要である。</p><p><strong>goose：</strong>import sessionのtool approval／executable stateを破棄し、local extensionと現在のgoose modeを再適用する。recipe retry・recipe values・container ID・provider session IDも持ち越さない。import fileを実行権限付きsnapshotではなく、会話履歴として扱う方向が明確になった。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>前回以降、仕様requirement・releaseの新たな重要差分は確認できなかった。</li><li><strong>AGENTS.md：</strong>新規commitは確認できなかった。</li><li><strong>goose：</strong>workspace versionを1.61.0へbumpしたが、確認時点でstable release pageの最新は1.60.2であり、1.61.0はcanary provenanceを確認した段階。cookie crateを0.18.3へ上げ、RUSTSEC-2026-0594へ対応した。Desktopからdotenv読込みも除去し、repository由来の<code>.env</code>がapplication設定へ混入する経路を閉じた。</li><li><strong>agentgateway：</strong>前回以降の新たな重要commitは確認できなかった。</li><li><strong>A2A：</strong>documentationのGitHub Actions公開と外部repository mount対応、Homebrew trust説明の追加が中心で、protocol変更はなかった。</li><li><strong>Agent Router：</strong>modern MCPに加え、Anthropic SSEのCRLF区切りを処理できず全streamをbufferして失敗する問題を修正。remote parentを新root spanのlinkへ変換するopt-inも追加し、LLM costの二重計上を避けられるようにした。</li><li><strong>OpenSandbox：</strong>image pull失敗中のPending sandboxへ<code>IMAGE_PULL_FAILING</code>とkubelet messageを表示し、起動停滞を観測可能にした。fast-sandbox無効時に関連RBACをrenderしないchart修正も入った。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p>AAIF Technical Committee、project proposals、Security &amp; Privacy WG、MCP Working／Interest Groupsについて、前回レポート以降の新しいcharter、project加入・卒業、正式なgovernance決定は確認できなかった。MCP 2026-07-28実装がgatewayのdata planeへ入り始めたことは重要だが、これはAgent Routerの実装進展であり、AAIF全体の標準変更ではない。</p><p><strong>分析：</strong>今後はmodern／legacyを単にversion stringで分類するだけでなく、method、header、capability、fallbackの許容範囲を適合testとして共有できるかがinteroperabilityの焦点になる。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>事実：</strong>protocol era、HTTP origin、session provenanceという3種類の境界で、持ち越してよい状態と破棄すべき状態が実装へ明記された。</p><p><strong>分析：</strong>Agent基盤では「同じsession」「同じendpoint」「同じtrace」に見えても、背後のauthorityが同じとは限らない。modern MCPへの移行時はmethod setと認可を再判定し、redirect時はorigin変更でtokenを落とし、import時はapprovalやprovider sessionを再利用しない、という再束縛が共通原則になりつつある。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<ol><li><strong>MCP世代test：</strong>modern headerとlegacy methodの混在、unsupported version、missing <code>_meta</code>、namespace違反をnegative testへ入れる。</li><li><strong>redirect test：</strong>hostだけでなくscheme・port変更、複数hop、same-origin復帰を含め、各SDKでexecd tokenが外部originへ出ないことをpacket／mock serverで検証する。</li><li><strong>session import：</strong>approval、executable flag、container／provider session ID、secret-bearing recipe valueが消えることをfixtureで確認する。import後の最初のtool callは再承認を必須にする。</li><li><strong>release判定：</strong>mainのversion bumpやcanary attestationをstable releaseと扱わず、tag、release notes、artifact digest、SBOMをdeployment基準線へ記録する。</li><li><strong>observability：</strong>SSE parserはLF／CRLF／mixed separatorと1-byte分割をtestし、Pending sandboxではreasonとkubelet messageをalertへ含める。</li></ol>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Agent RouterのMCP 2026-07-28実装を含む正式releaseと、multi-target／subscriptionの残差。</li><li>OpenSandboxのtoken redirect修正を収録するrelease、他のcustom headerや全SDKでの回帰test。</li><li>goose 1.61.0 stable releaseの有無、import session安全化とRUSTSEC修正のartifact収録。</li><li>modern／legacy MCPのconformance suiteやgateway間共通testへの展開。</li><li>AAIF TC・project proposals・WGでの新規決定。AGENTS.md、agentgateway、A2Aのprotocol更新。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "Agent Router: modern MCP 2026-07-28 APIs and era routing",
+        "https://github.com/theagentrouter/agent-router/commit/e90a4cd8e5a9d9d18133bea0f7982d2b272a04c2"
+      ],
+      [
+        "OpenSandbox: strip X-EXECD-ACCESS-TOKEN on cross-origin redirects",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/ab0c94e3a17e88004f5aa3752cbb0c3f40b686ab"
+      ],
+      [
+        "goose: remove approval and runtime state from imported sessions",
+        "https://github.com/aaif-goose/goose/commit/fe5dd1583f795bf5a72e03009bdc87be3d12cd94"
+      ],
+      [
+        "goose: remove desktop dotenv loading",
+        "https://github.com/aaif-goose/goose/commit/8256b9ac9ffae7d19ef1db1f57e37f84c44915bd"
+      ],
+      [
+        "goose: fix RUSTSEC-2026-0594",
+        "https://github.com/aaif-goose/goose/commit/820b4e53d1abe568bff02693ee68a0f6f8a471be"
+      ],
+      [
+        "goose: version bump to 1.61.0",
+        "https://github.com/aaif-goose/goose/commit/1551ae802eac62b75dd6cb2431f7fb03b03ae945"
+      ],
+      [
+        "goose releases",
+        "https://github.com/aaif-goose/goose/releases"
+      ],
+      [
+        "Agent Router: Anthropic SSE CRLF handling",
+        "https://github.com/theagentrouter/agent-router/commit/e33907d46ead3d099caed2b68658351e58325987"
+      ],
+      [
+        "Agent Router: remote parent as span link",
+        "https://github.com/theagentrouter/agent-router/commit/7a7fc0a729703977ca5198627aa756804c2c0d76"
+      ],
+      [
+        "OpenSandbox: report image pull failures while Pending",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/5c42221498ffe1d5331a9dfa66f17208326421a9"
+      ],
+      [
+        "OpenSandbox: fast-sandbox RBAC chart ownership",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/94b3dc0b84134ba39a951004c0aa8bbbbad2fb48"
+      ],
+      [
+        "A2A: publish documentation with GitHub Actions",
+        "https://github.com/a2aproject/A2A/commit/6ed0dcc2790bfd46983e723bfda61d53b5312b22"
+      ],
+      [
+        "AAIF Technical Committee",
+        "https://github.com/aaif/technical-committee"
+      ],
+      [
+        "AAIF Project Proposals",
+        "https://github.com/aaif/project-proposals"
+      ],
+      [
+        "AAIF Security & Privacy WG",
+        "https://github.com/aaif/wg-security-and-privacy"
+      ],
+      [
+        "MCP specification repository",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol"
+      ],
+      [
+        "AGENTS.md repository",
+        "https://github.com/agentsmd/agents.md"
+      ],
+      [
+        "agentgateway repository",
+        "https://github.com/agentgateway/agentgateway"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-25",
     "level": "MEDIUM",
     "tags": [
