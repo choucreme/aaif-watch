@@ -1,6 +1,126 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-27",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "MCP",
+      "Operations",
+      "A2A"
+    ],
+    "title": "設定読込前の処理を止め、MCP運用境界を固める",
+    "summary": "Agent Routerが初期設定不整合時のfail-openとSecret誤削除を防止。MCPは半年release cycleを正式文書化した。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>Agent Routerは、起動直後にconfig bundleのchecksum不一致やpart欠損がある場合でもexternal processorが<code>SERVING</code>を返し、最初のAI requestでnil configを参照してcrash-loopする問題を修正した。初回configの読込み完了まではhealth checkを<code>NOT_SERVING</code>、既知のdata-plane pathとMCP proxyを503にする。同時にMCPRoute controllerは、自身が所有しないcredential Secretを削除しないようowner確認とUID preconditionを追加した。MCP specification側ではSEP-3398に沿ったrelease cycle文書とgovernance変更がmainへ入った。</p><p><strong>分析：</strong>本日の中心は新機能ではなく、設定・所有権・変更凍結というcontrol-plane境界の明確化である。初期設定なしでtrafficを受ける挙動と、user-editableなfilter specから任意Secret名を参照できる削除経路は、障害と権限逸脱の両面で影響が大きい。いずれもmain branch上の変更であり、採用versionへの収録確認は別途必要だが、運用設計へ直結するためHIGHとした。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>Agent Routerの起動をfail-closedへ：</strong>従来はconfig bundleの再書込み中にPodが起動すると、checksum mismatchなどで初回loadに失敗してもextprocがready扱いになり、最初のrequestでcrashしてempty 500を返し得た。修正後は初回loadまでPodをrotationへ入れず、known pathはJSON 503、unknown pathは404、unsupported MCP methodは405を維持する。設定を読めないinstanceを明示的に不健康とするため、retry可能な503とreadinessでtrafficを制御できる。</p><p><strong>MCP credential Secretの所有権保護：</strong>MCPRoute controllerはbackendの既存HTTPRouteFilterに書かれたSecret名やorphan判定名をそのまま削除していた。filter specは編集可能なので、controller管理外のSecretが対象になり得た。修正は<code>IsControlledBy</code>でownerを確認し、取得後にSecretが差し替わった場合も消さないようUID preconditionを使う。これは名前一致だけでresource lifecycleを管理しない、Kubernetes controllerの基本原則をMCP credential処理へ徹底したものだ。</p><p><strong>MCP release cycleの正式化：</strong>半年ごとのspec release、8か月のplanning cycleと2か月overlap、soft freeze・hard freeze、Tier 1 SDK beta/stable deadline、critical fix手順が文書化された。次のtargetは2027年3月30日。SEPはWorking GroupだけでなくCore Maintainer groupもsponsorでき、review queueへの登録、agendaの2週間前公開、7日間投票、過半数に達しない場合のdraft差し戻しまで明記された。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>release cycle page、release manager制度、SEP review／投票規則を追加。schema自体の変更はなく、次回spec targetは2027-03-30。</li><li><strong>AGENTS.md：</strong>前回以降の新規commitは確認できなかった。</li><li><strong>goose：</strong>新modelのdaily check workflow、MCP UI client更新、Desktop UI修正とdependency更新が中心。確認範囲では新たなsecurity advisoryやstable releaseは見当たらない。</li><li><strong>agentgateway：</strong>前回以降の重要なrelease・仕様変更は確認できなかった。</li><li><strong>A2A：</strong>前回以降の新規commitは確認できず、protocol差分もなかった。</li><li><strong>Agent Router：</strong>同名resourceをnamespace単位で保持するCLI修正も入り、複数tenantで同名MCPRouteを翻訳した際に一方が欠落する問題を解消。reserved header <code>x-envoy-original-path</code>を明示設定しない修正、cost計測時にstreaming usageを必ず要求する変更も入った。</li><li><strong>OpenSandbox：</strong>FastPathのdialがclient cancellation後に失敗した場合もstale routeを無効化し、次回requestで再解決できるようにした。同一volumeを複数mountPathへ割り当てるtemplate mountを保持する修正と、fast-sandbox controllerから不要なnode RBACを外す最小権限化も確認した。roadmapは2026 Q4〜2027 H1へ更新されたが、計画でありrelease commitmentではない。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>MCPの変更は日程表の追加にとどまらず、sponsor資格、review queue、agenda公開、投票期間と成立条件、release managerの選出・交代・引継ぎ、hard freeze後の例外承認を既存governance文書へ反映した。次回release managerはDavid Soria Parra氏とDen Delimarsky氏がprimary、Luca Chang氏がsecondaryとして記載された。</p><p>AAIF Technical Committee、project proposals、Security &amp; Privacy Working Groupでは、前回以降の新規commit、新規加入・卒業project、認定変更を確認できなかった。したがって本日のgovernance signalはAAIF全体のmembership変更ではなく、MCPの仕様releaseを予測可能にする実務processの確立である。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>分析：</strong>Agentic infrastructureは「正常時にrouteできるか」から、「設定がまだない、古い、競合した、所有者が違う時に何もしないか」へ成熟軸が移っている。Agent Routerのreadiness／503、ownerReference＋UID precondition、namespace-awareなresource identityは、その三つの失敗境界をそれぞれ扱う。OpenSandboxのstale route evictionも、cancelされたrequestの背後で完了したdial failureを次のrequestへ持ち越さない設計で同じ方向を示す。</p><p>MCPの半年cycleはimplementation側にも影響する。soft freezeまでにproposalをFinalへし、hard freeze前にTier 1 SDK betaでinterop検証するため、gatewayやagent runtimeは「latestを追う」だけでなく、spec date・SDK version・conformance resultをrelease trainとして管理する必要がある。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>PoCと本番前確認では次を優先したい。</p><ul><li>config bundleを意図的にchecksum不一致・part欠損へし、PodがNotReadyのまま既知pathへ503、未知pathへ404を返し、復旧後だけreadyになることを確認する。</li><li>MCPRouteと同namespaceに同名またはfilterから参照可能な非owner Secretを置き、route変更・削除時にも残ることを確認する。監査logではowner UIDとdelete preconditionも追跡する。</li><li>複数namespaceへ同名MCPRouteを配置し、CLI translation後に双方のHTTPRouteが生成されることをtestへ固定する。</li><li>OpenSandboxではclient cancellation直後のdial failure、同一ConfigMapの複数subPath mount、controller ServiceAccountのnode read権限不要を回帰testへ入れる。</li><li>MCP 2027-03-30対応はsoft freeze、SDK beta、hard freezeを内部milestoneへ写し、spec／SDK／gatewayの組合せごとにinteropとrollback条件を残す。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Agent Routerの起動制御・Secret ownership修正が次のtag／patch releaseへ収録される時期とupgrade note。</li><li>MCP 2027-03-30 roadmapに掲載される正確なproposal deadline、soft freeze、Tier 1 SDK beta、hard freeze日時。</li><li>hard freeze後のcritical security／correctness／interoperability fixがCore Maintainer voteでどう運用されるか。</li><li>OpenSandboxの2026 Q4〜2027 H1 roadmapにあるauto-pause拡張、snapshot distribution、resource oversubscriptionがOSEPとreleaseへ落ちる過程。</li><li>AAIF Technical Committee、Working Groups、project proposals、新規加入・卒業projectは本日変更なし。次回も一次repositoryと公式blogを継続監視する。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "Agent Router: do not serve before first filter config",
+        "https://github.com/theagentrouter/agent-router/commit/6d867d379140b3e01515e0c69fed070d31badd84"
+      ],
+      [
+        "Agent Router: delete only MCPRoute-owned credential Secrets",
+        "https://github.com/theagentrouter/agent-router/commit/ab526350b7e738ff51df397c647056250d4a6c19"
+      ],
+      [
+        "Agent Router: preserve same-named objects across namespaces",
+        "https://github.com/theagentrouter/agent-router/commit/eee7b18d14b22728b93f971a268ae505f5658a0b"
+      ],
+      [
+        "Agent Router: stop setting reserved original-path header",
+        "https://github.com/theagentrouter/agent-router/commit/245501946f1b212d5555bf1f9956d8e2115ce38d"
+      ],
+      [
+        "Agent Router: include streaming usage for cost calculation",
+        "https://github.com/theagentrouter/agent-router/commit/1689692b9dbe44cc233b2197c53d450374068094"
+      ],
+      [
+        "MCP: add release cycle and governance updates",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/024d5255eb4466ba4fab21e044b5ba84d6a79327"
+      ],
+      [
+        "MCP: release cycle",
+        "https://modelcontextprotocol.io/community/release-cycle"
+      ],
+      [
+        "MCP: SEP-3398 Release Cycle Updates",
+        "https://modelcontextprotocol.io/seps/3398-release-cycle-updates"
+      ],
+      [
+        "OpenSandbox: evict failed FastPath routes after cancellation",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/13d64b7c61404d64c6b1a371bb8e4e8b74b5d07e"
+      ],
+      [
+        "OpenSandbox: keep template mounts sharing a volume",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/6e3ec2a9a2ca592a42a299fbadc93d1741016289"
+      ],
+      [
+        "OpenSandbox: drop node RBAC from fast-sandbox controller",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/0e7d255d49f9a126719a73bd8b8e02752fb825c2"
+      ],
+      [
+        "OpenSandbox: roadmap 2026 Q4–2027 H1",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/48aec1eea827607113c06e9c65eefbfb2e78765f"
+      ],
+      [
+        "AAIF Technical Committee",
+        "https://github.com/aaif/technical-committee"
+      ],
+      [
+        "AAIF Project Proposals",
+        "https://github.com/aaif/project-proposals"
+      ],
+      [
+        "AAIF Security & Privacy WG",
+        "https://github.com/aaif/wg-security-and-privacy"
+      ],
+      [
+        "AGENTS.md repository",
+        "https://github.com/agentsmd/agents.md"
+      ],
+      [
+        "goose repository",
+        "https://github.com/aaif-goose/goose"
+      ],
+      [
+        "agentgateway repository",
+        "https://github.com/agentgateway/agentgateway"
+      ],
+      [
+        "A2A repository",
+        "https://github.com/a2aproject/A2A"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-26",
     "level": "HIGH",
     "tags": [
