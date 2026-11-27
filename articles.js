@@ -1,6 +1,130 @@
 /* Editorial data. Add the newest entry first; each source must point to primary evidence. */
 const ARTICLES = [
   {
+    "date": "2026-11-28",
+    "level": "HIGH",
+    "tags": [
+      "Security",
+      "MCP",
+      "Operations",
+      "A2A"
+    ],
+    "title": "検証済みJWTだけを信頼し、MCP認可を全methodへ",
+    "summary": "Agent RouterがJWTの検証・認可不一致とtools以外の認可迂回を修正。OpenSandboxは1.3.0-rc.4をcutした。",
+    "sections": [
+      {
+        "heading": "今日のシグナル",
+        "html": "<p><strong>確認済み事実：</strong>Agent RouterはMCPRouteのJWT認可が、EnvoyのJWT filterで検証されたpayloadではなく、MCP proxyが<code>Authorization</code> headerから再解析したtokenを使っていた問題を修正した。さらにroute authorizationが<code>tools/call</code>と<code>tools/list</code>にしか適用されず、<code>resources/*</code>、<code>prompts/*</code>、<code>completion/complete</code>、<code>logging/setLevel</code>などが未検査でbackendへforwardされていた範囲を閉じた。OpenSandboxでは1.3.0-rc.4のrelease notesとBOM pinがmainへ統合された。</p><p><strong>分析：</strong>本日の焦点は「認証済み」と「認可判断に使ったidentity」が同一であること、そしてprotocol methodが増えてもauthorization coverageを欠かさないことである。既定denyを設定してもresourcesやpromptsが通過し得たため、MCPをtool APIとしてだけ捉えるpolicy testでは不足する。identity／method双方の境界に関わるためHIGHとした。Agent Routerの修正はmain branch上であり、現行release v1.2.1への収録は確認できていない。</p>"
+      },
+      {
+        "heading": "重要ニュース",
+        "html": "<p><strong>検証済みJWTを唯一の認可sourceへ：</strong>従来はEnvoyが検証したtokenとMCP proxyがheaderから再解析したtokenが必ずしも同一ではなかった。修正後はEnvoyの<code>jwt_authn</code> dynamic metadataにある検証済みpayloadをgateway内部headerへrenderし、clientが同名headerを送っても常に上書きする。payload欠損・malformed時はclaims／scopesなしとしてfail closedとなる。tokenの抽出元もBearer形式のAuthorization headerだけへ限定され、URI queryの<code>access_token</code>は受理しない。</p><p><strong>MCP method全体へroute authorization：</strong>single-backend methodはdeny時に403を返し、scope不足なら<code>WWW-Authenticate</code>へ<code>insufficient_scope</code> challengeを付ける。複数backendへfan-outするmethodは、callerに許可されていないbackendを呼び出し対象から除外する。tool名をtargetにしたruleはresourcesやpromptsには一致しないため、<code>defaultAction: Deny</code>の構成ではmethod／backendを明示的に許可するruleが必要になる。</p><p><strong>sessionとupstream pathも補強：</strong><code>aigw run</code>は未設定時に公開既知seedへfallbackせず、randomなMCP session encryption seedを0600のconfig fileへ保存し再利用するようになった。Files APIのnative IDとAzure OpenAI／Vertex AI／Bedrockのmodel名は単一path segmentとして検証・escapeされ、空文字・<code>.</code>・<code>..</code>を422で拒否する。</p>"
+      },
+      {
+        "heading": "OSS別アップデート",
+        "html": "<ul><li><strong>MCP：</strong>roadmapからrelease cycleへの導線を追加。extension client matrixにはOpenCodeを追加し、Skillsはexperimental flag配下、Eventsはpush deliveryのみのPartialと整理した。仕様schemaや新releaseの差分ではない。</li><li><strong>AGENTS.md：</strong>前回以降の新規commitは確認できなかった。</li><li><strong>goose：</strong>前回基準時刻以降の新規commitは確認できなかった。正式releaseの追加も確認できない。</li><li><strong>agentgateway：</strong>前回以降の重要なcommit／releaseは確認できなかった。</li><li><strong>A2A：</strong>前回以降の新規commitは確認できず、protocol変更もなかった。</li><li><strong>Agent Router：</strong>JWT sourceの一本化、全forwarded methodへの認可、random session seed、Files API IDとmodel pathの検証に加え、Bedrock historyで署名付きthinking blockを保持する修正、backend priority設定、Claude／Codexを起動するCLI commandも入った。</li><li><strong>OpenSandbox：</strong>1.3.0-rc.4はcreate hot path、ResourceAware admission、HMAC由来execd認証、Credential Vaultの加算的binding、egress drop telemetryを主な更新としている。RC imageは公開対象だが、SDK／CLI packageはstable 1.3.0まで保留される。mainではcontrol characterによるaudit log injection防止、subject-admission logからsubject IDを除く修正、複数credential bindingを1回のgrouped captureで解決して再検証する変更も確認した。</li></ul>"
+      },
+      {
+        "heading": "ガバナンスと標準化",
+        "html": "<p><strong>確認済み事実：</strong>AAIF Technical Committee、project proposals、Security &amp; Privacy Working Groupでは、前回基準時刻以降の新規commit、新規加入・卒業project、認定変更を確認できなかった。AAIF公式blogにも11月27日付の新規記事は検索で確認できなかった。</p><p>MCPの本日分はrelease cycleをroadmapから発見しやすくするdocumentation更新と、client implementation matrixの更新である。OpenCodeのEvents対応をPartialとしたことで、同じ「Events対応」でもpush／poll／webhookのtransport差を明記する方向が強まった。これはinteroperabilityをbooleanで管理せず、sub-capability単位でconformanceを追う必要性を示す。</p>"
+      },
+      {
+        "heading": "技術トレンド",
+        "html": "<p><strong>分析：</strong>MCP gatewayのsecurity modelは、単一のtool call authorizationから、protocol全体のmethod・backend・verified identityを組み合わせる段階へ移っている。認証filter、dynamic metadata、proxy authorizationの間でidentityを再解釈すると、個々のcomponentが正しくてもend-to-endでは別tokenを認可する可能性がある。検証済みclaimsを改変不能な内部channelで引き渡す設計は、MCP以外のagent protocol gatewayにも適用できる。</p><p>OpenSandbox RC4では高速化と高密度化に加え、HMAC由来token、audit log、kernel drop telemetryが同時に進んだ。sandboxの密度を上げるほど、credential、network drop、resource admissionをsandbox単位で説明できるtelemetryが必要になる。benchmark環境も2 node ACK、CPU／memory、OverlayBD cache、CIDR、overcommit ratioまで文書化され、性能値を構成とセットで比較する方向へ進んでいる。</p>"
+      },
+      {
+        "heading": "Agentic Opsへの示唆",
+        "html": "<p>PoCと本番前testでは次を追加したい。</p><ul><li>Envoyが検証するtokenとAuthorization header／query parameterに異なるtokenを置き、policyが検証済みpayloadだけを使うことを確認する。</li><li><code>defaultAction: Deny</code>でtoolsだけでなく、resources、prompts、completion、logging、notificationをmethod別に試験し、denyされたbackendへrequestが到達しないことをtraceで確認する。</li><li>session seed fileのpermission、backup対象外化、rotation時のsession失効、保存失敗時のwarningをrunbookへ入れる。</li><li>model名やfile IDへslash、query、fragment、<code>..</code>を含め、upstream path構造が変化しないことをnegative testへ固定する。</li><li>OpenSandbox RC4ではcreate latencyだけでなく、HMAC key rotation、image pull failureの可視化、egress drop counter、Credential Vault audit logの個人識別子・改行混入を確認する。</li></ul>"
+      },
+      {
+        "heading": "要ウォッチ項目",
+        "html": "<ul><li>Agent RouterのJWT／method authorization修正が次のtagへ収録される時期と、既存MCPRouteのbreaking behavior。</li><li><code>defaultAction: Deny</code>利用者向けに、resources／promptsを許可するmigration exampleがrelease noteへ載るか。</li><li>OpenSandbox 1.3.0-rc.4からstable 1.3.0までの追加security fixとSDK／CLI package公開。</li><li>Credential Vault grouped resolveのcontract、同時binding数、timeout／response size上限に対するinterop test。</li><li>MCP Eventsのpush／poll／webhook別matrixと、Skills experimental実装のconformance拡大。</li><li>AAIF Technical Committee、Working Groups、project proposals、新規加入・卒業projectは本日変更なし。継続監視する。</li></ul>"
+      }
+    ],
+    "sources": [
+      [
+        "Agent Router: authorize on JWT claims verified by Envoy",
+        "https://github.com/theagentrouter/agent-router/commit/accdb9214f1fc6f82aebba48ac3cb1fd481e3531"
+      ],
+      [
+        "Agent Router: apply route authorization to all forwarded MCP methods",
+        "https://github.com/theagentrouter/agent-router/commit/0c6e54fc659b94a95970cc7a9244ac40c42f6535"
+      ],
+      [
+        "Agent Router: validate backend-native file IDs",
+        "https://github.com/theagentrouter/agent-router/commit/689427614c9373565abdda521e51bd6cc4d0843a"
+      ],
+      [
+        "Agent Router: random MCP session encryption seed by default",
+        "https://github.com/theagentrouter/agent-router/commit/ea53122898c074b0628d1c892a5a3ab494ae1b9f"
+      ],
+      [
+        "Agent Router: escape model names in upstream paths",
+        "https://github.com/theagentrouter/agent-router/commit/b5063c45da0777367900a8c79fb4eaa78a15cdd3"
+      ],
+      [
+        "OpenSandbox: 1.3.0-rc.4 release notes",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/1438dcd0a4ad8001f92e41134caebccf92f28acc"
+      ],
+      [
+        "OpenSandbox: pin BOM for 1.3.0-rc.4",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/accf2630a242baf48582dd5766e9c54913509730"
+      ],
+      [
+        "OpenSandbox: prevent control-character log injection",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/71b813703c"
+      ],
+      [
+        "OpenSandbox: grouped multi-binding credential resolution",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/bb60df1f96b55e4c99b38232804caefa09c976e8"
+      ],
+      [
+        "OpenSandbox: fixed-vocabulary subject-admission logs",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/21cdbdf8c038066e3d4150497ffa8a9fe03904dc"
+      ],
+      [
+        "OpenSandbox: reference ACK OverlayBD benchmark environment",
+        "https://github.com/opensandbox-group/OpenSandbox/commit/00819dba8aff142b83ec0beaa674b4206d1b6c19"
+      ],
+      [
+        "MCP: add OpenCode to extension client matrix",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/bd5bc16fb0b4eee9e0a1994ffaa1d67f213865ac"
+      ],
+      [
+        "MCP: link roadmap to release cycle",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/c0bdba6e1e168f8e3b3198be03282c4c0065837f"
+      ],
+      [
+        "AAIF Technical Committee",
+        "https://github.com/aaif/technical-committee"
+      ],
+      [
+        "AAIF Project Proposals",
+        "https://github.com/aaif/project-proposals"
+      ],
+      [
+        "AAIF Security & Privacy WG",
+        "https://github.com/aaif/wg-security-and-privacy"
+      ],
+      [
+        "AGENTS.md repository",
+        "https://github.com/agentsmd/agents.md"
+      ],
+      [
+        "goose repository",
+        "https://github.com/aaif-goose/goose"
+      ],
+      [
+        "agentgateway repository",
+        "https://github.com/agentgateway/agentgateway"
+      ],
+      [
+        "A2A repository",
+        "https://github.com/a2aproject/A2A"
+      ]
+    ]
+  },
+  {
     "date": "2026-11-27",
     "level": "HIGH",
     "tags": [
